@@ -1,9 +1,8 @@
 import subprocess
 from autogen_core.tools import FunctionTool
-from autogen_agentchat.agents import AssistantAgent
 
 
-def _verify_install() -> str:
+async def _verify_install() -> str:
     return _run_istioctl_command("verify-install")
 
 
