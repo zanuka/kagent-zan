@@ -6,7 +6,7 @@ from autogen_core.tools import FunctionTool
 from ..common.shell import run_command
 
 
-def _k8s_get_pod(
+def _get_pod(
     pod_name: Annotated[str, "The name of the pod to get information about"],
     ns: Annotated[Optional[str], "The namespace of the pod to get information about"],
     output: Annotated[Optional[str], "The output format of the pod information"],
@@ -16,7 +16,7 @@ def _k8s_get_pod(
     )
 
 
-def _k8s_get_pods(
+def _get_pods(
     ns: Annotated[Optional[str], "The namespace of the pod to get information about"],
     all_namespaces: Annotated[
         Optional[bool], "Whether to get pods from all namespaces"
@@ -30,7 +30,7 @@ def _k8s_get_pods(
     )
 
 
-def _k8s_get_services(
+def _get_services(
     service_name: Annotated[
         Optional[str], "The name of the service to get information about"
     ],
@@ -50,7 +50,7 @@ def _k8s_get_services(
     )
 
 
-def _k8s_get_resources(
+def _get_resources(
     name: Annotated[str, "The name of the resource to get information about"],
     resource_type: Annotated[str, "The type of resource to get information about"],
     all_namespaces: Annotated[
@@ -69,7 +69,7 @@ def _k8s_get_resources(
     )
 
 
-def _k8s_apply_manifest(
+def _apply_manifest(
     manifest: Annotated[str, "The path to the manifest file to apply"],
 ) -> str:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=True) as tmp_file:
@@ -77,46 +77,46 @@ def _k8s_apply_manifest(
         tmp_file.flush()  # Ensure the content is written to disk
         return _run_kubectl_command(f"apply -f {tmp_file.name}")
 
-def _k8s_get_pod_logs(
+def _get_pod_logs(
     pod_name: Annotated[str, "The name of the pod to get logs from"],
     ns: Annotated[str, "The namespace of the pod to get logs from"],
 ):
     return _run_kubectl_command(f"logs {pod_name + ' ' if pod_name else ''}{'-n' + ns if ns else ''}")
 
-k8s_get_pods = FunctionTool(
-    _k8s_get_pods,
+get_pods = FunctionTool(
+    _get_pods,
     description="Gets pods in Kubernetes from a specific namespace. Always prefer output type `wide` unless otherwise specified.",
-    name="k8s_get_pods",
+    name="get_pods",
 )
 
-k8s_get_pod = FunctionTool(
-    _k8s_get_pod,
+get_pod = FunctionTool(
+    _get_pod,
     description="Gets a single pod in Kubernetes. Always prefer output type `wide` unless otherwise specified.",
-    name="k8s_get_pod",
+    name="get_pod",
 )
 
-k8s_get_services = FunctionTool(
-    _k8s_get_services,
+get_services = FunctionTool(
+    _get_services,
     description="Get information about services in Kubernetes. Always prefer output type `wide` unless otherwise specified.",
-    name="k8s_get_services",
+    name="get_services",
 )
 
-k8s_apply_manifest = FunctionTool(
-    _k8s_apply_manifest,
+apply_manifest = FunctionTool(
+    _apply_manifest,
     description="Apply a manifest file to the Kubernetes cluster.",
-    name="_k8s_apply_manifest",
+    name="_apply_manifest",
 )
 
-k8s_get_resources = FunctionTool(
-    _k8s_get_resources,
+get_resources = FunctionTool(
+    _get_resources,
     description="Get information about resources in Kubernetes. Always prefer output type `wide` unless otherwise specified.",
-    name="k8s_get_resources",
+    name="get_resources",
 )
 
-k8s_get_pod_logs = FunctionTool(
-    _k8s_get_pod_logs,
+get_pod_logs = FunctionTool(
+    _get_pod_logs,
     description="Get logs from a specific pod in Kubernetes.",
-    name="k8s_get_pod_logs",
+    name="get_pod_logs",
 )
 
 def _run_kubectl_command(command: str) -> str:

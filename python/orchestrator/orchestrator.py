@@ -1,6 +1,6 @@
 import argparse
 import asyncio
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import yaml
 from autogen_agentchat.agents import AssistantAgent
@@ -36,7 +36,10 @@ class Agent(BaseModel):
     # llm_config: LLMConfig
     description: str
     system_message: str = Field(alias="systemMessage")
-    tools: Optional[List[str]] = Field(default=None)
+    builtin_tools: Optional[List[str]] = Field(
+        default=None, alias="builtinTools"
+    )  # A list of built-in tools that the agent has access to
+    tools: Optional[List[str]] = Field(default=None)  # A list of references to user-defined tools
 
 
 class Selector(BaseModel):
@@ -46,8 +49,7 @@ class Selector(BaseModel):
 class Team(BaseModel):
     team_name: str = Field(alias="teamName")
     max_chat_rounds: int = Field(alias="maxChatRounds")
-    # default_llm_config: LLMConfig = Field(alias="defaultLLMConfig")
-    selector: Selector
+    selector: Optional[Selector] = None
 
 
 class AutogenOrchestrator:
@@ -77,22 +79,32 @@ class AutogenOrchestrator:
 
     def create_autogen_agent(self, agent: Agent, model_client: ChatCompletionClient) -> AssistantAgent:
         """Create an AutoGen agent instance from configuration"""
+        tools = []
+
+        if agent.builtin_tools:
+            for tool_name in agent.builtin_tools:
+                # Dynamically import and get the tool function from the tools package
+                module_path = tool_name.split(".")
+                module = __import__("tools." + ".".join(module_path[:-1]), fromlist=[module_path[-1]])
+                tool = getattr(module, module_path[-1])
+                tools.append(tool)
 
         return AssistantAgent(
             agent.name,
             model_client=model_client,
             description=agent.description,
             system_message=agent.system_message,
+            tools=tools,
         )
 
     def get_team_agents(self, team_name: str) -> List[Agent]:
         """Get all agents belonging to a team based on label selector"""
         team = self.teams[team_name]
-        labels = team.selector.match_labels
 
         team_agents = []
         for agent_name, agent in self.agents.items():
             agent_labels = self.get_agent_labels(agent_name)
+            labels = team.selector.match_labels if team.selector else {}
             if all(agent_labels.get(k) == v for k, v in labels.items()):
                 team_agents.append(agent)
         return team_agents
@@ -151,7 +163,6 @@ def main():
 
     # Execute prompt
     orchestrator.execute_prompt(args.team, args.prompt, model_client)
-    # print(f"Final Response: {response}")
 
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ class PromptTemplate:
     def _validate_variables(self) -> None:
         """Ensure all required variables have values or defaults."""
         all_vars = set()
-        for section in self.sections:
+        for section in self.sections if self.sections else []:
             all_vars.update(var.name for var in section.variables)
         for var in self.variables:
             all_vars.add(var.name)
@@ -78,7 +78,7 @@ class PromptTemplate:
                 )
 
         result = []
-        for section in self.sections:
+        for section in self.sections if self.sections else []:
             content = section.content
             for var in section.variables:
                 value = variables.get(var.name, var.default)
