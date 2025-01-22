@@ -23,7 +23,7 @@ planning_agent = AssistantAgent(
     You are a planning agent.
     Your job is to break down complex tasks into smaller, manageable subtasks.
     Your team members are:
-        K8s agent: Run information gathering tasks related to Kubernetes
+        K8s agent: Run information gathering tasks related to Kubernetes.
         Istio Agent: Run information gathering tasks related to Istio
 
     You only plan and delegate tasks - you do not execute them yourself.

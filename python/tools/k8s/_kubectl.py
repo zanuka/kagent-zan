@@ -15,7 +15,7 @@ def _k8s_get_pods(
 
 k8s_get_pods = FunctionTool(
     _k8s_get_pods,
-    description="Get information about pods in Kubernetes",
+    description="Get information about pods in Kubernetes. Always prefer output type `wide` unless otherwise specified.",
     name="k8s_get_pods",
 )
 
