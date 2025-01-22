@@ -1,3 +1,3 @@
-from ._istioctl import _verify_install as verify_install
+from ._istioctl import  verify_install, proxy_config
 
-__all__ = ["verify_install"]
+__all__ = ["verify_install", "proxy_config"]
