@@ -13,40 +13,6 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 from pydantic import BaseModel, Field
 
 
-def camel_to_snake(name: str) -> str:
-    """
-    Convert camelCase to snake_case while properly handling acronyms
-    Examples:
-        - requestTimeout -> request_timeout
-        - defaultLLMConfig -> default_llm_config
-        - APIVersion -> api_version
-    """
-    if not name:
-        return name
-
-    # Special case handling for known acronyms
-    name = name.replace("LLM", "Llm")
-
-    result = name[0].lower()
-    for char in name[1:]:
-        if char.isupper():
-            result += "_" + char.lower()
-        else:
-            result += char
-
-    return result
-
-
-def convert_dict_keys_to_snake_case(d: dict) -> dict:
-    """
-    Recursively convert all dictionary keys from camelCase to snake_case
-    """
-    if not isinstance(d, dict):
-        return d
-
-    return {camel_to_snake(k): convert_dict_keys_to_snake_case(v) if isinstance(v, dict) else v for k, v in d.items()}
-
-
 class LLMConfig(BaseModel):
     temperature: float = Field(default=0.7)
     timeout: int = Field(default=60)
@@ -71,6 +37,7 @@ class Agent(BaseModel):
     description: str
     system_message: str = Field(alias="systemMessage")
     tools: Optional[List[str]] = Field(default=None)
+
 
 class Selector(BaseModel):
     match_labels: Dict[str, str] = Field(alias="matchLabels")
