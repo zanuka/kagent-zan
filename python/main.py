@@ -10,10 +10,13 @@ from autogen_ext.models.openai import OpenAIChatCompletionClient
 from tools.istio._istioctl import proxy_config
 from tools.k8s._kubectl import k8s_get_pods
 
+from dotenv import load_dotenv
+load_dotenv()
+
+
 model_client = OpenAIChatCompletionClient(
     model="gpt-4o",
 )
-
 
 planning_agent = AssistantAgent(
     "PlanningAgent",
@@ -46,10 +49,10 @@ k8s_agent = AssistantAgent(
 )
 
 istio_agent = AssistantAgent(
-  name="istio_agent",
-  model_client=model_client,
-  tools=[proxy_config],
-  system_message="""You are an agent specialized in Istio.
+    name="istio_agent",
+    model_client=model_client,
+    tools=[proxy_config],
+    system_message="""You are an agent specialized in Istio.
   You have access to the proxy_config tool which allows you to get the proxy configuration for a pod.
   """
 )
