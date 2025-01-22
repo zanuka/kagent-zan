@@ -11,7 +11,19 @@ dependencies = [
   "openai==1.60.0",
   "tiktoken==0.8.0",
   "ruff>=0.9.2",
-  "python-dotenv>=1.0.1"
+  "python-dotenv>=1.0.1",
+  "pyyaml>=6.0.2",
 ]
 
+[tool.ruff]
+line-length = 120
+fix = true
 
+target-version = "py310"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "Q", "I", "ASYNC", "T20"]
+ignore = ["F401", "E501"]

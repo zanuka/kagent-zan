@@ -1,9 +1,10 @@
 import subprocess
+
+
 # Function that runs the istioctl command in the shell
 def run_command(command: str, args: list[str]) -> str:
     """Run the given command and return the output."""
     try:
-        print(f"Running command: {command} {args}")
         output = subprocess.check_output(
             [command] + args, stderr=subprocess.STDOUT
         )
