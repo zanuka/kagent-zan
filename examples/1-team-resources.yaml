@@ -26,6 +26,7 @@ spec:
   llmConfig:
     temperature: 0.7
     requestTimeout: 600
+  description: "Task Planner for Kubernetes pod scaling automation"
   systemMessage: |
     You are the Task Planner for Kubernetes pod scaling automation. Your responsibilities:
     1. Analyze scaling requirements and current cluster state
@@ -57,6 +58,7 @@ spec:
   llmConfig:
     temperature: 0.1
     requestTimeout: 300
+  description: "Metrics Analyzer for Kubernetes pod scaling"
   systemMessage: |
     You are the Metrics Analyzer agent specialized in:
     1. Querying Prometheus for resource utilization metrics
@@ -84,6 +86,7 @@ spec:
   tools:
     - "kubectl-tool"
     - "hpa-tool"
+  description: "Kubernetes Operator for managing HPA configurations"
   llmConfig:
     temperature: 0.1
     requestTimeout: 300
@@ -117,6 +120,7 @@ spec:
   llmConfig:
     temperature: 0.3
     requestTimeout: 300
+  description: "Resource Optimizer for Kubernetes pod scaling"
   systemMessage: |
     You are the Resource Optimization agent specialized in:
     1. Analyzing resource usage patterns

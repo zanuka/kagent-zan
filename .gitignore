@@ -1,5 +1,5 @@
 ### dotenv template
-.env
+python/.env
 
 ### Go template
 # If you prefer the allow list template instead of the deny list, see community template:
@@ -147,7 +147,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+python/.env
 .venv
 env/
 venv/

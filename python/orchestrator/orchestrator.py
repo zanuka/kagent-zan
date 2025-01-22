@@ -1,10 +1,15 @@
-import yaml
+import argparse
+import asyncio
 from dataclasses import dataclass
 from typing import Dict, List, Optional
-import argparse
-from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
-import os
-import re
+
+import yaml
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
+from autogen_agentchat.teams import SelectorGroupChat
+from autogen_agentchat.ui import Console
+from autogen_core.models import ChatCompletionClient
+from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 def camel_to_snake(name: str) -> str:
     """
@@ -29,6 +34,7 @@ def camel_to_snake(name: str) -> str:
 
     return result
 
+
 def convert_dict_keys_to_snake_case(d: dict) -> dict:
     """
     Recursively convert all dictionary keys from camelCase to snake_case
@@ -38,6 +44,7 @@ def convert_dict_keys_to_snake_case(d: dict) -> dict:
 
     return {camel_to_snake(k): convert_dict_keys_to_snake_case(v) if isinstance(v, dict) else v
             for k, v in d.items()}
+
 
 @dataclass
 class LLMConfig:
@@ -56,6 +63,7 @@ class LLMConfig:
             temperature=converted_data.get('temperature', 0.7),
             timeout=timeout
         )
+
 
 @dataclass
 class Tool:
@@ -90,11 +98,13 @@ class Tool:
         converted_data = convert_dict_keys_to_snake_case(data)
         return cls(**converted_data)
 
+
 @dataclass
 class Agent:
     name: str
     type: str
     llm_config: LLMConfig
+    description: str
     system_message: str
     tools: Optional[List[str]] = None  # Make tools optional with default None
 
@@ -106,7 +116,8 @@ class Agent:
             'type': data['type'],
             'tools': data.get('tools'),  # Use get() for optional field
             'llm_config': LLMConfig.from_dict(data['llmConfig']),
-            'system_message': data['systemMessage']
+            'system_message': data['systemMessage'],
+            'description': data['description']
         }
         return cls(**converted_data)
 
@@ -115,6 +126,7 @@ class Agent:
         converted_data = convert_dict_keys_to_snake_case(data)
         converted_data['llm_config'] = LLMConfig.from_dict(converted_data['llm_config'])
         return cls(**converted_data)
+
 
 @dataclass
 class Team:
@@ -128,6 +140,7 @@ class Team:
         converted_data = convert_dict_keys_to_snake_case(data)
         converted_data['default_llm_config'] = LLMConfig.from_dict(converted_data['default_llm_config'])
         return cls(**converted_data)
+
 
 class AutogenOrchestrator:
     def __init__(self, config_path: str):
@@ -154,19 +167,14 @@ class AutogenOrchestrator:
             elif kind == 'AutogenTool':
                 self.tools[metadata['name']] = Tool.from_dict(spec)
 
-    def create_autogen_agent(self, agent: Agent, config_list: List[Dict]) -> AssistantAgent:
+    def create_autogen_agent(self, agent: Agent, model_client: ChatCompletionClient) -> AssistantAgent:
         """Create an AutoGen agent instance from configuration"""
-        llm_config = {
-            "temperature": agent.llm_config.temperature,
-            "config_list": config_list,
-            # Remove request_timeout as it's causing issues with newer OpenAI client
-            "timeout": 60,  # Use timeout instead of request_timeout
-        }
 
         return AssistantAgent(
-            name=agent.name,
+            agent.name,
+            model_client=model_client,
+            description=agent.description,
             system_message=agent.system_message,
-            llm_config=llm_config
         )
 
     def get_team_agents(self, team_name: str) -> List[Agent]:
@@ -189,46 +197,40 @@ class AutogenOrchestrator:
                 return config['metadata'].get('labels', {})
         return {}
 
-    def execute_prompt(self, team_name: str, prompt: str, config_list: List[Dict]):
+    def execute_prompt(self, team_name: str, prompt: str, model_client: ChatCompletionClient):
         """Execute a prompt with the specified team"""
         team = self.teams[team_name]
         team_agents = self.get_team_agents(team_name)
 
         # Create AutoGen agents
         autogen_agents = [
-            self.create_autogen_agent(agent, config_list)
+            self.create_autogen_agent(agent, model_client)
             for agent in team_agents
         ]
 
-        # Add human proxy agent
-        human_proxy = UserProxyAgent(
-            name="human_proxy",
-            system_message="A proxy for human interaction. Validates final decisions and provides oversight.",
-            human_input_mode="NEVER",
-            max_consecutive_auto_reply=10
-        )
-        autogen_agents.append(human_proxy)
+        # # Add human proxy agent
+        # human_proxy = UserProxyAgent(
+        #     name="human_proxy",
+        #     system_message="A proxy for human interaction. Validates final decisions and provides oversight.",
+        #     human_input_mode="NEVER",
+        #     max_consecutive_auto_reply=10
+        # )
+        # autogen_agents.append(human_proxy)
+
+        text_mention_termination = TextMentionTermination("TERMINATE")
+        max_messages_termination = MaxMessageTermination(max_messages=25)
+        termination = text_mention_termination | max_messages_termination
 
         # Create group chat
-        group_chat = GroupChat(
-            agents=autogen_agents,
-            messages=[],
-            max_round=team.max_chat_rounds
-        )
-
-        # Create manager and execute
-        manager = GroupChatManager(
-            groupchat=group_chat,
-            llm_config={"config_list": config_list}
+        group_chat = SelectorGroupChat(
+            autogen_agents,
+            model_client=model_client,
+            termination_condition=termination,
         )
 
         # Execute prompt
-        final_response = human_proxy.initiate_chat(
-            manager,
-            message=prompt
-        )
+        asyncio.run(Console(group_chat.run_stream(task=prompt)))
 
-        return final_response
 
 def main():
     parser = argparse.ArgumentParser(description='AutoGen Team Orchestrator')
@@ -240,17 +242,14 @@ def main():
     # Initialize orchestrator
     orchestrator = AutogenOrchestrator(args.config)
 
-    # Load your LLM config list (from environment or configuration)
-    config_list = [
-        {
-            "model": "gpt-4",
-            "api_key": os.getenv("OPENAI_API_KEY")
-        }
-    ]
+    model_client = OpenAIChatCompletionClient(
+        model="gpt-4o",
+    )
 
     # Execute prompt
-    response = orchestrator.execute_prompt(args.team, args.prompt, config_list)
-    print(f"Final Response: {response}")
+    orchestrator.execute_prompt(args.team, args.prompt, model_client)
+    # print(f"Final Response: {response}")
+
 
 if __name__ == "__main__":
     main()
