@@ -75,6 +75,11 @@ def _k8s_apply_manifest(
         tmp_file.flush()  # Ensure the content is written to disk
         return _run_kubectl_command(f"apply -f {tmp_file.name}")
 
+def _k8s_get_pod_logs(
+    pod_name: Annotated[str, "The name of the pod to get logs from"],
+    ns: Annotated[str, "The namespace of the pod to get logs from"],
+):
+    return _run_kubectl_command(f"logs {pod_name + ' ' if pod_name else ''}{'-n' + ns if ns else ''}")
 
 k8s_get_pods = FunctionTool(
     _k8s_get_pods,
@@ -106,6 +111,14 @@ k8s_get_resources = FunctionTool(
     name="k8s_get_resources",
 )
 
+k8s_get_pod_logs = FunctionTool(
+    _k8s_get_pod_logs,
+    description="Get logs from a specific pod in Kubernetes.",
+    name="k8s_get_pod_logs",
+)
 
 def _run_kubectl_command(command: str) -> str:
-    return run_command("kubectl", command.split(" "))
+    # Split the command and remove empty strings
+    cmd_parts = command.split(" ")
+    cmd_parts = [part for part in cmd_parts if part]  # Remove empty strings from the list
+    return run_command("kubectl", cmd_parts)

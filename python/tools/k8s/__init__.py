@@ -4,6 +4,7 @@ from ._kubectl import (
     k8s_get_pod,
     k8s_apply_manifest,
     k8s_get_resources,
+    k8s_get_pod_logs
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "k8s_get_pod",
     "k8s_apply_manifest",
     "k8s_get_resources",
+    "k8s_get_pod_logs"
 ]
