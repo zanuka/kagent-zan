@@ -7,8 +7,8 @@ from autogen_agentchat.teams import SelectorGroupChat
 from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-from tools.istio._istioctl import proxy_config
-from tools.k8s._kubectl import k8s_get_pods
+from tools.istio import proxy_config
+from tools.k8s import k8s_get_pods
 
 model_client = OpenAIChatCompletionClient(
     model="gpt-4o",
