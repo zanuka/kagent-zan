@@ -1,13 +1,14 @@
-from typing import Any, Dict, List
+import asyncio
 
 from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.conditions import HandoffTermination, TextMentionTermination
+from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
 from autogen_agentchat.messages import HandoffMessage
 from autogen_agentchat.teams import SelectorGroupChat
 from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 from tools.istio._istioctl import proxy_config
+from tools.k8s._kubectl import k8s_get_pods
 
 model_client = OpenAIChatCompletionClient(
     model="gpt-4o",
@@ -38,6 +39,7 @@ planning_agent = AssistantAgent(
 k8s_agent = AssistantAgent(
     "k8s_agent",
     model_client=model_client,
+    tools=[k8s_get_pods],
     system_message="""You are an agent specialized in Kubernetes.
     You have access to the get_pods tool which allows you to get information about one or more pods.
     """,
@@ -51,3 +53,17 @@ istio_agent = AssistantAgent(
   You have access to the proxy_config tool which allows you to get the proxy configuration for a pod.
   """
 )
+
+text_mention_termination = TextMentionTermination("TERMINATE")
+max_messages_termination = MaxMessageTermination(max_messages=25)
+termination = text_mention_termination | max_messages_termination
+
+team = SelectorGroupChat(
+    [planning_agent, k8s_agent, istio_agent],
+    model_client=OpenAIChatCompletionClient(model="gpt-4o-mini"),
+    termination_condition=termination,
+)
+
+task = "Get the proxy configuration for all pods in the default namespace"
+
+asyncio.run(Console(team.run_stream(task=task)))
