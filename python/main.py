@@ -6,11 +6,11 @@ from autogen_agentchat.messages import HandoffMessage
 from autogen_agentchat.teams import SelectorGroupChat
 from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+from dotenv import load_dotenv
 
 from tools.istio import proxy_config
 from tools.k8s import k8s_get_pods
 
-from dotenv import load_dotenv
 load_dotenv()
 
 
