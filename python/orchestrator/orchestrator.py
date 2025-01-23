@@ -1,15 +1,15 @@
 import argparse
 import asyncio
-from typing import Dict, List, Optional, Union
+import importlib
+from typing import AsyncGenerator, Dict, List, Optional
 
 import yaml
 from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.base import ChatAgent
+from autogen_agentchat.base import ChatAgent, TaskResult
 from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
+from autogen_agentchat.messages import AgentEvent, ChatMessage
 from autogen_agentchat.teams import SelectorGroupChat
-from autogen_agentchat.ui import Console
 from autogen_core.models import ChatCompletionClient
-from autogen_ext.models.openai import OpenAIChatCompletionClient
 from pydantic import BaseModel, Field
 
 
@@ -85,7 +85,8 @@ class AutogenOrchestrator:
             for tool_name in agent.builtin_tools:
                 # Dynamically import and get the tool function from the tools package
                 module_path = tool_name.split(".")
-                module = __import__("tools." + ".".join(module_path[:-1]), fromlist=[module_path[-1]])
+                module_name = "tools." + ".".join(module_path[:-1])
+                module = importlib.import_module(module_name)
                 tool = getattr(module, module_path[-1])
                 tools.append(tool)
 
@@ -116,7 +117,9 @@ class AutogenOrchestrator:
                 return config["metadata"].get("labels", {})
         return {}
 
-    def execute_prompt(self, team_name: str, prompt: str, model_client: ChatCompletionClient):
+    async def execute_prompt(
+        self, team_name: str, prompt: str, model_client: ChatCompletionClient
+    ) -> AsyncGenerator[AgentEvent | ChatMessage | TaskResult, None]:
         """Execute a prompt with the specified team"""
         team_agents = self.get_team_agents(team_name)
 
@@ -144,26 +147,5 @@ class AutogenOrchestrator:
         )
 
         # Execute prompt
-        asyncio.run(Console(group_chat.run_stream(task=prompt)))
-
-
-def main():
-    parser = argparse.ArgumentParser(description="AutoGen Team Orchestrator")
-    parser.add_argument("--config", required=True, help="Path to YAML configuration file")
-    parser.add_argument("--team", required=True, help="Name of the team to execute")
-    parser.add_argument("--prompt", required=True, help="Prompt to execute")
-    args = parser.parse_args()
-
-    # Initialize orchestrator
-    orchestrator = AutogenOrchestrator(args.config)
-
-    model_client = OpenAIChatCompletionClient(
-        model="gpt-4o",
-    )
-
-    # Execute prompt
-    orchestrator.execute_prompt(args.team, args.prompt, model_client)
-
-
-if __name__ == "__main__":
-    main()
+        async for item in group_chat.run_stream(task=prompt):
+            yield item

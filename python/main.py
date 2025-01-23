@@ -1,101 +1,31 @@
+import argparse
 import asyncio
 
-from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
-from autogen_agentchat.teams import SelectorGroupChat
 from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from dotenv import load_dotenv
 
-from prompts._istio_crd import get_istio_crd_prompt
-from prompts.models import IstioCrdType
-from tools.istio import proxy_config
-from tools.k8s import (
-    apply_manifest,
-    get_pod,
-    get_pod_logs,
-    get_pods,
-    get_resources,
-    get_services,
-)
+from orchestrator.orchestrator import AutogenOrchestrator
 
 load_dotenv()
 
+async def main():
+    parser = argparse.ArgumentParser(description="AutoGen Team Orchestrator")
+    parser.add_argument("--config", required=True, help="Path to YAML configuration file")
+    parser.add_argument("--team", required=True, help="Name of the team to execute")
+    parser.add_argument("--prompt", required=True, help="Prompt to execute")
+    args = parser.parse_args()
 
-model_client = OpenAIChatCompletionClient(
-    model="gpt-4o",
-)
+    # Initialize orchestrator
+    orchestrator = AutogenOrchestrator(args.config)
 
-planning_agent = AssistantAgent(
-    "PlanningAgent",
-    description="An agent for planning tasks, this agent should be the first to engage when given a new task.",
-    model_client=model_client,
-    system_message="""
-    You are a planning agent.
-    Your job is to break down complex tasks into smaller, manageable subtasks.
-    Your team members are:
-        k8s_agent: Run information gathering tasks related to Kubernetes and any resources in the cluster.
-        k8s_resource_applier: Apply manifests to the Kubernetes cluster.
-        istio_agent: Run information gathering tasks related to Istio.
+    model_client = OpenAIChatCompletionClient(
+        model="gpt-4o",
+    )
 
-    You only plan and delegate tasks - you do not execute them yourself.
-
-    When assigning tasks, use this format:
-    1. <agent> : <task>
-
-    After all tasks are complete, summarize the findings and end with "TERMINATE".
-    """,
-)
+    # Execute prompt
+    await Console(orchestrator.execute_prompt(args.team, args.prompt, model_client))
 
 
-k8s_agent = AssistantAgent(
-    "k8s_agent",
-    model_client=model_client,
-    tools=[
-        get_pods,
-        get_pod,
-        get_services,
-        get_resources,
-        get_pod_logs,
-    ],
-    system_message="""You are an agent specialized in Kubernetes.
-    You have access to tools that allow you to interact with the Kubernetes cluster.
-    """,
-)
-
-k8s_resource_applier = AssistantAgent(
-    "k8s_resource_applier",
-    model_client=model_client,
-    tools=[apply_manifest],
-    system_message="You are an agent specialized in applying manifests to Kubernetes.",
-)
-
-istio_agent = AssistantAgent(
-    name="istio_agent",
-    model_client=model_client,
-    tools=[proxy_config],
-    system_message="""You are an agent specialized in Istio.
-  You have access to the proxy_config tool which allows you to get the proxy configuration for a pod.
-  """,
-)
-
-istio_authpolicy_crd_agent = AssistantAgent(
-    name="istio_authpolicy_crd_agent",
-    model_client=model_client,
-    tools=[proxy_config],
-    system_message=get_istio_crd_prompt(IstioCrdType.AUTHORIZATION_POLICY),
-)
-
-text_mention_termination = TextMentionTermination("TERMINATE")
-max_messages_termination = MaxMessageTermination(max_messages=25)
-termination = text_mention_termination | max_messages_termination
-
-team = SelectorGroupChat(
-    [planning_agent, k8s_agent, k8s_resource_applier],
-    model_client=OpenAIChatCompletionClient(model="gpt-4o-mini"),
-    termination_condition=termination,
-)
-
-task = "Can you investigate why the the ingress pod is not starting?"
-
-asyncio.run(Console(team.run_stream(task=task)))
+if __name__ == "__main__":
+    asyncio.run(main())
