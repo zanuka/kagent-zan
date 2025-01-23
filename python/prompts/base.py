@@ -49,11 +49,13 @@ class PromptTemplate:
         self,
         name: str,
         description: str,
+        version: str,
         sections: list[PromptSection] | None,
         variables: list[TemplateVariable] | None = None,
     ):
         self.name = name
         self.description = description
+        self.version = version
         self.sections = sections
         self.variables = variables or []
         self._validate_variables()
