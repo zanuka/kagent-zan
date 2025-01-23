@@ -1,17 +1,17 @@
 from ._kubectl import (
-    k8s_get_pods,
-    k8s_get_services,
-    k8s_get_pod,
-    k8s_apply_manifest,
-    k8s_get_resources,
-    k8s_get_pod_logs
+    apply_manifest,
+    get_pod,
+    get_pod_logs,
+    get_pods,
+    get_resources,
+    get_services,
 )
 
 __all__ = [
-    "k8s_get_pods",
-    "k8s_get_services",
-    "k8s_get_pod",
-    "k8s_apply_manifest",
-    "k8s_get_resources",
-    "k8s_get_pod_logs"
+    "get_pods",
+    "get_services",
+    "get_pod",
+    "apply_manifest",
+    "get_resources",
+    "get_pod_logs"
 ]

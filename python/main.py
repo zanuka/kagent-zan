@@ -11,12 +11,12 @@ from prompts._istio_crd import get_istio_crd_prompt
 from prompts.models import IstioCrdType
 from tools.istio import proxy_config
 from tools.k8s import (
-    k8s_get_pods,
-    k8s_get_services,
-    k8s_get_pod,
-    k8s_apply_manifest,
-    k8s_get_resources,
-    k8s_get_pod_logs,
+    apply_manifest,
+    get_pod,
+    get_pod_logs,
+    get_pods,
+    get_resources,
+    get_services,
 )
 
 load_dotenv()
@@ -52,11 +52,11 @@ k8s_agent = AssistantAgent(
     "k8s_agent",
     model_client=model_client,
     tools=[
-        k8s_get_pods,
-        k8s_get_pod,
-        k8s_get_services,
-        k8s_get_resources,
-        k8s_get_pod_logs,
+        get_pods,
+        get_pod,
+        get_services,
+        get_resources,
+        get_pod_logs,
     ],
     system_message="""You are an agent specialized in Kubernetes.
     You have access to tools that allow you to interact with the Kubernetes cluster.
@@ -66,7 +66,7 @@ k8s_agent = AssistantAgent(
 k8s_resource_applier = AssistantAgent(
     "k8s_resource_applier",
     model_client=model_client,
-    tools=[k8s_apply_manifest],
+    tools=[apply_manifest],
     system_message="You are an agent specialized in applying manifests to Kubernetes.",
 )
 
