@@ -1,5 +1,6 @@
 import difflib
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -27,7 +28,7 @@ def analyze_results_command(results_file: Path) -> dict[str, Any]:
         expected_str = json.dumps(test["expected_output"], sort_keys=True)
         actual_str = json.dumps(test["actual_output"], sort_keys=True)
         similarity = difflib.SequenceMatcher(None, expected_str, actual_str).ratio() * 100
-        
+
         # Track similarity distribution
         if similarity >= 90:
             similarity_ranges["excellent"] += 1
@@ -94,38 +95,38 @@ def analyze_results_command(results_file: Path) -> dict[str, Any]:
         }
 
     # Print analysis results
-    print(f"\nAnalyzing {results_file.name}")
-    print(f"Model: {run['config']['model']}")
-    print(f"\nAnalyzing {num_tests} test cases:")
+    logging.info(f"\nAnalyzing {results_file.name}")
+    logging.info(f"Model: {run['config']['model']}")
+    logging.info(f"\nAnalyzing {num_tests} test cases:")
 
     # Print summary statistics
-    print("\n=== Summary Statistics ===")
-    print(f"Average similarity to expected output: {analysis_results['summary']['avg_similarity']:.2f}%")
-    print(f"Average duration: {analysis_results['summary']['avg_duration']:.2f}ms")
-    
-    print("\nSimilarity Distribution:")
-    print(f"Excellent (90-100%): {similarity_ranges['excellent']} tests")
-    print(f"Good (75-90%): {similarity_ranges['good']} tests")
-    print(f"Fair (50-75%): {similarity_ranges['fair']} tests")
-    print(f"Poor (<50%): {similarity_ranges['poor']} tests")
+    logging.info("\n=== Summary Statistics ===")
+    logging.info(f"Average similarity to expected output: {analysis_results['summary']['avg_similarity']:.2f}%")
+    logging.info(f"Average duration: {analysis_results['summary']['avg_duration']:.2f}ms")
 
-    print("\nPerformance by Category:")
+    logging.info("\nSimilarity Distribution:")
+    logging.info(f"Excellent (90-100%): {similarity_ranges['excellent']} tests")
+    logging.info(f"Good (75-90%): {similarity_ranges['good']} tests")
+    logging.info(f"Fair (50-75%): {similarity_ranges['fair']} tests")
+    logging.info(f"Poor (<50%): {similarity_ranges['poor']} tests")
+
+    logging.info("\nPerformance by Category:")
     for cat, stats in analysis_results["summary"]["similarity_by_category"].items():
-        print(f"{cat}:")
-        print(f"  - Average similarity: {stats['avg_similarity']:.2f}%")
-        print(f"  - Number of tests: {stats['test_count']}")
+        logging.info(f"{cat}:")
+        logging.info(f"  - Average similarity: {stats['avg_similarity']:.2f}%")
+        logging.info(f"  - Number of tests: {stats['test_count']}")
 
-    print("\nDetailed Test Analysis:")
+    logging.info("\nDetailed Test Analysis:")
     for analysis in test_analyses:
-        print(f"\n=== Test Category: {analysis['category']} ===")
-        print(f"Input: {analysis['input']}")
-        print(f"Similarity to expected: {analysis['similarity']:.2f}%")
-        print(f"Duration: {analysis['duration_ms']:.2f}ms")
-        
+        logging.info(f"\n=== Test Category: {analysis['category']} ===")
+        logging.info(f"Input: {analysis['input']}")
+        logging.info(f"Similarity to expected: {analysis['similarity']:.2f}%")
+        logging.info(f"Duration: {analysis['duration_ms']:.2f}ms")
+
         if analysis["differences"]:
-            print("Differences from expected output:")
+            logging.info("Differences from expected output:")
             for line in analysis["differences"]:
-                print(line)
+                logging.info(line)
 
     return analysis_results
 
@@ -149,13 +150,13 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
     better_similarity_count_run1 = 0
     better_similarity_count_run2 = 0
     equal_similarity_count = 0
-    
-    for idx, (test1, test2) in enumerate(zip(run1["results"], run2["results"]), 1):
+
+    for idx, (test1, test2) in enumerate(zip(run1["results"], run2["results"], strict=False), 1):
         similarity1 = test1.get("similarity", 0)
         similarity2 = test2.get("similarity", 0)
         total_similarity_run1 += similarity1
         total_similarity_run2 += similarity2
-        
+
         # Track which run performed better for this test
         if similarity1 > similarity2:
             better_similarity_count_run1 += 1
@@ -163,7 +164,7 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
             better_similarity_count_run2 += 1
         else:
             equal_similarity_count += 1
-            
+
         comparison = {
             "test_number": idx,
             "input": test1["input"],
@@ -173,7 +174,7 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
             "similarity_new": similarity2,
             "similarity_delta": similarity2 - similarity1
         }
-        
+
         # Compare outputs
         if test1["actual_output"] != test2["actual_output"]:
             diff = difflib.unified_diff(
@@ -184,13 +185,13 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
                 lineterm=""
             )
             comparison["differences"] = list(diff)
-        
+
         test_comparisons.append(comparison)
 
     num_tests = len(test_comparisons)
     avg_similarity_run1 = total_similarity_run1 / num_tests if num_tests > 0 else 0
     avg_similarity_run2 = total_similarity_run2 / num_tests if num_tests > 0 else 0
-    
+
     comparison_results = {
         "file1": results_file1.name,
         "file2": results_file2.name,
@@ -214,47 +215,47 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
     }
 
     # Print detailed comparison results
-    print(f"\nComparing {results_file1.name} with {results_file2.name}")
-    print(f"Model changed: {comparison_results['model_changed']}")
-    print(f"Prompt changed: {comparison_results['prompt_changed']}")
-    print(f"\nAnalyzing {comparison_results['total_tests']} test cases:")
-    
+    logging.info(f"\nComparing {results_file1.name} with {results_file2.name}")
+    logging.info(f"Model changed: {comparison_results['model_changed']}")
+    logging.info(f"Prompt changed: {comparison_results['prompt_changed']}")
+    logging.info(f"\nAnalyzing {comparison_results['total_tests']} test cases:")
+
     for test in test_comparisons:
-        print(f"\n=== Test {test['test_number']} ===")
-        print(f"Input: {test['input']}")
-        print(f"Duration delta: {test['duration_delta']:.2f}ms")
-        print(f"Similarity: {test['similarity_old']:.2f}% → {test['similarity_new']:.2f}% "
+        logging.info(f"\n=== Test {test['test_number']} ===")
+        logging.info(f"Input: {test['input']}")
+        logging.info(f"Duration delta: {test['duration_delta']:.2f}ms")
+        logging.info(f"Similarity: {test['similarity_old']:.2f}% → {test['similarity_new']:.2f}% "
               f"(Δ: {test['similarity_delta']:+.2f}%)")
-        
+
         if test["differences"]:
-            print("Output differences:")
+            logging.info("Output differences:")
             for line in test["differences"]:
-                print(line)
+                logging.info(line)
         else:
-            print("No differences in output")
+            logging.info("No differences in output")
 
     # Print enhanced summary statistics
     if test_comparisons:
         avg_similarity_delta = sum(t["similarity_delta"] for t in test_comparisons) / num_tests
         avg_duration_delta = sum(t["duration_delta"] for t in test_comparisons) / num_tests
-        
-        print("\n=== Summary Statistics ===")
-        print(f"Tests with differences: {comparison_results['tests_with_differences']} of {comparison_results['total_tests']}")
-        
+
+        logging.info("\n=== Summary Statistics ===")
+        logging.info(f"Tests with differences: {comparison_results['tests_with_differences']} of {comparison_results['total_tests']}")
+
         # Print overall performance comparison
-        print(f"\nOverall Performance Comparison:")
-        print(f"Run 1 ({run1['config']['model']}):")
-        print(f"  - Average similarity: {avg_similarity_run1:.2f}%")
-        print(f"  - Better performance in: {better_similarity_count_run1} tests")
-        
-        print(f"\nRun 2 ({run2['config']['model']}):")
-        print(f"  - Average similarity: {avg_similarity_run2:.2f}%")
-        print(f"  - Better performance in: {better_similarity_count_run2} tests")
-        
-        print(f"\nEqual performance in: {equal_similarity_count} tests")
-        print(f"Overall similarity delta: {avg_similarity_delta:+.2f}%")
-        print(f"Overall duration delta: {avg_duration_delta:+.2f}ms")
-        
+        logging.info("\nOverall Performance Comparison:")
+        logging.info(f"Run 1 ({run1['config']['model']}):")
+        logging.info(f"  - Average similarity: {avg_similarity_run1:.2f}%")
+        logging.info(f"  - Better performance in: {better_similarity_count_run1} tests")
+
+        logging.info(f"\nRun 2 ({run2['config']['model']}):")
+        logging.info(f"  - Average similarity: {avg_similarity_run2:.2f}%")
+        logging.info(f"  - Better performance in: {better_similarity_count_run2} tests")
+
+        logging.info(f"\nEqual performance in: {equal_similarity_count} tests")
+        logging.info(f"Overall similarity delta: {avg_similarity_delta:+.2f}%")
+        logging.info(f"Overall duration delta: {avg_duration_delta:+.2f}ms")
+
         # Determine overall winner
         if avg_similarity_run1 > avg_similarity_run2:
             winner = f"Run 1 ({run1['config']['model']})"
@@ -265,9 +266,9 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
         else:
             winner = "Tie"
             margin = 0
-            
+
         if winner != "Tie":
-            print(f"\nOverall Winner: {winner}")
-            print(f"Winning margin: {margin:.2f}% higher average similarity")
+            logging.info(f"\nOverall Winner: {winner}")
+            logging.info(f"Winning margin: {margin:.2f}% higher average similarity")
 
     return comparison_results

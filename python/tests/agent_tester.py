@@ -1,11 +1,14 @@
-from autogen_agentchat.agents import AssistantAgent
-from schema import TestCase, TestRunResult, TestResult
+import difflib
+import hashlib
+import json
+import logging
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
-from dataclasses import asdict
-import json
-import hashlib
-import difflib
+
+from autogen_agentchat.agents import AssistantAgent
+from schema import TestCase, TestResult, TestRunResult
+
 
 class AgentTester:
     def __init__(self, agent: "AssistantAgent", test_cases: list[TestCase], results_dir: str = "test_results"):
@@ -17,7 +20,7 @@ class AgentTester:
     async def run_tests(self) -> TestRunResult:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        model = self.agent._model_client._to_config().model_dump().get('model')
+        model = self.agent._model_client._to_config().model_dump().get("model")
 
         # Get all system messages once for the entire test run
         system_msg = "\n".join([msg.content for msg in self.agent._system_messages])
@@ -28,12 +31,11 @@ class AgentTester:
             "tools": "\n".join([tool.name for tool in self.agent._tools]),
             "model": model,
             "prompt": system_msg,
-            "prompt_hash": hashlib.sha256(system_msg.encode('utf-8')).hexdigest(),
+            "prompt_hash": hashlib.sha256(system_msg.encode("utf-8")).hexdigest(),
         }
 
         results = []
         for test_case in self.test_cases:
-            print(".", end="", flush=True)
             start = datetime.now()
             # Run the agent with the test input
             response = await self.agent.run(task=test_case.input)
@@ -57,7 +59,6 @@ class AgentTester:
             )
             results.append(result)
 
-        print()
         # Create the test run result that combines config and individual results
         test_run_result = TestRunResult(
             timestamp=timestamp,
@@ -74,7 +75,7 @@ class AgentTester:
         # Convert both dictionaries to strings with consistent formatting
         str1 = json.dumps(dict1, sort_keys=True)
         str2 = json.dumps(dict2, sort_keys=True)
-        
+
         return difflib.SequenceMatcher(None, str1, str2).ratio() * 100
 
     def _save_results(self, test_run_result: TestRunResult):
@@ -84,10 +85,10 @@ class AgentTester:
             "config": test_run_result.config,
             "results": [asdict(result) for result in test_run_result.results]
         }
-        
+
         # Save to JSON file
         results_file = self.results_dir / f"results_{test_run_result.timestamp}_{test_run_result.config.get('model')}.json"
         with open(results_file, "w") as f:
             json.dump(results_dict, f, indent=2)
-        
-        print(f"Results saved to: {results_file}")
+
+        logging.info(f"Results saved to: {results_file}")

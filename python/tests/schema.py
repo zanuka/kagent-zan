@@ -13,7 +13,7 @@ class AgentDefinition:
     system_messages: list[str]
     metadata: AgentMetadata
     tools: Optional[list[str]] = None
-    
+
 @dataclass
 class TestMetadata:
     description: str

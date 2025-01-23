@@ -1,55 +1,16 @@
-import argparse
-import asyncio
 import importlib
-from typing import AsyncGenerator, Dict, List, Optional
+from typing import AsyncGenerator, Dict, List
 
 import yaml
-from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.agents import BaseChatAgent
 from autogen_agentchat.base import ChatAgent, TaskResult
 from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
 from autogen_agentchat.messages import AgentEvent, ChatMessage
 from autogen_agentchat.teams import SelectorGroupChat
 from autogen_core.models import ChatCompletionClient
-from pydantic import BaseModel, Field
+from autogen_core.tools import FunctionTool
 
-
-class LLMConfig(BaseModel):
-    temperature: float = Field(default=0.7)
-    timeout: int = Field(default=60)
-
-
-class Tool(BaseModel):
-    type: str
-    timeout: int
-    path: Optional[str] = None
-    allowed_commands: Optional[List[str]] = Field(None, alias="allowedCommands")
-    environment: Optional[Dict[str, str]] = None
-    base_url: Optional[str] = Field(None, alias="baseUrl")
-    allowed_paths: Optional[List[str]] = Field(None, alias="allowedPaths")
-    api_version: Optional[str] = Field(None, alias="apiVersion")
-    resources: Optional[List[str]] = None
-
-
-class Agent(BaseModel):
-    name: str  # Needs to be unique
-    type: str  # Should probably be an Enum
-    # llm_config: LLMConfig
-    description: str
-    system_message: str = Field(alias="systemMessage")
-    builtin_tools: Optional[List[str]] = Field(
-        default=None, alias="builtinTools"
-    )  # A list of built-in tools that the agent has access to
-    tools: Optional[List[str]] = Field(default=None)  # A list of references to user-defined tools
-
-
-class Selector(BaseModel):
-    match_labels: Dict[str, str] = Field(alias="matchLabels")
-
-
-class Team(BaseModel):
-    team_name: str = Field(alias="teamName")
-    max_chat_rounds: int = Field(alias="maxChatRounds")
-    selector: Optional[Selector] = None
+from .model import Agent, Team, Tool
 
 
 class AutogenOrchestrator:
@@ -77,26 +38,9 @@ class AutogenOrchestrator:
             elif kind == "AutogenTool":
                 self.tools[metadata["name"]] = Tool(**spec)
 
-    def create_autogen_agent(self, agent: Agent, model_client: ChatCompletionClient) -> AssistantAgent:
+    def create_autogen_agent(self, agent: Agent, model_client: ChatCompletionClient) -> BaseChatAgent:
         """Create an AutoGen agent instance from configuration"""
-        tools = []
-
-        if agent.builtin_tools:
-            for tool_name in agent.builtin_tools:
-                # Dynamically import and get the tool function from the tools package
-                module_path = tool_name.split(".")
-                module_name = "tools." + ".".join(module_path[:-1])
-                module = importlib.import_module(module_name)
-                tool = getattr(module, module_path[-1])
-                tools.append(tool)
-
-        return AssistantAgent(
-            agent.name,
-            model_client=model_client,
-            description=agent.description,
-            system_message=agent.system_message,
-            tools=tools,
-        )
+        return agent.build(model_client)
 
     def get_team_agents(self, team_name: str) -> List[Agent]:
         """Get all agents belonging to a team based on label selector"""

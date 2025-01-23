@@ -1,13 +1,14 @@
 import argparse
 import asyncio
-from dotenv import load_dotenv
+import logging
 from pathlib import Path
-from autogen_ext.models.openai import OpenAIChatCompletionClient
-from autogen_ext.models.openai.config import ResponseFormat 
 
-from comparator import analyze_results_command, compare_results_command
-from loader import load_test_cases, load_agent_definition, create_agent
 from agent_tester import AgentTester
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+from autogen_ext.models.openai.config import ResponseFormat
+from comparator import analyze_results_command, compare_results_command
+from dotenv import load_dotenv
+from loader import create_agent, load_agent_definition, load_test_cases
 
 load_dotenv()
 
@@ -23,8 +24,8 @@ async def run_test_command(test_cases_file: Path, agent_def_file: Path, model: s
     agent = create_agent(agent_def, model_client)
 
     tester = AgentTester(agent, test_cases=test_suite.test_cases, results_dir=results_dir)
-    
-    print(f"Running {len(test_suite.test_cases)} test cases for agent: {agent_def.name}...")
+
+    logging.info(f"Running {len(test_suite.test_cases)} test cases for agent: {agent_def.name}...")
     results = await tester.run_tests()
     return results
 
