@@ -551,6 +551,7 @@ class IstioCrdPromptTemplate(PromptTemplate):
         super().__init__(
             name=f"Istio {crd_type.value} Template",
             description=f"Template for generating {crd_type.value} configurations",
+            version="0.0.1",
             sections=[
                 PromptSection(
                     name="Role Definition",
