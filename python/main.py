@@ -13,7 +13,7 @@ async def main():
     parser = argparse.ArgumentParser(description="AutoGen Team Orchestrator")
     parser.add_argument("--config", required=True, help="Path to YAML configuration file")
     parser.add_argument("--team", required=True, help="Name of the team to execute")
-    parser.add_argument("--prompt", required=True, help="Prompt to execute")
+    parser.add_argument("--task", required=True, help="Task to execute")
     args = parser.parse_args()
 
     # Initialize orchestrator
@@ -24,7 +24,7 @@ async def main():
     )
 
     # Execute prompt
-    await Console(orchestrator.execute_prompt(args.team, args.prompt, model_client))
+    await Console(orchestrator.execute_prompt(args.team, args.task, model_client))
 
 
 if __name__ == "__main__":

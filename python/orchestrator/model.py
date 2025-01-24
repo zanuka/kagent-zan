@@ -8,6 +8,8 @@ from autogen_core.models import ChatCompletionClient
 from autogen_core.tools import BaseTool, FunctionTool
 from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter
 from pydantic_core import CoreSchema, core_schema
+from mcp import ClientSession, StdioServerParameters
+
 
 
 class ModelError(Exception):
@@ -28,7 +30,7 @@ class ToolBuilder(ABC):
     Builds a tool from a tool name
     """
     @abstractmethod
-    def build(self) -> BaseTool:
+    def build(self, tool_name: str) -> list[BaseTool]:
         pass
 
 
@@ -36,7 +38,7 @@ class ToolType(Enum):
     Builtin = "BuiltIn"
 
 
-class BuiltInTool(str):
+class BuiltInTool(ToolBuilder, str):
     """
     https://docs.pydantic.dev/latest/concepts/types/#as-a-method-on-a-custom-type
     """
@@ -60,6 +62,12 @@ class BuiltInTool(str):
             raise ToolError(tool_name, "Tool not found") from e
         assert isinstance(tool, FunctionTool)
         return [tool]
+
+# class McpTool(ToolBuilder, BaseModel):
+#     name: str
+
+#     def build(self, tool_name: str) -> list[BaseTool]:
+#         return self.tools.build(tool_name)
 
 
 class Tool(BaseModel):

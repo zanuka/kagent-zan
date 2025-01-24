@@ -1,14 +1,14 @@
 apiVersion: ai.solo.io/v1alpha1
 kind: AutogenTeam
 metadata:
-  name: pod-scaling-team
+  name: istio-debug-team
   namespace: autogen-system
 spec:
-  teamName: "pod-scaling-team"
+  teamName: "istio-debug-team"
   maxChatRounds: 50
   selector:
     matchLabels:
-      team: pod-scaling
+      team: istio-debug
 ---
 apiVersion: ai.solo.io/v1alpha1
 kind: AutogenAgent
@@ -16,7 +16,7 @@ metadata:
   name: task_planner
   namespace: autogen-system
   labels:
-    team: pod-scaling
+    team: istio-debug
 spec:
   name: "task_planner"
   type: "AssistantAgent"
@@ -42,7 +42,7 @@ metadata:
   name: k8s_agent
   namespace: autogen-system
   labels:
-    team: pod-scaling
+    team: istio-debug
 spec:
   name: "k8s_agent"
   type: "AssistantAgent"
@@ -69,7 +69,7 @@ metadata:
   name: istio_agent
   namespace: autogen-system
   labels:
-    team: pod-scaling
+    team: istio-debug
 spec:
   name: "istio_agent"
   type: "AssistantAgent"
