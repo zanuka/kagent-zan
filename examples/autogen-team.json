@@ -1,0 +1,37 @@
+{
+  "name": "filesystem_team",
+  "component_type": "team",
+  "participants": [
+    {
+      "name": "filesystem_agent",
+      "component_type": "agent",
+      "model_client": {
+        "model": "gpt-4o-2024-08-06",
+        "model_type": "OpenAIChatCompletionClient",
+        "component_type": "model"
+      },
+      "tools": [
+        {
+          "name": "list_allowed_directories",
+          "description": "List the allowed directories",
+          "tool_type": "McpStdioClient",
+          "component_type": "tool",
+          "command": "npx",
+          "args":[
+              "-y",
+              "@modelcontextprotocol/server-filesystem",
+              "/home/eitanyarmush"
+          ]
+        }
+      ],
+      "agent_type": "AssistantAgent"
+    }
+  ],
+  "termination_condition": {
+    "termination_type": "MaxMessageTermination",
+    "max_messages": 5,
+    "component_type": "termination"
+  },
+  "team_type": "RoundRobinGroupChat",
+  "model_client": null
+}
