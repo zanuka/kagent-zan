@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "kagent"
 version = "0.1.0"
@@ -26,6 +30,7 @@ jupyter-executor = [
 [tool.uv.sources]
 autogenstudio = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "c573244206768908f415ea06b415c8af6d1e8d5b" }
 autogen-ext = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "c573244206768908f415ea06b415c8af6d1e8d5b" }
+kagent = { workspace = true }
 
 [tool.ruff]
 line-length = 120
@@ -39,3 +44,6 @@ docstring-code-format = true
 [tool.ruff.lint]
 select = ["E", "F", "W", "B", "Q", "I", "ASYNC", "T20"]
 ignore = ["F401", "E501"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kagent"]
