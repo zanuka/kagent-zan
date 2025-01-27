@@ -32,7 +32,7 @@ class BuiltInTool(BaseTool[BaseModel, BaseModel], Component[BuiltInToolConfig]):
         self.fn_name = fn_name
         self.fn_tool = self._load_tool(fn_name)
         super().__init__(
-            name=fn_name,
+            name=self.fn_tool.name,
             description=self.fn_tool.description,
             args_type=self.fn_tool.args_type(),
             return_type=self.fn_tool.return_type(),

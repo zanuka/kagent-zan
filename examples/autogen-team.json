@@ -47,6 +47,13 @@
                             "required": ["ns", "all_namespaces", "output"]
                           }
                         }
+                      },
+                      {
+                        "provider": "kagent.tools.k8s.GetPods",
+                        "component_type": "tool",
+                        "version": 1,
+                        "component_version": 1,
+                        "config": {}
                       }
                     ],
                     "model_context": {
