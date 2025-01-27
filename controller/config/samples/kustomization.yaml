@@ -3,4 +3,5 @@ resources:
 - agent_v1alpha1_autogenteam.yaml
 - agent_v1alpha1_autogenagent.yaml
 - agent_v1alpha1_autogentool.yaml
+- agent_v1alpha1_autogenmodelconfig.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

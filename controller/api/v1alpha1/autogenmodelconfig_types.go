@@ -1,0 +1,65 @@
+/*
+Copyright 2025.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package v1alpha1
+
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+// AutogenModelConfigSpec defines the desired state of AutogenModelConfig.
+type AutogenModelConfigSpec struct {
+	ModelType       string                   `json:"modelType"`
+	Model           string                   `json:"model"`
+	APIKeySecret    string                   `json:"apiKeySecret"`
+	APIKeySecretKey string                   `json:"apiKeySecretKey"`
+	BaseURL         string                   `json:"baseUrl"`
+	Capabilities    AutogenModelCapabilities `json:"capabilities"`
+}
+
+type AutogenModelCapabilities struct {
+	Vision          bool `json:"vision"`
+	FunctionCalling bool `json:"functionCalling"`
+	JSONOutput      bool `json:"jsonOutput"`
+}
+
+// AutogenModelConfigStatus defines the observed state of AutogenModelConfig.
+type AutogenModelConfigStatus struct{}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
+// AutogenModelConfig is the Schema for the autogenmodelconfigs API.
+type AutogenModelConfig struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   AutogenModelConfigSpec   `json:"spec,omitempty"`
+	Status AutogenModelConfigStatus `json:"status,omitempty"`
+}
+
+// +kubebuilder:object:root=true
+
+// AutogenModelConfigList contains a list of AutogenModelConfig.
+type AutogenModelConfigList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []AutogenModelConfig `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&AutogenModelConfig{}, &AutogenModelConfigList{})
+}

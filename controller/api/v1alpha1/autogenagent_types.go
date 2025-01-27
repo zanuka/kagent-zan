@@ -25,18 +25,15 @@ import (
 
 // AutogenAgentSpec defines the desired state of AutogenAgent.
 type AutogenAgentSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of AutogenAgent. Edit autogenagent_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Name          string   `json:"name,omitempty"`
+	Type          string   `json:"type,omitempty"`
+	Description   string   `json:"description,omitempty"`
+	SystemMessage string   `json:"systemMessage,omitempty"`
+	Tools         []string `json:"tools,omitempty"`
 }
 
 // AutogenAgentStatus defines the observed state of AutogenAgent.
-type AutogenAgentStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+type AutogenAgentStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

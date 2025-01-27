@@ -5,6 +5,7 @@ resources:
 - bases/agent.ai.solo.io_autogenteams.yaml
 - bases/agent.ai.solo.io_autogenagents.yaml
 - bases/agent.ai.solo.io_autogentools.yaml
+- bases/agent.ai.solo.io_autogenmodelconfigs.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

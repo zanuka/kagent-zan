@@ -25,18 +25,11 @@ import (
 
 // AutogenToolSpec defines the desired state of AutogenTool.
 type AutogenToolSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of AutogenTool. Edit autogentool_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
 // AutogenToolStatus defines the observed state of AutogenTool.
-type AutogenToolStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+type AutogenToolStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

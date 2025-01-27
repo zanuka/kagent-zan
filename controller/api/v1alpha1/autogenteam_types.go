@@ -25,18 +25,28 @@ import (
 
 // AutogenTeamSpec defines the desired state of AutogenTeam.
 type AutogenTeamSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Participants         []string             `json:"participants"`
+	TeamType             string               `json:"teamType"`
+	SelectorTeamConfig   SelectorTeamConfig   `json:"selectorTeamConfig"`
+	TerminationCondition TerminationCondition `json:"terminationCondition"`
+	MaxTurns             int64                `json:"maxTurns"`
+}
 
-	// Foo is an example field of AutogenTeam. Edit autogenteam_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type SelectorTeamConfig struct {
+	SelectorPrompt string `json:"selectorPrompt"`
+	ModelConfig    string `json:"modelConfig"`
+}
+
+type TerminationCondition struct {
+	MaxMessageTermination MaxMessageTermination `json:"maxMessageTermination"`
+}
+
+type MaxMessageTermination struct {
+	MaxMessages int64 `json:"maxMessages"`
 }
 
 // AutogenTeamStatus defines the observed state of AutogenTeam.
-type AutogenTeamStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+type AutogenTeamStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
