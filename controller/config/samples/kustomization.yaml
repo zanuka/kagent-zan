@@ -1,0 +1,6 @@
+## Append samples of your project ##
+resources:
+- agent_v1alpha1_autogenteam.yaml
+- agent_v1alpha1_autogenagent.yaml
+- agent_v1alpha1_autogentool.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
