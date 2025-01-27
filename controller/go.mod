@@ -1,3 +1,3 @@
 module github.com/kagent-dev/kagent/controller
 
-go 1.22.1
+go 1.23.5
