@@ -97,7 +97,7 @@ wheels = [
 [[package]]
 name = "autogen-agentchat"
 version = "0.4.3"
-source = { git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=declarative-mcp-tools#dd0005917b83042d807ae7197fd7df88685668ac" }
+source = { git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=c573244206768908f415ea06b415c8af6d1e8d5b#c573244206768908f415ea06b415c8af6d1e8d5b" }
 dependencies = [
     { name = "autogen-core" },
 ]
@@ -105,7 +105,7 @@ dependencies = [
 [[package]]
 name = "autogen-core"
 version = "0.4.3"
-source = { git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=declarative-mcp-tools#dd0005917b83042d807ae7197fd7df88685668ac" }
+source = { git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=c573244206768908f415ea06b415c8af6d1e8d5b#c573244206768908f415ea06b415c8af6d1e8d5b" }
 dependencies = [
     { name = "jsonref" },
     { name = "opentelemetry-api" },
@@ -118,13 +118,14 @@ dependencies = [
 [[package]]
 name = "autogen-ext"
 version = "0.4.3"
-source = { git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=declarative-mcp-tools#dd0005917b83042d807ae7197fd7df88685668ac" }
+source = { git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=c573244206768908f415ea06b415c8af6d1e8d5b#c573244206768908f415ea06b415c8af6d1e8d5b" }
 dependencies = [
     { name = "autogen-core" },
 ]
 
 [package.optional-dependencies]
 azure = [
+    { name = "azure-ai-inference" },
     { name = "azure-core" },
     { name = "azure-identity" },
 ]
@@ -133,10 +134,6 @@ magentic-one = [
     { name = "markitdown" },
     { name = "pillow" },
     { name = "playwright" },
-]
-mcp = [
-    { name = "json-schema-to-pydantic" },
-    { name = "mcp" },
 ]
 openai = [
     { name = "aiofiles" },
@@ -147,7 +144,7 @@ openai = [
 [[package]]
 name = "autogenstudio"
 version = "0.4.0"
-source = { git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=declarative-mcp-tools#dd0005917b83042d807ae7197fd7df88685668ac" }
+source = { git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=c573244206768908f415ea06b415c8af6d1e8d5b#c573244206768908f415ea06b415c8af6d1e8d5b" }
 dependencies = [
     { name = "aiofiles" },
     { name = "alembic" },
@@ -157,7 +154,6 @@ dependencies = [
     { name = "azure-identity" },
     { name = "fastapi" },
     { name = "loguru" },
-    { name = "mcp" },
     { name = "numpy" },
     { name = "psycopg" },
     { name = "pydantic" },
@@ -168,6 +164,20 @@ dependencies = [
     { name = "typer" },
     { name = "uvicorn" },
     { name = "websockets" },
+]
+
+[[package]]
+name = "azure-ai-inference"
+version = "1.0.0b7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-core" },
+    { name = "isodate" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/af/37/233eee0bebbf631d2f911a9f1ebbc3784b100d9bfb84efc275e71c1ea636/azure_ai_inference-1.0.0b7.tar.gz", hash = "sha256:bd912f71f7f855036ca46c9a21439f290eed5e61da418fd26bbb32e3c68bcce3", size = 175883 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cd/b6/5ba830eddc59f820c654694d476c14a3dd9c1f828ff9b48eb8b21dfd5f01/azure_ai_inference-1.0.0b7-py3-none-any.whl", hash = "sha256:59bb6a9ee62bd7654a69ca2bf12fe9335d7045df95b491cb8b5f9e3791c86175", size = 123030 },
 ]
 
 [[package]]
@@ -587,6 +597,15 @@ wheels = [
 ]
 
 [[package]]
+name = "isodate"
+version = "0.7.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/54/4d/e940025e2ce31a8ce1202635910747e5a87cc3a6a6bb2d00973375014749/isodate-0.7.2.tar.gz", hash = "sha256:4cd1aa0f43ca76f4a6c6c0292a85f40b35ec2e43e315b59f06e6d32171a953e6", size = 29705 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/aa/0aca39a37d3c7eb941ba736ede56d689e7be91cab5d9ca846bde3999eba6/isodate-0.7.2-py3-none-any.whl", hash = "sha256:28009937d8031054830160fce6d409ed342816b543597cece116d966c6d99e15", size = 22320 },
+]
+
+[[package]]
 name = "jiter"
 version = "0.8.2"
 source = { registry = "https://pypi.org/simple" }
@@ -646,18 +665,6 @@ wheels = [
 ]
 
 [[package]]
-name = "json-schema-to-pydantic"
-version = "0.2.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/13/87/af1870beea329744a759349b972b309f8c95ae21e986e387e19733b85cc9/json_schema_to_pydantic-0.2.2.tar.gz", hash = "sha256:685db8d93aa29ccd257b2803fcd9a956c527e5fb108a523cbfe8cac1239b3785", size = 34158 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/8d/3c738e4b4b041269c4a506544b90e9ba924bbd800c8d496ed3e5a6da0265/json_schema_to_pydantic-0.2.2-py3-none-any.whl", hash = "sha256:01b82d234f2b482a273e117e29d063b6b86021a250035873d6eec4b85b70e64d", size = 11396 },
-]
-
-[[package]]
 name = "jsonref"
 version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -673,7 +680,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "autogen-agentchat" },
     { name = "autogen-core" },
-    { name = "autogen-ext", extra = ["mcp"] },
+    { name = "autogen-ext" },
     { name = "autogenstudio" },
     { name = "mcp" },
     { name = "openai" },
@@ -687,8 +694,8 @@ dependencies = [
 requires-dist = [
     { name = "autogen-agentchat", specifier = "==0.4.3" },
     { name = "autogen-core", specifier = "==0.4.3" },
-    { name = "autogen-ext", extras = ["mcp"], git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=declarative-mcp-tools" },
-    { name = "autogenstudio", git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=declarative-mcp-tools" },
+    { name = "autogen-ext", extras = ["mcp"], git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=c573244206768908f415ea06b415c8af6d1e8d5b" },
+    { name = "autogenstudio", git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=c573244206768908f415ea06b415c8af6d1e8d5b" },
     { name = "mcp", specifier = ">=1.2.0" },
     { name = "openai", specifier = "==1.60.0" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
