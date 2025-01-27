@@ -30,6 +30,7 @@ jupyter-executor = [
 [tool.uv.sources]
 autogenstudio = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "c573244206768908f415ea06b415c8af6d1e8d5b" }
 autogen-ext = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "c573244206768908f415ea06b415c8af6d1e8d5b" }
+autogen-core = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-core", rev = "c573244206768908f415ea06b415c8af6d1e8d5b" }
 kagent = { workspace = true }
 
 [tool.ruff]

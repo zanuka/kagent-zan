@@ -13,5 +13,5 @@ __all__ = [
     "get_pod",
     "apply_manifest",
     "get_resources",
-    "get_pod_logs"
+    "get_pod_logs",
 ]

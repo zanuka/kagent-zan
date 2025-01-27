@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
 
-
 class ModelError(Exception):
     """Base class for all orchestrator errors"""
 

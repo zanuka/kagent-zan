@@ -921,7 +921,7 @@ jupyter-executor = [
 [package.metadata]
 requires-dist = [
     { name = "autogen-agentchat", specifier = "==0.4.3" },
-    { name = "autogen-core", specifier = "==0.4.3" },
+    { name = "autogen-core", git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=c573244206768908f415ea06b415c8af6d1e8d5b" },
     { name = "autogen-ext", extras = ["http"], git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=c573244206768908f415ea06b415c8af6d1e8d5b" },
     { name = "autogenstudio", git = "https://github.com/EItanya/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=c573244206768908f415ea06b415c8af6d1e8d5b" },
     { name = "ipykernel", marker = "extra == 'jupyter-executor'", specifier = ">=6.29.5" },
