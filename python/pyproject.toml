@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "autogen-core==0.4.3",
-  "autogen-ext[mcp]==0.4.3",
+  "autogen-ext[http]==0.4.3",
   "autogen-agentchat==0.4.3",
   "autogenstudio==0.4.3",
   "openai==1.60.0",
@@ -15,6 +15,12 @@ dependencies = [
   "python-dotenv>=1.0.1",
   "pyyaml>=6.0.2",
   "mcp>=1.2.0",
+]
+
+[project.optional-dependencies]
+jupyter-executor = [
+    "ipykernel>=6.29.5",
+    "nbclient>=0.10.2",
 ]
 
 [tool.uv.sources]

@@ -6,9 +6,8 @@ from typing import Any, Dict, List, Optional
 from autogen_agentchat.agents import AssistantAgent, BaseChatAgent
 from autogen_core.models import ChatCompletionClient
 from autogen_core.tools import BaseTool, FunctionTool
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter
+from pydantic import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
-from mcp import ClientSession, StdioServerParameters
 
 
 

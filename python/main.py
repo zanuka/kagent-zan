@@ -1,4 +1,4 @@
-from tools.server import app
+from kagent.tools.server import app
 
 def main():
     import uvicorn
