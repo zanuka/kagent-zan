@@ -5,7 +5,13 @@ from autogen_core.models import SystemMessage, UserMessage
 from autogen_core.tools import FunctionTool
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
-from .prompts import AUTH_POLICY_PROMPT, GATEWAY_PROMPT, PEER_AUTHENTICATION_PROMPT, VIRTUAL_SERVICE_PROMPT
+from .prompts import (
+    AUTH_POLICY_PROMPT,
+    GATEWAY_PROMPT,
+    PEER_AUTHENTICATION_PROMPT,
+    VIRTUAL_SERVICE_PROMPT,
+    IstioResources,
+)
 
 
 def get_model_client():
@@ -62,14 +68,6 @@ async def _generate_virtual_service_crd(
     policy_description: Annotated[str, "Detailed description of the VirtualService to generate YAML for"],
 ) -> str:
     return await _generate_crd(VIRTUAL_SERVICE_PROMPT, policy_description)
-
-
-class IstioResources(Enum):
-    AUTH_POLICY = "auth_policy"
-    GATEWAY = "gateway"
-    PEER_AUTHENTICATION = "peer_authentication"
-    VIRTUAL_SERVICE = "virtual_service"
-
 
 async def _generate_istio_resource(
     istio_resource: Annotated[IstioResources, "Type of resources to generate"],
