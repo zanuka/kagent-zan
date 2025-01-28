@@ -19,15 +19,13 @@ package controller
 import (
 	"context"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	agentv1alpha1 "ai.solo.io/kagent/api/v1alpha1"
+	agentv1alpha1 "github.com/kagent-dev/kagent/controller/api/v1alpha1"
 )
 
 var _ = Describe("AutogenTeam Controller", func() {

@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"ai.solo.io/kagent/test/utils"
+	"github.com/kagent-dev/kagent/controller/test/utils"
 )
 
 var (

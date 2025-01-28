@@ -26,7 +26,6 @@ import (
 // AutogenAgentSpec defines the desired state of AutogenAgent.
 type AutogenAgentSpec struct {
 	Name          string   `json:"name,omitempty"`
-	Type          string   `json:"type,omitempty"`
 	Description   string   `json:"description,omitempty"`
 	SystemMessage string   `json:"systemMessage,omitempty"`
 	Tools         []string `json:"tools,omitempty"`

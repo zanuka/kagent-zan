@@ -26,7 +26,7 @@ import (
 // AutogenTeamSpec defines the desired state of AutogenTeam.
 type AutogenTeamSpec struct {
 	Participants         []string             `json:"participants"`
-	TeamType             string               `json:"teamType"`
+	Description          string               `json:"description"`
 	SelectorTeamConfig   SelectorTeamConfig   `json:"selectorTeamConfig"`
 	TerminationCondition TerminationCondition `json:"terminationCondition"`
 	MaxTurns             int64                `json:"maxTurns"`
@@ -38,11 +38,22 @@ type SelectorTeamConfig struct {
 }
 
 type TerminationCondition struct {
-	MaxMessageTermination MaxMessageTermination `json:"maxMessageTermination"`
+	// ONEOF: maxMessageTermination, textMentionTermination, orTermination
+	MaxMessageTermination  *MaxMessageTermination  `json:"maxMessageTermination,omitempty"`
+	TextMentionTermination *TextMentionTermination `json:"textMentionTermination,omitempty"`
+	OrTermination          *OrTermination          `json:"orTermination,omitempty"`
 }
 
 type MaxMessageTermination struct {
-	MaxMessages int64 `json:"maxMessages"`
+	MaxMessages int `json:"maxMessages"`
+}
+
+type TextMentionTermination struct {
+	Text string `json:"text"`
+}
+
+type OrTermination struct {
+	Conditions []TerminationCondition `json:"conditions"`
 }
 
 // AutogenTeamStatus defines the observed state of AutogenTeam.

@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	agentv1alpha1 "ai.solo.io/kagent/api/v1alpha1"
+	agentv1alpha1 "github.com/kagent-dev/kagent/controller/api/v1alpha1"
 )
 
 // AutogenModelConfigReconciler reconciles a AutogenModelConfig object

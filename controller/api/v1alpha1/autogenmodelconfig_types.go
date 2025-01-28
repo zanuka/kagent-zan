@@ -22,18 +22,9 @@ import (
 
 // AutogenModelConfigSpec defines the desired state of AutogenModelConfig.
 type AutogenModelConfigSpec struct {
-	ModelType       string                   `json:"modelType"`
-	Model           string                   `json:"model"`
-	APIKeySecret    string                   `json:"apiKeySecret"`
-	APIKeySecretKey string                   `json:"apiKeySecretKey"`
-	BaseURL         string                   `json:"baseUrl"`
-	Capabilities    AutogenModelCapabilities `json:"capabilities"`
-}
-
-type AutogenModelCapabilities struct {
-	Vision          bool `json:"vision"`
-	FunctionCalling bool `json:"functionCalling"`
-	JSONOutput      bool `json:"jsonOutput"`
+	Model           string `json:"model"`
+	APIKeySecret    string `json:"apiKeySecret"`
+	APIKeySecretKey string `json:"apiKeySecretKey"`
 }
 
 // AutogenModelConfigStatus defines the observed state of AutogenModelConfig.
