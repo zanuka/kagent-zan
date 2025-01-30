@@ -28,7 +28,7 @@ func newTeamCmd() *cobra.Command {
 			RunE:  runTeamCreate,
 		},
 		&cobra.Command{
-			Use:   "get [team-id]",
+			Use:   "get [name]",
 			Short: "Get team details",
 			Args:  cobra.ExactArgs(1),
 			RunE:  runTeamGet,
@@ -75,23 +75,7 @@ func runTeamList(cmd *cobra.Command, args []string) error {
 }
 
 func runTeamCreate(cmd *cobra.Command, args []string) error {
-	cfg, err := config.Get()
-	if err != nil {
-		return err
-	}
-
-	team := &api.Team{
-		UserID:  "default", // TODO: Add user ID flag
-		Version: "0.0.1",
-	}
-
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
-	if err := client.CreateTeam(team); err != nil {
-		return err
-	}
-
-	fmt.Printf("Team created with ID: %d\n", team.ID)
-	return nil
+	return fmt.Errorf("not implemented")
 }
 
 func runTeamGet(cmd *cobra.Command, args []string) error {
@@ -100,15 +84,15 @@ func runTeamGet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	teamID, err := strconv.Atoi(args[0])
-	if err != nil {
-		return fmt.Errorf("invalid team ID: %s", args[0])
-	}
-
 	client := api.NewClient(cfg.APIURL, cfg.WSURL)
-	team, err := client.GetTeam(teamID, cfg.UserID)
+	team, err := client.GetTeam(args[0], cfg.UserID)
 	if err != nil {
 		return err
+	}
+
+	if team == nil {
+		fmt.Println("Team not found")
+		return nil
 	}
 
 	output, err := json.MarshalIndent(team, "", "  ")

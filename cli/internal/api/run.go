@@ -2,9 +2,9 @@ package api
 
 import "fmt"
 
-func (c *Client) CreateRun(req *CreateRunRequest) (*Run, error) {
-	var run Run
-	err := c.doRequest("POST", "/runs/", req, &run)
+func (c *Client) CreateRun(req *CreateRunRequest) (*CreateRunResult, error) {
+	var run CreateRunResult
+	err := c.doRequest("POST", "/runs", req, &run)
 	return &run, err
 }
 
@@ -34,12 +34,4 @@ func (c *Client) ListRuns(userID string) ([]Run, error) {
 		runs = append(runs, sessionRuns.Runs...)
 	}
 	return runs, nil
-}
-
-func (c *Client) GetRunMessages(runID string) ([]TaskMessage, error) {
-	var result struct {
-		Messages []TaskMessage `json:"messages"`
-	}
-	err := c.doRequest("GET", fmt.Sprintf("/runs/%s/messages", runID), nil, &result)
-	return result.Messages, err
 }

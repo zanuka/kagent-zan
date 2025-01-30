@@ -7,7 +7,9 @@ import (
 
 	"github.com/kagent-dev/kagent/cli/internal/api"
 	"github.com/kagent-dev/kagent/cli/internal/config"
+	"github.com/kagent-dev/kagent/cli/internal/ws"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/rand"
 )
 
 func newRunCmd() *cobra.Command {
@@ -17,9 +19,9 @@ func newRunCmd() *cobra.Command {
 	}
 
 	createCmd := &cobra.Command{
-		Use:   "create [session-id]",
+		Use:   "create [team-name] [task]",
 		Short: "Create a new run",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(2),
 		RunE:  runRunCreate,
 	}
 
@@ -37,12 +39,6 @@ func newRunCmd() *cobra.Command {
 			Short: "Get run details",
 			Args:  cobra.ExactArgs(1),
 			RunE:  runRunGet,
-		},
-		&cobra.Command{
-			Use:   "messages [run-id]",
-			Short: "Get run messages",
-			Args:  cobra.ExactArgs(1),
-			RunE:  runRunMessages,
 		},
 	)
 
@@ -87,28 +83,71 @@ func runListAll(cmd *cobra.Command, args []string) error {
 	return PrintOutput(runs, headers, rows)
 
 }
+
+func generateRandomString(prefix string, length int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, length)
+
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+
+	for i := range b {
+		b[i] = charset[int(b[i])%len(charset)]
+	}
+
+	return prefix + string(b), nil
+}
+
 func runRunCreate(cmd *cobra.Command, args []string) error {
 	cfg, err := config.Get()
 	if err != nil {
 		return err
 	}
 
-	sessionID, err := strconv.Atoi(args[0])
+	client := api.NewClient(cfg.APIURL, cfg.WSURL)
+	// Get the team based on the input + userID
+	team, err := client.GetTeam(args[0], cfg.UserID)
 	if err != nil {
-		return fmt.Errorf("invalid session ID: %s", args[0])
+		return err
+	}
+	fmt.Printf("Retrieved team %s with ID %d\n", team.Component.Label, team.ID)
+
+	// Create a random session name
+	sessionName, err := generateRandomString("session-", 5)
+	if err != nil {
+		return err
 	}
 
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
+	session, err := client.CreateSession(&api.CreateSession{
+		UserID: cfg.UserID,
+		// This will probably be created on the apiserver side in the future
+		Name:   sessionName,
+		TeamID: team.ID,
+	})
+	if err != nil {
+		fmt.Printf("Failed to create session: %v\n", err)
+		return err
+	}
+
+	fmt.Printf("Created session %s with ID %d\n", session.Name, session.ID)
+
 	run, err := client.CreateRun(&api.CreateRunRequest{
-		SessionID: sessionID,
-		UserID:    cfg.UserID,
+		SessionID: session.ID,
+		UserID:    session.UserID,
 	})
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Run created with ID: %s\n", run.ID)
-	return nil
+	wsConfig := ws.DefaultConfig()
+	wsClient, err := ws.NewClient(cfg.WSURL, run.ID, wsConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create WebSocket client: %v", err)
+	}
+
+	// Starting interactive mode by default
+	return wsClient.StartInteractive(team.Component, args[1])
 }
 
 func runRunGet(cmd *cobra.Command, args []string) error {
@@ -124,27 +163,6 @@ func runRunGet(cmd *cobra.Command, args []string) error {
 	}
 
 	output, err := json.MarshalIndent(run, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(string(output))
-	return nil
-}
-
-func runRunMessages(cmd *cobra.Command, args []string) error {
-	cfg, err := config.Get()
-	if err != nil {
-		return err
-	}
-
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
-	messages, err := client.GetRunMessages(args[0])
-	if err != nil {
-		return err
-	}
-
-	output, err := json.MarshalIndent(messages, "", "  ")
 	if err != nil {
 		return err
 	}

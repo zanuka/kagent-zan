@@ -46,6 +46,6 @@ func runConfigSetBackendURL(cmd *cobra.Command, args []string) error {
 	if err := viper.WriteConfig(); err != nil {
 		return fmt.Errorf("error saving config: %w", err)
 	}
-	fmt.Printf("Backend URL set to: %s\n", args[0])
+	fmt.Printf("API URL set to: %s\n", args[0])
 	return nil
 }

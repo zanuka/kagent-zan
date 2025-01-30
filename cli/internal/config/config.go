@@ -32,8 +32,7 @@ func Init() error {
 
 	// Set default values
 	viper.SetDefault("api_url", "http://localhost:8081/api")
-	// TODO: check this
-	viper.SetDefault("ws_url", "ws://localhost:8081/api")
+	viper.SetDefault("ws_url", "ws://localhost:8081/api/ws")
 	viper.SetDefault("user_id", "guestuser@gmail.com")
 
 	if err := viper.ReadInConfig(); err != nil {
@@ -54,20 +53,5 @@ func Get() (*Config, error) {
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, fmt.Errorf("error unmarshaling config: %w", err)
 	}
-
-	if config.WSURL == "" {
-		config.WSURL = deriveWSURL(config.APIURL)
-	}
-
 	return &config, nil
-}
-
-func deriveWSURL(backendURL string) string {
-	if len(backendURL) >= 8 && backendURL[:8] == "https://" {
-		return "wss://" + backendURL[8:]
-	}
-	if len(backendURL) >= 7 && backendURL[:7] == "http://" {
-		return "ws://" + backendURL[7:]
-	}
-	return "ws://" + backendURL
 }

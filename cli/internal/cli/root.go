@@ -27,6 +27,7 @@ func NewRootCmd() *cobra.Command {
 
 	// Add commands
 	cmd.AddCommand(
+		newInstallCmd(),
 		newConfigCmd(),
 		newSessionCmd(),
 		newTeamCmd(),

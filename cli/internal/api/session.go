@@ -8,8 +8,10 @@ func (c *Client) ListSessions(userID string) ([]Session, error) {
 	return sessions, err
 }
 
-func (c *Client) CreateSession(session *Session) error {
-	return c.doRequest("POST", "/sessions/", session, session)
+func (c *Client) CreateSession(session *CreateSession) (*Session, error) {
+	var result Session
+	err := c.doRequest("POST", "/sessions/", session, &result)
+	return &result, err
 }
 
 func (c *Client) GetSession(sessionID int, userID string) (*Session, error) {

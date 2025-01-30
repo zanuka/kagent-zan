@@ -61,14 +61,13 @@ func runSessionList(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	headers := []string{"ID", "NAME", "TEAM", "CREATED"}
+	headers := []string{"ID", "NAME", "TEAM"}
 	rows := make([][]string, len(sessions))
 	for i, session := range sessions {
 		rows[i] = []string{
 			strconv.Itoa(session.ID),
 			session.Name,
 			strconv.Itoa(session.TeamID),
-			session.CreatedAt,
 		}
 	}
 
@@ -76,22 +75,7 @@ func runSessionList(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionCreate(cmd *cobra.Command, args []string) error {
-	cfg, err := config.Get()
-	if err != nil {
-		return err
-	}
 
-	session := &api.Session{
-		UserID:  cfg.UserID,
-		Version: "0.0.1",
-	}
-
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
-	if err := client.CreateSession(session); err != nil {
-		return err
-	}
-
-	fmt.Printf("Session created with ID: %d\n", session.ID)
 	return nil
 }
 
