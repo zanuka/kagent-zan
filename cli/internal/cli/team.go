@@ -72,7 +72,7 @@ func runTeamList(cmd *cobra.Command, args []string) error {
 	for i, team := range teams {
 		rows[i] = []string{
 			fmt.Sprintf("%d", team.ID),
-			team.Component.Label,
+			*team.Component.Label,
 			team.CreatedAt,
 		}
 	}

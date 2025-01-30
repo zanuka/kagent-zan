@@ -21,7 +21,7 @@ func (c *Client) GetTeam(teamLabel string, userID string) (*Team, error) {
 	}
 
 	for _, team := range allTeams {
-		if team.Component.Label == teamLabel {
+		if *team.Component.Label == teamLabel {
 			return &team, nil
 		}
 	}

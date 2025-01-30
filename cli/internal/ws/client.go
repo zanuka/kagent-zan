@@ -57,7 +57,7 @@ func NewClient(wsURL string, runID string, config Config) (*Client, error) {
 }
 
 // StartInteractive initiates the interactive session with the server
-func (c *Client) StartInteractive(teamConfig api.TeamComponent, task string) error {
+func (c *Client) StartInteractive(team api.Team, task string) error {
 	defer c.conn.Close()
 
 	interrupt := make(chan os.Signal, 1)
@@ -68,12 +68,8 @@ func (c *Client) StartInteractive(teamConfig api.TeamComponent, task string) err
 	startMsg := StartMessage{
 		Type:       MessageTypeStart,
 		Task:       task,
-		TeamConfig: teamConfig,
+		TeamConfig: team.Component,
 	}
-
-	// type: "start",
-	// task: query,
-	// team_config: teamConfig,
 
 	if err := c.conn.WriteJSON(startMsg); err != nil {
 		return fmt.Errorf("failed to send start message: %v", err)

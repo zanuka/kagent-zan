@@ -1,10 +1,12 @@
 package api
 
+import "encoding/json"
+
 // APIResponse is the common response wrapper for all API responses
 type APIResponse struct {
-	Status  bool        `json:"status"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Status  bool            `json:"status"`
+	Message string          `json:"message"`
+	Data    json.RawMessage `json:"data"`
 }
 
 type Session struct {
@@ -32,21 +34,20 @@ type BaseComponent struct {
 	Label            *string     `json:"label,omitempty"`
 }
 
-// TeamConfig represents the team component configuration
-type TeamConfig struct {
-	Participants         []BaseComponent `json:"participants"`
-	TerminationCondition *BaseComponent  `json:"termination_condition,omitempty"`
-}
-
-// TeamComponent represents the component field in the Team response
 type TeamComponent struct {
 	Provider         string     `json:"provider"`
 	ComponentType    string     `json:"component_type"`
 	Version          int        `json:"version"`
 	ComponentVersion int        `json:"component_version"`
 	Description      *string    `json:"description"`
-	Component        TeamConfig `json:"component"`
-	Label            string     `json:"label"`
+	Config           TeamConfig `json:"config"`
+	Label            *string    `json:"label,omitempty"`
+}
+
+// TeamConfig represents the team component configuration
+type TeamConfig struct {
+	Participants         []BaseComponent `json:"participants"`
+	TerminationCondition *BaseComponent  `json:"termination_condition,omitempty"`
 }
 
 // Team represents the full team response structure
@@ -61,7 +62,7 @@ type Team struct {
 type CreateTeamRequest struct {
 	UserID    string        `json:"user_id"`
 	Version   string        `json:"version"`
-	Component TeamComponent `json:"component"`
+	Component BaseComponent `json:"component"`
 }
 
 // AgentConfig represents the configuration for an agent
