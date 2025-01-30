@@ -75,7 +75,6 @@ func runSessionList(cmd *cobra.Command, args []string) error {
 }
 
 func runSessionCreate(cmd *cobra.Command, args []string) error {
-
 	return nil
 }
 
