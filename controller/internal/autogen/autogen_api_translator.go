@@ -2,6 +2,8 @@ package autogen
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"github.com/kagent-dev/kagent/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/controller/internal/utils/syncutils"
@@ -163,6 +165,8 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 	}
 
 	return &SelectorGroupChat{
+		ID:               generateIdFromString(selectorTeam.Name + "-" + selectorTeam.Namespace),
+		UserID:           "guestuser@gmail.com", // always use global id
 		Provider:         "autogen_agentchat.teams.SelectorGroupChat",
 		ComponentType:    "team",
 		Version:          1,
@@ -176,6 +180,13 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 			AllowRepeatedSpeaker: false,
 		},
 	}, nil
+}
+
+func generateIdFromString(s string) int {
+	hash := sha256.Sum256([]byte(s))
+	// Uses first 8 bytes
+	number := int(binary.BigEndian.Uint64(hash[:8]))
+	return number
 }
 
 func translateTerminationCondition(terminationCondition v1alpha1.TerminationCondition) (*TerminationCondition, error) {

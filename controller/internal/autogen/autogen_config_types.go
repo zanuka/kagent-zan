@@ -1,6 +1,8 @@
 package autogen
 
 type SelectorGroupChat struct {
+	ID               int                     `json:"id"`
+	UserID           string                  `json:"user_id"`
 	Provider         string                  `json:"provider"`
 	ComponentType    string                  `json:"component_type"`
 	Version          int                     `json:"version"`
