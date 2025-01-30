@@ -1,18 +1,20 @@
 package api
 
-import "fmt"
+import (
+	"fmt"
+)
 
-func (c *Client) ListTeams(userID string) ([]TeamResponse, error) {
-	var teams []TeamResponse
+func (c *Client) ListTeams(userID string) ([]Team, error) {
+	var teams []Team
 	err := c.doRequest("GET", fmt.Sprintf("/teams/?user_id=%s", userID), nil, &teams)
 	return teams, err
 }
 
-func (c *Client) CreateTeam(team *TeamResponse) error {
-	return c.doRequest("POST", "/teams/", team, team)
+func (c *Client) CreateTeam(team *CreateTeamRequest) error {
+	return c.doRequest("POST", "/teams/", team, nil)
 }
 
-func (c *Client) GetTeam(teamLabel string, userID string) (*TeamResponse, error) {
+func (c *Client) GetTeam(teamLabel string, userID string) (*Team, error) {
 	allTeams, err := c.ListTeams(userID)
 	if err != nil {
 		return nil, err
@@ -23,7 +25,6 @@ func (c *Client) GetTeam(teamLabel string, userID string) (*TeamResponse, error)
 			return &team, nil
 		}
 	}
-
 	return nil, nil
 }
 

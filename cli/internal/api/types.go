@@ -32,28 +32,33 @@ type BaseComponent struct {
 	Label            *string     `json:"label,omitempty"`
 }
 
-// TeamResponseConfig represents the team component configuration
-type TeamResponseConfig struct {
+// TeamConfig represents the team component configuration
+type TeamConfig struct {
 	Participants         []BaseComponent `json:"participants"`
 	TerminationCondition *BaseComponent  `json:"termination_condition,omitempty"`
 }
 
 // TeamComponent represents the component field in the Team response
 type TeamComponent struct {
-	Provider         string             `json:"provider"`
-	ComponentType    string             `json:"component_type"`
-	Version          int                `json:"version"`
-	ComponentVersion int                `json:"component_version"`
-	Description      *string            `json:"description"`
-	Component        TeamResponseConfig `json:"component"`
-	Label            string             `json:"label"`
+	Provider         string     `json:"provider"`
+	ComponentType    string     `json:"component_type"`
+	Version          int        `json:"version"`
+	ComponentVersion int        `json:"component_version"`
+	Description      *string    `json:"description"`
+	Component        TeamConfig `json:"component"`
+	Label            string     `json:"label"`
 }
 
-// TeamResponse represents the full team response structure
-type TeamResponse struct {
+// Team represents the full team response structure
+type Team struct {
 	ID        int           `json:"id"`
 	CreatedAt string        `json:"created_at"`
 	UpdatedAt string        `json:"updated_at"`
+	UserID    string        `json:"user_id"`
+	Version   string        `json:"version"`
+	Component TeamComponent `json:"component"`
+}
+type CreateTeamRequest struct {
 	UserID    string        `json:"user_id"`
 	Version   string        `json:"version"`
 	Component TeamComponent `json:"component"`
@@ -79,37 +84,6 @@ type ModelResponseConfig struct {
 // TerminationResponseConfig represents the configuration for termination conditions
 type TerminationResponseConfig struct {
 	MaxMessages int `json:"max_messages"`
-}
-
-// HTTPToolConfig represents the configuration for HTTP tools
-type HTTPToolConfig struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Scheme      string                 `json:"scheme"`
-	Host        string                 `json:"host"`
-	Port        int                    `json:"port"`
-	Path        string                 `json:"path"`
-	Method      string                 `json:"method"`
-	Headers     map[string]string      `json:"headers"`
-	JSONSchema  map[string]interface{} `json:"json_schema"`
-}
-
-// BuiltInToolConfig represents the configuration for built-in tools
-type BuiltInToolConfig struct {
-	FnName string `json:"fn_name"`
-}
-
-// TeamConfig represents either a SelectorGroupChatConfig or RoundRobinGroupChatConfig
-type TeamConfig struct {
-	// Shared fields between both configs
-	Participants         []AgentComponent      `json:"participants"`
-	TerminationCondition *TerminationComponent `json:"termination_condition,omitempty"`
-	MaxTurns             *int                  `json:"max_turns,omitempty"`
-
-	// SelectorGroupChat specific fields
-	ModelClient          *ModelComponent `json:"model_client,omitempty"`
-	SelectorPrompt       string          `json:"selector_prompt,omitempty"`
-	AllowRepeatedSpeaker bool            `json:"allow_repeated_speaker,omitempty"`
 }
 
 // Component types
