@@ -14,80 +14,82 @@
           "component_type": "agent",
           "version": 1,
           "component_version": 1,
-          "description": null,
           "config": {
-            "description": "An agent that provides assistance with ability to use tools.",
+            "name": "PlanningAgent",
             "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
               "component_type": "model",
+              "version": 1,
               "component_version": 1,
               "config": {
                 "model": "gpt-4o"
-              },
-              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
-              "version": 1
+              }
             },
+            "tools": [],
+            "handoffs": [],
             "model_context": {
-              "component_type": "chat_completion_context",
-              "component_version": 1,
-              "config": {},
               "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
-              "version": 1
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "config": {}
             },
-            "name": "assistant",
+            "description": "An agent for planning tasks, this agent should be the first to engage when given a new task.",
+            "system_message": "\n    You are a planning agent.\n    Your job is to break down complex tasks into smaller, manageable subtasks that can be executed by the team members. DO NOT MAKE UP ADDITIONAL AND UNNECESSARY SUBTASKS.\n    Your team members are:\n        istio_agent: Performs Istio resource generation tasks.\n        k8s_agent: Performs Kubernetes tasks.\n\n    You only plan and delegate tasks - you do not execute them yourself.\n\n    When assigning tasks, use this format:\n    1. <agent> : <task>\n\n    After all tasks are complete, summarize the findings and end with \"TERMINATE\".\n    ",
             "reflect_on_tool_use": false,
-            "system_message": "Use tools to solve tasks.",
             "tool_call_summary_format": "{result}",
+            "model_client_stream": false
+          }
+        },
+        {
+          "provider": "autogen_agentchat.agents.AssistantAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "config": {
+            "name": "k8s_agent",
+            "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+              "component_type": "model",
+              "version": 1,
+              "component_version": 1,
+              "config": {
+                "model": "gpt-4o"
+              }
+            },
             "tools": [
               {
+                "provider": "kagent.tools.BuiltInTool",
                 "component_type": "tool",
+                "version": 1,
                 "component_version": 1,
                 "config": {
-                  "description": "Get pods from the Kubernetes cluster",
-                  "headers": {
-                    "Content-Type": "application/json"
-                  },
-                  "host": "localhost",
-                  "json_schema": {
-                    "properties": {
-                      "all_namespaces": {
-                        "description": "Whether to get pods from all namespaces",
-                        "type": "boolean"
-                      },
-                      "ns": {
-                        "description": "The namespace of the pods to get information about",
-                        "type": "string"
-                      },
-                      "output": {
-                        "description": "The output format of the pod information",
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "ns",
-                      "all_namespaces",
-                      "output"
-                    ],
-                    "type": "object"
-                  },
-                  "method": "POST",
-                  "name": "get_pods_api",
-                  "path": "/k8s/get_pods",
-                  "port": 8000,
-                  "scheme": "http"
-                },
-                "provider": "autogen_ext.tools.http.HttpTool",
-                "version": 1
+                  "fn_name": "k8s.apply_manifest"
+                }
               },
               {
+                "provider": "kagent.tools.BuiltInTool",
                 "component_type": "tool",
+                "version": 1,
                 "component_version": 1,
                 "config": {
                   "fn_name": "k8s.get_pods"
-                },
-                "provider": "kagent.tools.BuiltInTool",
-                "version": 1
+                }
               }
-            ]
+            ],
+            "handoffs": [],
+            "model_context": {
+              "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "config": {}
+            },
+            "description": "An agent for k8s operations",
+            "system_message": "\n    You are a k8s agent. You know how to interact with a Kubernetes cluster.\n    ",
+            "reflect_on_tool_use": false,
+            "tool_call_summary_format": "{result}",
+            "model_client_stream": false
           }
         },
         {
