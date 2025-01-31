@@ -17,7 +17,7 @@ type AutogenApiTranslator interface {
 	TranslateSelectorGroupChat(
 		ctx context.Context,
 		selectorTeamRef types.NamespacedName,
-	) (*api.TeamConfig, error)
+	) (*api.TeamResponse, error)
 }
 
 type autogenApiTranslator struct {
@@ -40,7 +40,7 @@ func NewAutogenApiTranslator(
 func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 	ctx context.Context,
 	selectorTeamRef types.NamespacedName,
-) (*SelectorGroupChat, error) {
+) (*api.TeamResponse, error) {
 	// get selector team
 	selectorTeam := &v1alpha1.AutogenTeam{}
 	err := fetchObjKube(
@@ -89,18 +89,18 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		return nil, fmt.Errorf("model api key not found")
 	}
 
-	modelClient := ModelClient{
-		Provider:         "autogen_ext.models.openai.OpenAIChatCompletionClient",
-		ComponentType:    "model",
-		Version:          1,
-		ComponentVersion: 1,
-		Config: ModelClientConfig{
+	modelClient := &api.ModelComponent{
+		Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
+		ComponentType: "model",
+		Version:       makePtr(1),
+		//ComponentVersion: 1,
+		Component: api.ModelConfig{
 			Model:  modelConfig.Spec.Model,
-			ApiKey: string(modelApiKey),
+			APIKey: makePtr(string(modelApiKey)),
 		},
 	}
 
-	var participants []GroupChatParticipant
+	var participants []api.AgentComponent
 	for _, agentName := range selectorTeam.Spec.Participants {
 		agent := &v1alpha1.AutogenAgent{}
 		err := fetchObjKube(
@@ -115,7 +115,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		}
 
 		//TODO: currently only supports builtin tools
-		var tools []GroupChatParticipantTool
+		var tools []api.ToolComponent
 		for _, toolRef := range agent.Spec.Tools {
 			// fetch fn name from builtin tools
 			fnName, ok := a.builtinTools.Get(toolRef)
@@ -123,36 +123,42 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 				return nil, fmt.Errorf("builtin tool %s not found", toolRef)
 			}
 
-			tool := GroupChatParticipantTool{
-				Provider:         "autogen_agentchat.tools.BuiltinTool",
-				ComponentType:    "tool",
-				Version:          1,
-				ComponentVersion: 1,
-				Config: GroupChatParticipantToolConfig{
+			tool := api.ToolComponent{
+				Provider:      "autogen_agentchat.tools.BuiltinTool",
+				ComponentType: "tool",
+				Version:       makePtr(1),
+				//ComponentVersion: 1,
+				Component: api.ToolConfig{
 					FnName: fnName,
 				},
 			}
 			tools = append(tools, tool)
 		}
 
-		participant := GroupChatParticipant{
+		sysMsgPtr := makePtr(agent.Spec.SystemMessage)
+		if agent.Spec.SystemMessage == "" {
+			sysMsgPtr = nil
+		}
+		participant := api.AgentComponent{
 			//TODO: currently only supports assistant agents
-			Provider:         "autogen_agentchat.agents.AssistantAgent",
-			ComponentType:    "agent",
-			Version:          1,
-			ComponentVersion: 1,
-			Config: GroupChatParticipantConfig{
+			Provider:      "autogen_agentchat.agents.AssistantAgent",
+			ComponentType: "agent",
+			Version:       makePtr(1),
+			Description:   makePtr(agent.Spec.Description),
+			//ComponentVersion: 1,
+			Component: api.AgentConfig{
 				Name:        agent.Spec.Name,
 				ModelClient: modelClient,
 				Tools:       tools,
-				ModelContext: ModelContext{
-					Provider:         "autogen_core.model_context.UnboundedChatCompletionContext",
-					ComponentType:    "chat_completion_context",
-					Version:          1,
-					ComponentVersion: 1,
+				ModelContext: &api.ChatCompletionContextComponent{
+					Provider:      "autogen_core.model_context.UnboundedChatCompletionContext",
+					ComponentType: "chat_completion_context",
+					Version:       makePtr(1),
+					//ComponentVersion: 1,
 				},
-				Description:           agent.Spec.Description,
-				SystemMessage:         agent.Spec.SystemMessage,
+				Description: agent.Spec.Description,
+				// TODO(ilackarms): convert to non-ptr with omitempty?
+				SystemMessage:         sysMsgPtr,
 				ReflectOnToolUse:      false,
 				ToolCallSummaryFormat: "{result}",
 			},
@@ -165,22 +171,28 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		return nil, err
 	}
 
-	return &SelectorGroupChat{
-		ID:               generateIdFromString(selectorTeam.Name + "-" + selectorTeam.Namespace),
-		UserID:           "guestuser@gmail.com", // always use global id
-		Provider:         "autogen_agentchat.teams.SelectorGroupChat",
-		ComponentType:    "team",
-		Version:          1,
-		ComponentVersion: 1,
-		Description:      selectorTeam.Spec.Description,
-		Config: SelectorGroupChatConfig{
-			Participants:         participants,
-			ModelClient:          modelClient,
-			TerminationCondition: *terminationCondition,
-			SelectorPrompt:       selectorTeam.Spec.SelectorTeamConfig.SelectorPrompt,
-			AllowRepeatedSpeaker: false,
+	return &api.TeamResponse{
+		ID:     generateIdFromString(selectorTeam.Name + "-" + selectorTeam.Namespace),
+		UserID: "guestuser@gmail.com", // always use global id
+		Component: api.TeamComponent{
+			Provider:         "autogen_agentchat.teams.SelectorGroupChat",
+			ComponentType:    "team",
+			Version:          1,
+			ComponentVersion: 1,
+			Description:      makePtr(selectorTeam.Spec.Description),
+			Config: api.TeamConfig{
+				Participants:         participants,
+				ModelClient:          modelClient,
+				TerminationCondition: terminationCondition,
+				SelectorPrompt:       selectorTeam.Spec.SelectorTeamConfig.SelectorPrompt,
+				AllowRepeatedSpeaker: false,
+			},
 		},
 	}, nil
+}
+
+func makePtr[T any](v T) *T {
+	return &v
 }
 
 func generateIdFromString(s string) int {
@@ -190,7 +202,7 @@ func generateIdFromString(s string) int {
 	return number
 }
 
-func translateTerminationCondition(terminationCondition v1alpha1.TerminationCondition) (*TerminationCondition, error) {
+func translateTerminationCondition(terminationCondition v1alpha1.TerminationCondition) (*api.TerminationComponent, error) {
 	// ensure only one termination condition is set
 	var conditionsSet int
 	if terminationCondition.MaxMessageTermination != nil {
@@ -208,27 +220,27 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 
 	switch {
 	case terminationCondition.MaxMessageTermination != nil:
-		return &TerminationCondition{
-			Provider:         "autogen_agentchat.conditions.MaxMessageTermination",
-			ComponentType:    "termination",
-			Version:          1,
-			ComponentVersion: 1,
-			Config: TerminationConditionConfig{
-				MaxMessages: terminationCondition.MaxMessageTermination.MaxMessages,
+		return &api.TerminationComponent{
+			Provider:      "autogen_agentchat.conditions.MaxMessageTermination",
+			ComponentType: "termination",
+			Version:       makePtr(1),
+			//ComponentVersion: 1,
+			Component: api.TerminationConfig{
+				MaxMessages: makePtr(terminationCondition.MaxMessageTermination.MaxMessages),
 			},
 		}, nil
 	case terminationCondition.TextMentionTermination != nil:
-		return &TerminationCondition{
-			Provider:         "autogen_agentchat.conditions.TextMentionTermination",
-			ComponentType:    "termination",
-			Version:          1,
-			ComponentVersion: 1,
-			Config: TerminationConditionConfig{
-				Text: terminationCondition.TextMentionTermination.Text,
+		return &api.TerminationComponent{
+			Provider:      "autogen_agentchat.conditions.TextMentionTermination",
+			ComponentType: "termination",
+			Version:       makePtr(1),
+			//ComponentVersion: 1,
+			Component: api.TerminationConfig{
+				Text: makePtr(terminationCondition.TextMentionTermination.Text),
 			},
 		}, nil
 	case terminationCondition.OrTermination != nil:
-		var conditions []TerminationCondition
+		var conditions []api.TerminationComponent
 		for _, c := range terminationCondition.OrTermination.Conditions {
 			condition, err := translateTerminationCondition(c)
 			if err != nil {
@@ -236,12 +248,12 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			}
 			conditions = append(conditions, *condition)
 		}
-		return &TerminationCondition{
-			Provider:         "autogen_agentchat.conditions.OrTerminationCondition",
-			ComponentType:    "termination",
-			Version:          1,
-			ComponentVersion: 1,
-			Config: TerminationConditionConfig{
+		return &api.TerminationComponent{
+			Provider:      "autogen_agentchat.conditions.OrTerminationCondition",
+			ComponentType: "termination",
+			Version:       makePtr(1),
+			//ComponentVersion: 1,
+			Component: api.TerminationConfig{
 				Conditions: conditions,
 			},
 		}, nil

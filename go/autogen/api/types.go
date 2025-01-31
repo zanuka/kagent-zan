@@ -47,6 +47,7 @@ type TeamComponent struct {
 	Description      *string            `json:"description"`
 	Component        TeamResponseConfig `json:"component"`
 	Label            string             `json:"label"`
+	Config           TeamConfig         `json:"config"`
 }
 
 // TeamResponse represents the full team response structure
@@ -225,6 +226,9 @@ type ToolConfig struct {
 	Description            string        `json:"description"`
 	GlobalImports          []interface{} `json:"global_imports"`
 	HasCancellationSupport bool          `json:"has_cancellation_support"`
+
+	// for BUILTIN TOOL type
+	FnName string `json:"fn_name,omitempty"`
 }
 
 // ChatCompletionContext Configuration
