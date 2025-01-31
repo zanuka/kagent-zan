@@ -24,29 +24,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	agentv1alpha1 "github.com/kagent-dev/kagent/controller/api/v1alpha1"
+	agentv1alpha1 "github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 )
 
-// AutogenAgentReconciler reconciles a AutogenAgent object
-type AutogenAgentReconciler struct {
+// AutogenModelConfigReconciler reconciles a AutogenModelConfig object
+type AutogenModelConfigReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenagents,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenagents/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenagents/finalizers,verbs=update
+// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenmodelconfigs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenmodelconfigs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenmodelconfigs/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the AutogenAgent object against the actual cluster state, and then
+// the AutogenModelConfig object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.0/pkg/reconcile
-func (r *AutogenAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *AutogenModelConfigReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -55,9 +55,9 @@ func (r *AutogenAgentReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *AutogenAgentReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *AutogenModelConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&agentv1alpha1.AutogenAgent{}).
-		Named("autogenagent").
+		For(&agentv1alpha1.AutogenModelConfig{}).
+		Named("autogenmodelconfig").
 		Complete(r)
 }

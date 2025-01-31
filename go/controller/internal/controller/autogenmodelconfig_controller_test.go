@@ -25,10 +25,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	agentv1alpha1 "github.com/kagent-dev/kagent/controller/api/v1alpha1"
+	agentv1alpha1 "github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 )
 
-var _ = Describe("AutogenAgent Controller", func() {
+var _ = Describe("AutogenModelConfig Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 
@@ -38,13 +38,13 @@ var _ = Describe("AutogenAgent Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		autogenagent := &agentv1alpha1.AutogenAgent{}
+		autogenmodelconfig := &agentv1alpha1.AutogenModelConfig{}
 
 		BeforeEach(func() {
-			By("creating the custom resource for the Kind AutogenAgent")
-			err := k8sClient.Get(ctx, typeNamespacedName, autogenagent)
+			By("creating the custom resource for the Kind AutogenModelConfig")
+			err := k8sClient.Get(ctx, typeNamespacedName, autogenmodelconfig)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &agentv1alpha1.AutogenAgent{
+				resource := &agentv1alpha1.AutogenModelConfig{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -57,16 +57,16 @@ var _ = Describe("AutogenAgent Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &agentv1alpha1.AutogenAgent{}
+			resource := &agentv1alpha1.AutogenModelConfig{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Cleanup the specific resource instance AutogenAgent")
+			By("Cleanup the specific resource instance AutogenModelConfig")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &AutogenAgentReconciler{
+			controllerReconciler := &AutogenModelConfigReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}

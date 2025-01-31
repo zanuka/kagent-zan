@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	agentv1alpha1 "github.com/kagent-dev/kagent/controller/api/v1alpha1"
+	agentv1alpha1 "github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 )
 
 // AutogenTeamReconciler reconciles a AutogenTeam object

@@ -5,8 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"github.com/kagent-dev/kagent/controller/api/v1alpha1"
-	"github.com/kagent-dev/kagent/controller/internal/utils/syncutils"
+	"github.com/kagent-dev/kagent/go/autogen/api"
+	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
+	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,7 +17,7 @@ type AutogenApiTranslator interface {
 	TranslateSelectorGroupChat(
 		ctx context.Context,
 		selectorTeamRef types.NamespacedName,
-	) (*SelectorGroupChat, error)
+	) (*api.TeamConfig, error)
 }
 
 type autogenApiTranslator struct {

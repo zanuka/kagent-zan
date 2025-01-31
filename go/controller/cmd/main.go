@@ -37,8 +37,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	agentv1alpha1 "github.com/kagent-dev/kagent/controller/api/v1alpha1"
-	"github.com/kagent-dev/kagent/controller/internal/controller"
+	agentv1alpha1 "github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
+	"github.com/kagent-dev/kagent/go/controller/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
 

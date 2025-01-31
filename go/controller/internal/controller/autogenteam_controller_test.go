@@ -25,10 +25,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	agentv1alpha1 "github.com/kagent-dev/kagent/controller/api/v1alpha1"
+	agentv1alpha1 "github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 )
 
-var _ = Describe("AutogenTool Controller", func() {
+var _ = Describe("AutogenTeam Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 
@@ -38,13 +38,13 @@ var _ = Describe("AutogenTool Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		autogentool := &agentv1alpha1.AutogenTool{}
+		autogenteam := &agentv1alpha1.AutogenTeam{}
 
 		BeforeEach(func() {
-			By("creating the custom resource for the Kind AutogenTool")
-			err := k8sClient.Get(ctx, typeNamespacedName, autogentool)
+			By("creating the custom resource for the Kind AutogenTeam")
+			err := k8sClient.Get(ctx, typeNamespacedName, autogenteam)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &agentv1alpha1.AutogenTool{
+				resource := &agentv1alpha1.AutogenTeam{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -57,16 +57,16 @@ var _ = Describe("AutogenTool Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &agentv1alpha1.AutogenTool{}
+			resource := &agentv1alpha1.AutogenTeam{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Cleanup the specific resource instance AutogenTool")
+			By("Cleanup the specific resource instance AutogenTeam")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &AutogenToolReconciler{
+			controllerReconciler := &AutogenTeamReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}
