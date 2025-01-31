@@ -233,22 +233,22 @@ type ModelsUsage struct {
 }
 
 type TaskMessage struct {
-	Source      string       `json:"source"`
-	ModelsUsage *ModelsUsage `json:"models_usage"`
-	Content     string       `json:"content"`
-	Type        string       `json:"type"`
+	Source      string          `json:"source"`
+	ModelsUsage *ModelsUsage    `json:"models_usage"`
+	Content     json.RawMessage `json:"content"`
+	Type        string          `json:"type"`
 }
 
 type RunMessage struct {
-	CreatedAt   string                 `json:"created_at"`
-	UpdatedAt   string                 `json:"updated_at"`
-	Version     string                 `json:"version"`
-	SessionID   int                    `json:"session_id"`
-	MessageMeta map[string]interface{} `json:"message_meta"`
 	ID          int                    `json:"id"`
 	UserID      *string                `json:"user_id"`
 	Component   TaskMessage            `json:"component"`
 	RunID       string                 `json:"run_id"`
+	MessageMeta map[string]interface{} `json:"message_meta"`
+	CreatedAt   string                 `json:"created_at"`
+	UpdatedAt   string                 `json:"updated_at"`
+	Version     string                 `json:"version"`
+	SessionID   int                    `json:"session_id"`
 }
 
 type CreateRunRequest struct {

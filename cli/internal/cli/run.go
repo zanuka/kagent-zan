@@ -129,8 +129,6 @@ func runRunCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Created session %s with ID %d\n", session.Name, session.ID)
-
 	run, err := client.CreateRun(&api.CreateRunRequest{
 		SessionID: session.ID,
 		UserID:    session.UserID,
