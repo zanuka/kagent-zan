@@ -1,6 +1,6 @@
 module github.com/kagent-dev/kagent/go
 
-go 1.23.3
+go 1.23.5
 
 require (
 	github.com/onsi/ginkgo/v2 v2.21.0
