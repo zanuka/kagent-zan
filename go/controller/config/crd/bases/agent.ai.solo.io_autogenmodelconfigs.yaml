@@ -40,15 +40,15 @@ spec:
           spec:
             description: AutogenModelConfigSpec defines the desired state of AutogenModelConfig.
             properties:
-              apiKeySecret:
-                type: string
               apiKeySecretKey:
+                type: string
+              apiKeySecretName:
                 type: string
               model:
                 type: string
             required:
-            - apiKeySecret
             - apiKeySecretKey
+            - apiKeySecretName
             - model
             type: object
           status:

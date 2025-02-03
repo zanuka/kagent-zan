@@ -72,7 +72,23 @@ spec:
                   orTermination:
                     properties:
                       conditions:
-                        items: {}
+                        items:
+                          properties:
+                            maxMessageTermination:
+                              properties:
+                                maxMessages:
+                                  type: integer
+                              required:
+                              - maxMessages
+                              type: object
+                            textMentionTermination:
+                              properties:
+                                text:
+                                  type: string
+                              required:
+                              - text
+                              type: object
+                          type: object
                         type: array
                     required:
                     - conditions
@@ -85,6 +101,10 @@ spec:
                     - text
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: There must one termination type set
+                  rule: 1 == (self.maxMessageTermination != null?1:0) + (self.textMentionTermination
+                    != null?1:0) + (self.orTermination != null?1:0)
             required:
             - description
             - maxTurns
