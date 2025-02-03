@@ -53,8 +53,8 @@ type TeamComponent struct {
 // TeamResponse represents the full team response structure
 type TeamResponse struct {
 	ID        int           `json:"id"`
-	CreatedAt string        `json:"created_at"`
-	UpdatedAt string        `json:"updated_at"`
+	CreatedAt string        `json:"created_at,omitempty"`
+	UpdatedAt string        `json:"updated_at,omitempty"`
 	UserID    string        `json:"user_id"`
 	Version   string        `json:"version"`
 	Component TeamComponent `json:"component"`
