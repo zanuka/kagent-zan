@@ -37,6 +37,7 @@ type SelectorTeamConfig struct {
 	ModelConfig    string `json:"modelConfig"`
 }
 
+// +kubebuilder:validation:XValidation:message="There must one termination type set",rule="1 == (self.maxMessageTermination != null?1:0) + (self.textMentionTermination != null?1:0) + (self.orTermination != null?1:0)"
 type TerminationCondition struct {
 	// ONEOF: maxMessageTermination, textMentionTermination, orTermination
 	MaxMessageTermination  *MaxMessageTermination  `json:"maxMessageTermination,omitempty"`
@@ -53,7 +54,12 @@ type TextMentionTermination struct {
 }
 
 type OrTermination struct {
-	Conditions []TerminationCondition `json:"conditions"`
+	Conditions []OrTerminationCondition `json:"conditions"`
+}
+
+type OrTerminationCondition struct {
+	MaxMessageTermination  *MaxMessageTermination  `json:"maxMessageTermination,omitempty"`
+	TextMentionTermination *TextMentionTermination `json:"textMentionTermination,omitempty"`
 }
 
 // AutogenTeamStatus defines the observed state of AutogenTeam.

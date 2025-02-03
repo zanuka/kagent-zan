@@ -22,9 +22,9 @@ import (
 
 // AutogenModelConfigSpec defines the desired state of AutogenModelConfig.
 type AutogenModelConfigSpec struct {
-	Model           string `json:"model"`
-	APIKeySecret    string `json:"apiKeySecret"`
-	APIKeySecretKey string `json:"apiKeySecretKey"`
+	Model            string `json:"model"`
+	APIKeySecretName string `json:"apiKeySecretName"`
+	APIKeySecretKey  string `json:"apiKeySecretKey"`
 }
 
 // AutogenModelConfigStatus defines the observed state of AutogenModelConfig.

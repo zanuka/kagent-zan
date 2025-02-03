@@ -16,7 +16,7 @@ import (
 type AutogenApiTranslator interface {
 	TranslateSelectorGroupChat(
 		ctx context.Context,
-		selectorTeamRef types.NamespacedName,
+		team *v1alpha1.AutogenTeam,
 	) (*api.TeamResponse, error)
 }
 
@@ -39,29 +39,17 @@ func NewAutogenApiTranslator(
 
 func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 	ctx context.Context,
-	selectorTeamRef types.NamespacedName,
+	team *v1alpha1.AutogenTeam,
 ) (*api.TeamResponse, error) {
-	// get selector team
-	selectorTeam := &v1alpha1.AutogenTeam{}
-	err := fetchObjKube(
-		ctx,
-		a.kube,
-		selectorTeam,
-		selectorTeamRef.Name,
-		selectorTeamRef.Namespace,
-	)
-	if err != nil {
-		return nil, err
-	}
 
 	// get model config
 	modelConfig := &v1alpha1.AutogenModelConfig{}
-	err = fetchObjKube(
+	err := fetchObjKube(
 		ctx,
 		a.kube,
 		modelConfig,
-		selectorTeam.Spec.SelectorTeamConfig.ModelConfig,
-		selectorTeam.Namespace,
+		team.Spec.SelectorTeamConfig.ModelConfig,
+		team.Namespace,
 	)
 	if err != nil {
 		return nil, err
@@ -73,8 +61,8 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		ctx,
 		a.kube,
 		modelApiKeySecret,
-		modelConfig.Spec.APIKeySecret,
-		selectorTeam.Namespace,
+		modelConfig.Spec.APIKeySecretName,
+		team.Namespace,
 	)
 	if err != nil {
 		return nil, err
@@ -101,14 +89,14 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 	}
 
 	var participants []api.AgentComponent
-	for _, agentName := range selectorTeam.Spec.Participants {
+	for _, agentName := range team.Spec.Participants {
 		agent := &v1alpha1.AutogenAgent{}
 		err := fetchObjKube(
 			ctx,
 			a.kube,
 			agent,
 			agentName,
-			selectorTeam.Namespace,
+			team.Namespace,
 		)
 		if err != nil {
 			return nil, err
@@ -166,25 +154,25 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		participants = append(participants, participant)
 	}
 
-	terminationCondition, err := translateTerminationCondition(selectorTeam.Spec.TerminationCondition)
+	terminationCondition, err := translateTerminationCondition(team.Spec.TerminationCondition)
 	if err != nil {
 		return nil, err
 	}
 
 	return &api.TeamResponse{
-		ID:     generateIdFromString(selectorTeam.Name + "-" + selectorTeam.Namespace),
+		ID:     generateIdFromString(team.Name + "-" + team.Namespace),
 		UserID: "guestuser@gmail.com", // always use global id
 		Component: api.TeamComponent{
 			Provider:         "autogen_agentchat.teams.SelectorGroupChat",
 			ComponentType:    "team",
 			Version:          1,
 			ComponentVersion: 1,
-			Description:      makePtr(selectorTeam.Spec.Description),
+			Description:      makePtr(team.Spec.Description),
 			Config: api.TeamConfig{
 				Participants:         participants,
 				ModelClient:          modelClient,
 				TerminationCondition: terminationCondition,
-				SelectorPrompt:       selectorTeam.Spec.SelectorTeamConfig.SelectorPrompt,
+				SelectorPrompt:       team.Spec.SelectorTeamConfig.SelectorPrompt,
 				AllowRepeatedSpeaker: false,
 			},
 		},
@@ -242,7 +230,12 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 	case terminationCondition.OrTermination != nil:
 		var conditions []api.TerminationComponent
 		for _, c := range terminationCondition.OrTermination.Conditions {
-			condition, err := translateTerminationCondition(c)
+			subConditon := v1alpha1.TerminationCondition{
+				MaxMessageTermination:  c.MaxMessageTermination,
+				TextMentionTermination: c.TextMentionTermination,
+			}
+
+			condition, err := translateTerminationCondition(subConditon)
 			if err != nil {
 				return nil, err
 			}

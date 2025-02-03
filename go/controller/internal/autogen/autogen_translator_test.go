@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"os"
 	"os/exec"
@@ -68,9 +67,9 @@ var _ = Describe("AutogenClient", func() {
 				Namespace: namespace,
 			},
 			Spec: v1alpha1.AutogenModelConfigSpec{
-				Model:           "gpt-4o",
-				APIKeySecret:    apikeySecret.Name,
-				APIKeySecretKey: apikeySecretKey,
+				Model:            "gpt-4o",
+				APIKeySecretName: apikeySecret.Name,
+				APIKeySecretKey:  apikeySecretKey,
 			},
 		}
 
@@ -136,12 +135,7 @@ var _ = Describe("AutogenClient", func() {
 		err = kubeClient.Create(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 
-		teamRef := types.NamespacedName{
-			Name:      apiTeam.Name,
-			Namespace: apiTeam.Namespace,
-		}
-
-		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient, builtinTools).TranslateSelectorGroupChat(ctx, teamRef)
+		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient, builtinTools).TranslateSelectorGroupChat(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(autogenTeam).NotTo(BeNil())
 

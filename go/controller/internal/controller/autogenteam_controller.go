@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,7 +31,8 @@ import (
 // AutogenTeamReconciler reconciles a AutogenTeam object
 type AutogenTeamReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme     *runtime.Scheme
+	Reconciler autogen.AutogenReconciler
 }
 
 // +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenteams,verbs=get;list;watch;create;update;patch;delete
@@ -49,9 +51,7 @@ type AutogenTeamReconciler struct {
 func (r *AutogenTeamReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
-
-	return ctrl.Result{}, nil
+	return ctrl.Result{}, r.Reconciler.ReconcileAutogenTeam(ctx, req)
 }
 
 // SetupWithManager sets up the controller with the Manager.

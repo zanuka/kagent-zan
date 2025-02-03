@@ -19,6 +19,9 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"github.com/kagent-dev/kagent/go/autogen/api"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
+	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
 	"os"
 	"path/filepath"
 
@@ -63,6 +66,8 @@ func main() {
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
+	var autogenStudioBaseURL string
+	var autogenStudioWsURL string
 	var tlsOpts []func(*tls.Config)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -81,6 +86,9 @@ func main() {
 	flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+
+	flag.StringVar(&autogenStudioBaseURL, "autogen-base-url", "http://localhost:8081/api", "The base url of the Autogen Studio server.")
+	flag.StringVar(&autogenStudioWsURL, "autogen-ws-url", "ws://localhost:8081/api/ws", "The base url of the Autogen Studio websocket server.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -202,32 +210,65 @@ func main() {
 		os.Exit(1)
 	}
 
+	// TODO(ilackarms): aliases for builtin autogen tools
+	builtinTools := syncutils.NewAtomicMap[string, string]()
+	builtinTools.Set("k8s-get-pod", "k8s.get_pod")
+
+	autogenClient := api.NewClient(
+		autogenStudioBaseURL,
+		autogenStudioWsURL,
+	)
+
+	kubeClient := mgr.GetClient()
+
+	apiTranslator := autogen.NewAutogenApiTranslator(
+		kubeClient,
+		builtinTools,
+	)
+
+	autogenReconciler := autogen.NewAutogenReconciler(
+		apiTranslator,
+		kubeClient,
+		autogenClient,
+	)
+
 	if err = (&controller.AutogenTeamReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:     kubeClient,
+		Scheme:     mgr.GetScheme(),
+		Reconciler: autogenReconciler,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AutogenTeam")
 		os.Exit(1)
 	}
 	if err = (&controller.AutogenAgentReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:     kubeClient,
+		Scheme:     mgr.GetScheme(),
+		Reconciler: autogenReconciler,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AutogenAgent")
 		os.Exit(1)
 	}
 	if err = (&controller.AutogenToolReconciler{
-		Client: mgr.GetClient(),
+		Client: kubeClient,
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AutogenTool")
 		os.Exit(1)
 	}
 	if err = (&controller.AutogenModelConfigReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:     kubeClient,
+		Scheme:     mgr.GetScheme(),
+		Reconciler: autogenReconciler,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "AutogenModelConfig")
+		os.Exit(1)
+	}
+	if err = (&controller.AutogenSecretReconciler{
+		Client:     kubeClient,
+		Scheme:     mgr.GetScheme(),
+		Reconciler: autogenReconciler,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "AutogenSecret")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
