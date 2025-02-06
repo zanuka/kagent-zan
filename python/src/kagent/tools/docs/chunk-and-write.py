@@ -203,7 +203,7 @@ def main():
     product_name, version, documentation_dir = sys.argv[1:4]
     openai_client = OpenAI()
     
-    db_conn = None if VECTOR_DB == 'qdrant' else init_sqlite('istio-documentation.db')
+    db_conn = None if VECTOR_DB == 'qdrant' else init_sqlite(f'{product_name}-documentation.db')
     qdrant_client = init_qdrant() if VECTOR_DB == 'qdrant' else None
 
     for root, _, files in os.walk(documentation_dir):

@@ -16,12 +16,12 @@ def _search_documentation(
 ) -> str:
     if query == "" or product == "":
         raise ValueError("Both query and product must be specified")
-    results = asyncio.run(query_documentation(
+    results = query_documentation(
         query,
         product,
         version="",
         limit=4
-    ))
+    )
     return json.dumps(results)
 
 search_documentation = FunctionTool(

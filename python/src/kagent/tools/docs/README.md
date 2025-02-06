@@ -51,7 +51,6 @@ The documentation is generated under `tools/docs/out`.
 An example command for the istio docs would be:
 
 ```
-DB_PATH=istio.db \
   VECTOR_DB=qdrant \
   python3 chunk-and-write.py istio 1.24
 ```
