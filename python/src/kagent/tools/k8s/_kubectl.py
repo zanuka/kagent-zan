@@ -75,7 +75,7 @@ def _get_pod_logs(
 
 get_pods = FunctionTool(
     _get_pods,
-    description="Gets pods in Kubernetes from a specific namespace. Always prefer output type `wide` unless otherwise specified.",
+    description="Gets pods in Kubernetes from a namespace or all of them. Always prefer output type `wide` unless otherwise specified.",
     name="get_pods",
 )
 
