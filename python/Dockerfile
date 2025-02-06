@@ -26,6 +26,7 @@ COPY pyproject.toml .
 COPY .python-version .
 COPY uv.lock .
 COPY src .
+COPY README.md .
 
 # Install dependencies using uv
 RUN uv sync --all-extras
