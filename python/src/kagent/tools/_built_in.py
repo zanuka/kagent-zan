@@ -23,7 +23,6 @@ class BuiltInTool(BaseTool[BaseModel, BaseModel], Component[BuiltInToolConfig]):
     fn_name: str
     fn_tool: FunctionTool
 
-
     component_provider_override = "kagent.tools.BuiltInTool"
     component_type = "tool"
     component_config_schema = BuiltInToolConfig

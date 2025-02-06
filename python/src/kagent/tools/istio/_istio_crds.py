@@ -69,6 +69,7 @@ async def _generate_virtual_service_crd(
 ) -> str:
     return await _generate_crd(VIRTUAL_SERVICE_PROMPT, policy_description)
 
+
 async def _generate_istio_resource(
     istio_resource: Annotated[IstioResources, "Type of resources to generate"],
     policy_description: Annotated[str, "Detailed description of the resource to generate YAML for"],
