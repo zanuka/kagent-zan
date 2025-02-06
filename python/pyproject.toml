@@ -28,9 +28,10 @@ jupyter-executor = [
 ]
 
 [tool.uv.sources]
-autogenstudio = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "0d4e9bb02d7356feda4d0b383df4085ed6995166" }
-autogen-ext = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "0d4e9bb02d7356feda4d0b383df4085ed6995166" }
-autogen-core = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-core", rev = "0d4e9bb02d7356feda4d0b383df4085ed6995166" }
+autogenstudio = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "0a51544e5f2e05fd51cd9ac24d08e894c3ed7abd" }
+autogen-ext = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "0a51544e5f2e05fd51cd9ac24d08e894c3ed7abd" }
+autogen-core = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-core", rev = "0a51544e5f2e05fd51cd9ac24d08e894c3ed7abd" }
+autogen-agentchat = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "0a51544e5f2e05fd51cd9ac24d08e894c3ed7abd" }
 kagent = { workspace = true }
 
 [tool.ruff]
