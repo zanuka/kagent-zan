@@ -27,7 +27,7 @@ class DocumentChunk(TypedDict):
 # Configuration
 VECTOR_DB = os.getenv('VECTOR_DB', 'sqlite')
 QDRANT_URL = os.getenv('QDRANT_URL', 'http://localhost:6333')
-COLLECTION_NAME = 'istio_documentation'
+COLLECTION_NAME = 'documentation' # Change this to the name of your collection
 EMBEDDING_DIMENSION = 3072
 
 def init_sqlite(db_path: str):
@@ -203,7 +203,7 @@ def main():
     product_name, version, documentation_dir = sys.argv[1:4]
     openai_client = OpenAI()
     
-    db_conn = None if VECTOR_DB == 'qdrant' else init_sqlite(f'{product_name}-documentation.db')
+    db_conn = None if VECTOR_DB == 'qdrant' else init_sqlite(f'{product_name}.db')
     qdrant_client = init_qdrant() if VECTOR_DB == 'qdrant' else None
 
     for root, _, files in os.walk(documentation_dir):

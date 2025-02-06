@@ -8,6 +8,8 @@ from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Filter
 from openai import OpenAI
 
+COLLECTION_NAME = 'documentation' # Change this to the name of your collection
+
 class QueryResult:
     def __init__(self, chunk_id, distance, content, url=None, **kwargs):
         self.chunk_id = chunk_id
@@ -31,8 +33,6 @@ def create_embeddings(text: str):
 def query_collection(query_embedding, filter: dict, top_k: int = 10):
     if use_qdrant:
         # Query Qdrant
-        # TODO: change to remove -documentation
-        collection_name = f"{filter.get('product_name')}_documentation"
 
         # Construct filter for Qdrant query
         qdrant_filter = Filter(
@@ -41,7 +41,7 @@ def query_collection(query_embedding, filter: dict, top_k: int = 10):
 
         # Perform the search in Qdrant
         search_result = qdrant_client.search(
-            collection_name=collection_name,
+            collection_name=COLLECTION_NAME,
             query_vector=query_embedding,
             limit=top_k,
             query_filter=qdrant_filter
@@ -59,7 +59,7 @@ def query_collection(query_embedding, filter: dict, top_k: int = 10):
 
     else:
         # Query SQLite
-        db_path = Path(__file__).parent / f"{filter['product_name']}-documentation.db"
+        db_path = Path(__file__).parent / f"{filter['product_name']}.db"
         
         if not db_path.exists():
             print(f"Database file not found at {db_path}", file=sys.stderr)

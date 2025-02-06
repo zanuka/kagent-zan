@@ -39,7 +39,7 @@ The documentation is generated under `tools/docs/out`.
 
 ```bash
   VECTOR_DB=<DB_TYPE> \
-  python3 chunk-and-write.py <PRODUCT_NAME> <VERSION> <<DOCS_DIR>
+  python3 chunk-and-write.py <PRODUCT_NAME> <VERSION> <DOCS_DIR>
 ```
 
 - `<DB_PATH>` - The **full path** to the database file. (e.g. ./python/src/kagent/tools/qdrant/istio.db)
@@ -50,9 +50,8 @@ The documentation is generated under `tools/docs/out`.
 
 An example command for the istio docs would be:
 
-```
-  VECTOR_DB=qdrant \
-  python3 chunk-and-write.py istio 1.24
+```bash
+  VECTOR_DB=qdrant python3 chunk-and-write.py istio 1.24 ./out
 ```
 
 In the end, either (a) cleanup or (b) backup the output files
