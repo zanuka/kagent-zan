@@ -1,5 +1,4 @@
 import importlib
-import traceback
 from typing import Any
 
 from autogen_core import CancellationToken, Component
@@ -48,10 +47,8 @@ class BuiltInTool(BaseTool[BaseModel, BaseModel], Component[BuiltInToolConfig]):
             module = importlib.import_module(module_name)
             tool = getattr(module, module_path[-1])
         except ImportError as e:
-            traceback.print_exc() 
             raise ToolError(tool_name, "Tool not found") from e
         except AttributeError as e:
-            traceback.print_exc() 
             raise ToolError(tool_name, "Tool not found") from e
         assert isinstance(tool, FunctionTool)
         return tool
