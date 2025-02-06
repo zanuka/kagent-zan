@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "autogen-core>=0.4.3",
-  "autogen-ext[http]>=0.4.3",
+  "autogen-ext[mcp]>=0.4.3",
   "autogen-agentchat>=0.4.3",
   "autogenstudio>=0.4.3",
   "openai==1.60.0",
@@ -28,9 +28,9 @@ jupyter-executor = [
 ]
 
 [tool.uv.sources]
-autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "b2800d729b289bcac614bd918e4fffd8f094d104" }
-autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "b2800d729b289bcac614bd918e4fffd8f094d104" }
-autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "b2800d729b289bcac614bd918e4fffd8f094d104" }
+autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "5308b76d5f8d8b102756831a20000849975534e5" }
+autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "5308b76d5f8d8b102756831a20000849975534e5" }
+autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "5308b76d5f8d8b102756831a20000849975534e5" }
 kagent = { workspace = true }
 
 [tool.ruff]
