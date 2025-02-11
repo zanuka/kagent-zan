@@ -9,10 +9,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "autogen-core==0.4.3",
-  "autogen-ext[http]==0.4.3",
-  "autogen-agentchat==0.4.3",
-  "autogenstudio==0.4.3",
+  "autogen-core>=0.4.3",
+  "autogen-ext[mcp]>=0.4.3",
+  "autogen-agentchat>=0.4.3",
+  "autogenstudio>=0.4.3",
   "openai==1.60.0",
   "tiktoken==0.8.0",
   "ruff>=0.9.2",
@@ -28,10 +28,9 @@ jupyter-executor = [
 ]
 
 [tool.uv.sources]
-autogenstudio = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "0a51544e5f2e05fd51cd9ac24d08e894c3ed7abd" }
-autogen-ext = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "0a51544e5f2e05fd51cd9ac24d08e894c3ed7abd" }
-autogen-core = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-core", rev = "0a51544e5f2e05fd51cd9ac24d08e894c3ed7abd" }
-autogen-agentchat = { git = "https://github.com/EItanya/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "0a51544e5f2e05fd51cd9ac24d08e894c3ed7abd" }
+autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "5308b76d5f8d8b102756831a20000849975534e5" }
+autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "5308b76d5f8d8b102756831a20000849975534e5" }
+autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "5308b76d5f8d8b102756831a20000849975534e5" }
 kagent = { workspace = true }
 
 [tool.ruff]
