@@ -21,11 +21,9 @@ VerifyInstall, VerifyInstallConfig = create_typed_fn_tool(verify_install, "kagen
 
 async def _proxy_config(
     pod_name: Annotated[str, "The name of the pod to get proxy configuration for"],
-    ns: Annotated[Optional[str], "The namespace of the pod to get proxy configuration for"]
+    ns: Annotated[Optional[str], "The namespace of the pod to get proxy configuration for"],
 ) -> str:
-    return _run_istioctl_command(
-        f"proxy-config all {'-n ' + ns if ns else ''} {pod_name}"
-    )
+    return _run_istioctl_command(f"proxy-config all {'-n ' + ns if ns else ''} {pod_name}")
 
 
 proxy_config = FunctionTool(
