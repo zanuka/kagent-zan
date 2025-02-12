@@ -14,13 +14,17 @@ create-kind-cluster:
 
 build: build-controller build-web
 
-build-controller:
+controller-manifests:
+	make -C go manifests
+	cp go/config/crd/bases/* helm/crds/
+
+build-controller: controller-manifests
 	make -C go docker-build
 
 build-web:
 	make -C python build
 
-.PHONY: build build-controller build-web
+.PHONY: build build-controller build-web controller-manifests
 
 kind-load-docker-images: build
 	kind load docker-image --name autogen $(CONTROLLER_IMG)
