@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -30,11 +32,7 @@ func NewClient(baseURL, wsURL string) *Client {
 
 func (c *Client) GetVersion() (string, error) {
 	var result struct {
-		Status  bool   `json:"status"`
-		Message string `json:"message"`
-		Data    struct {
-			Version string `json:"version"`
-		} `json:"data"`
+		Version string `json:"version"`
 	}
 
 	err := c.doRequest("GET", "/version", nil, &result)
@@ -42,11 +40,7 @@ func (c *Client) GetVersion() (string, error) {
 		return "", err
 	}
 
-	if !result.Status {
-		return "", fmt.Errorf("api error: %s", result.Message)
-	}
-
-	return result.Data.Version, nil
+	return result.Version, nil
 }
 
 func (c *Client) doRequest(method, path string, body interface{}, result interface{}) error {
@@ -89,15 +83,22 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 		return fmt.Errorf("request failed with status: %s", resp.Status)
 	}
 
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading response: %w", err)
+	}
+
 	// Decode into APIResponse first
 	var apiResp APIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
-		return fmt.Errorf("error decoding response: %w", err)
+	if err := json.Unmarshal(b, &apiResp); err != nil {
+		return fmt.Errorf("error decoding response [%s]: %w", b, err)
 	}
+
+	log.Printf("API Response: %s\n", b)
 
 	// Check response status
 	if !apiResp.Status {
-		return fmt.Errorf("api error: %s", apiResp.Message)
+		return fmt.Errorf("api error: [%+v]", apiResp)
 	}
 
 	// If caller wants the result, marshal the Data field into their result type

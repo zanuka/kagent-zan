@@ -168,6 +168,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 			Version:          1,
 			ComponentVersion: 1,
 			Description:      makePtr(team.Spec.Description),
+			Label:            team.Name,
 			Config: api.TeamConfig{
 				Participants:         participants,
 				ModelClient:          modelClient,
