@@ -1,16 +1,16 @@
+import logging
 import os
-import sys
-import json
 import sqlite3
-import sqlite_vec
+import sys
+from pathlib import Path
+from typing import Any, Dict, List
+
 import numpy as np
 import requests
-from pathlib import Path
-from qdrant_client import QdrantClient
-from qdrant_client.models import VectorParams, Filter
+import sqlite_vec
 from openai import OpenAI
-from urllib.parse import urlparse
-from typing import Dict, Optional, List, Dict, Any
+from qdrant_client import QdrantClient
+from qdrant_client.models import Filter
 
 COLLECTION_NAME = "documentation"
 
@@ -60,17 +60,17 @@ class SQLiteDownloader:
             db_url = f"{self.base_url}/{db_filename}"
 
             try:
-                print(f"Downloading database for {product_name} from {db_url}")
+                logging.error(f"Downloading database for {product_name} from {db_url}")
                 response = requests.get(db_url, stream=True)
                 response.raise_for_status()
 
                 with open(db_path, "wb") as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
-                print(f"Successfully downloaded database for {product_name}")
+                logging.error(f"Successfully downloaded database for {product_name}")
 
             except requests.exceptions.RequestException as e:
-                print(f"Error downloading database for {product_name}: {e}", file=sys.stderr)
+                logging.error(f"Error downloading database for {product_name}: {e}", file=sys.stderr)
                 raise
 
         return db_path
@@ -114,14 +114,14 @@ def query_collection(query_embedding: List[float], filter: dict, top_k: int = 10
         try:
             db_path = db_downloader.download_if_needed(filter["product_name"])
         except Exception as e:
-            print(f"Failed to get database: {e}", file=sys.stderr)
+            logging.error(f"Failed to get database: {e}", file=sys.stderr)
             raise
 
         conn = sqlite3.connect(str(db_path))
         conn.enable_load_extension(True)
         sqlite_vec.load(conn)
         conn.enable_load_extension(False)
-        
+
         cursor = conn.cursor()
 
         query = """
@@ -130,7 +130,7 @@ def query_collection(query_embedding: List[float], filter: dict, top_k: int = 10
         params = [np.array(query_embedding, dtype=np.float32).tobytes()]
 
         if "product_name" in filter:
-            query += " AND product_name = ?" 
+            query += " AND product_name = ?"
             params.append(filter["product_name"])
 
         if "version" in filter:
@@ -146,7 +146,7 @@ def query_collection(query_embedding: List[float], filter: dict, top_k: int = 10
 
         results = []
         for row in rows:
-            row_dict = dict(zip([column[0] for column in cursor.description], row))
+            row_dict = dict(zip([column[0] for column in cursor.description], row, strict=True))
             row_dict.pop("embedding", None)
             results.append(QueryResult(**row_dict))
 
@@ -197,7 +197,7 @@ def query_documentation(
         return [{"distance": qr.distance, "content": qr.content} for qr in results]
 
     except Exception as e:
-        print("An error occurred:", e, file=sys.stderr)
+        logging.error("An error occurred: %s", e)
         raise
 
 

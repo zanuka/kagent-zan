@@ -1,11 +1,8 @@
-import tempfile
 import json
-import asyncio
 from typing import Annotated, Optional
 
 from autogen_core.tools import FunctionTool
 
-from ..common.shell import run_command
 from .query_documentation import query_documentation
 
 
