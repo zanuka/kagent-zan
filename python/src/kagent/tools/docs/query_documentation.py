@@ -15,7 +15,10 @@ from qdrant_client.models import Filter
 COLLECTION_NAME = "documentation"
 
 # Map of supported products and their database files
-PRODUCT_DB_MAP = {"kubernetes": "kubernetes.db", "istio": "istio.db"}
+PRODUCT_DB_MAP = {
+    "kubernetes": "kubernetes.db",
+    "istio": "istio.db",
+    "argo": "argo.db"}
 
 
 class QueryResult:
