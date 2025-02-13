@@ -3,11 +3,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, List, Optional, Type, Union
 
+import httpx
 from autogen_core import CancellationToken, Component
 from autogen_core.tools import BaseTool
 from pydantic import BaseModel, Field
-
-from ..common.client import HttpClient
 
 
 class Config(BaseModel):
@@ -18,6 +17,17 @@ class Config(BaseModel):
     username: str = Field(default="", description="Username for basic auth")
     password: str = Field(default="", description="Password for basic auth")
 
+
+def get_http_client(config: Config, cancellation_token: CancellationToken) -> httpx.AsyncClient:
+    """Create an HTTP client for the API"""
+    if cancellation_token.is_canceled:
+        raise Exception("Request canceled")
+
+    if config.username and config.password:
+        auth = httpx.BasicAuth(config.username, config.password)
+        return httpx.AsyncClient(base_url=config.base_url, auth=auth)
+    else:
+        return httpx.AsyncClient(base_url=config.base_url)
 
 class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
     """Base class for all Prometheus tools"""
@@ -64,9 +74,9 @@ class QueryTool(BaseTool):
         super().__init__(config=config, input_model=QueryInput, description=self.description)
 
     async def run(self, args: QueryInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {"query": args.query}
-            return await client._make_request("GET", "query", params=params)
+            return await client.get("/query", params=params)
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryTool":
@@ -92,7 +102,7 @@ class QueryRangeTool(BaseTool):
         super().__init__(config=config, input_model=QueryRangeInput, description=self.description)
 
     async def run(self, args: QueryRangeInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "query": args.query,
                 "start": client._format_time(args.start),
@@ -100,7 +110,7 @@ class QueryRangeTool(BaseTool):
                 "step": str(args.step),
                 "timeout": args.timeout,
             }
-            return await client._make_request("GET", "query_range", params=params)
+            return await client.get("/query_range", params=params)
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryRangeTool":
@@ -125,14 +135,14 @@ class SeriesQueryTool(BaseTool):
         super().__init__(config=config, input_model=SeriesInput, description=self.description)
 
     async def run(self, args: SeriesInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "match[]": args.match,
                 "start": client._format_time(args.start) if args.start else None,
                 "end": client._format_time(args.end) if args.end else None,
                 "limit": args.limit,
             }
-            result = await client._make_request("GET", "series", params=params)
+            result = await client.get("/series", params=params)
             return result.get("data", [])
 
     @classmethod
@@ -158,14 +168,14 @@ class LabelNamesTool(BaseTool):
         super().__init__(config=config, input_model=LabelNamesInput, description=self.description)
 
     async def run(self, args: LabelNamesInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "start": client._format_time(args.start) if args.start else None,
                 "end": client._format_time(args.end) if args.end else None,
                 "match[]": args.match,
                 "limit": args.limit,
             }
-            result = await client._make_request("GET", "labels", params=params)
+            result = await client.get("/labels", params=params)
             return result.get("data", [])
 
     @classmethod
@@ -192,7 +202,7 @@ class LabelValuesTool(BaseTool):
         super().__init__(config=config, input_model=LabelValuesInput, description=self.description)
 
     async def run(self, args: LabelValuesInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             encoded_label = urllib.parse.quote(args.label_name)
             params = {
                 "start": client._format_time(args.start) if args.start else None,
@@ -200,7 +210,7 @@ class LabelValuesTool(BaseTool):
                 "match[]": args.match,
                 "limit": args.limit,
             }
-            result = await client._make_request("GET", f"label/{encoded_label}/values", params=params)
+            result = await client.get(f"/label/{encoded_label}/values", params=params)
             return result.get("data", [])
 
     @classmethod
@@ -230,12 +240,12 @@ class TargetsTool(BaseTool):
         super().__init__(config=config, input_model=TargetsInput, description=self.description)
 
     async def run(self, args: TargetsInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "state": args.state.value if args.state else None,
                 "scrape_pool": args.scrape_pool,
             }
-            return await client._make_request("GET", "targets", params=params)
+            return await client.get("/targets", params=params)
 
     @classmethod
     def _from_config(cls, config: Config) -> "TargetsTool":
@@ -264,7 +274,7 @@ class RulesTool(BaseTool):
         super().__init__(config=config, input_model=RulesInput, description=self.description)
 
     async def run(self, args: RulesInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "type": args.type,
                 "rule_name[]": args.rule_name,
@@ -275,7 +285,7 @@ class RulesTool(BaseTool):
                 "group_limit": args.group_limit,
                 "group_next_token": args.group_next_token,
             }
-            return await client._make_request("GET", "rules", params=params)
+            return await client.get("/rules", params=params)
 
     @classmethod
     def _from_config(cls, config: Config) -> "RulesTool":
@@ -299,8 +309,8 @@ class AlertsTool(BaseTool):
         super().__init__(config=config, input_model=AlertsInput, description=self.description)
 
     async def run(self, args: AlertsInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
-            return await client._make_request("GET", "alerts")
+        async with get_http_client(self.config, cancellation_token) as client:
+            return await client.get("/alerts")
 
     @classmethod
     def _from_config(cls, config: Config) -> "AlertsTool":
@@ -324,13 +334,13 @@ class TargetMetadataTool(BaseTool):
         super().__init__(config=config, input_model=TargetMetadataInput, description=self.description)
 
     async def run(self, args: TargetMetadataInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "match_target": args.match_target,
                 "metric": args.metric,
                 "limit": args.limit,
             }
-            result = await client._make_request("GET", "targets/metadata", params=params)
+            result = await client.get("/targets/metadata", params=params)
             return result.get("data", [])
 
     @classmethod
@@ -353,8 +363,8 @@ class AlertmanagersTool(BaseTool):
         super().__init__(config=config, input_model=AlertmanagersInput, description=self.description)
 
     async def run(self, args: AlertmanagersInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
-            return await client._make_request("GET", "alertmanagers")
+        async with get_http_client(self.config, cancellation_token) as client:
+            return await client.get("/alertmanagers")
 
     @classmethod
     def _from_config(cls, config: Config) -> "AlertmanagersTool":
@@ -378,13 +388,13 @@ class MetadataTool(BaseTool):
         super().__init__(config=config, input_model=MetadataInput, description=self.description)
 
     async def run(self, args: MetadataInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "metric": args.metric,
                 "limit": args.limit,
                 "limit_per_metric": args.limit_per_metric,
             }
-            result = await client._make_request("GET", "metadata", params=params)
+            result = await client.get("/metadata", params=params)
             return result.get("data", {})
 
     @classmethod
@@ -407,8 +417,8 @@ class StatusConfigTool(BaseTool):
         super().__init__(config=config, input_model=StatusConfigInput, description=self.description)
 
     async def run(self, args: StatusConfigInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
-            return await client._make_request("GET", "status/config")
+        async with get_http_client(self.config, cancellation_token) as client:
+            return await client.get("/status/config")
 
     @classmethod
     def _from_config(cls, config: Config) -> "StatusConfigTool":
@@ -430,8 +440,8 @@ class StatusFlagsTool(BaseTool):
         super().__init__(config=config, input_model=StatusFlagsInput, description=self.description)
 
     async def run(self, args: StatusFlagsInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
-            return await client._make_request("GET", "status/flags")
+        async with get_http_client(self.config, cancellation_token) as client:
+            return await client.get("/status/flags")
 
     @classmethod
     def _from_config(cls, config: Config) -> "StatusFlagsTool":
@@ -453,8 +463,8 @@ class RuntimeInfoTool(BaseTool):
         super().__init__(config=config, input_model=RuntimeInfoInput, description=self.description)
 
     async def run(self, args: RuntimeInfoInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
-            return await client._make_request("GET", "status/runtimeinfo")
+        async with get_http_client(self.config, cancellation_token) as client:
+            return await client.get("/status/runtimeinfo")
 
     @classmethod
     def _from_config(cls, config: Config) -> "RuntimeInfoTool":
@@ -476,8 +486,8 @@ class BuildInfoTool(BaseTool):
         super().__init__(config=config, input_model=BuildInfoInput, description=self.description)
 
     async def run(self, args: BuildInfoInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
-            return await client._make_request("GET", "status/buildinfo")
+        async with get_http_client(self.config, cancellation_token) as client:
+            return await client.get("/status/buildinfo")
 
     @classmethod
     def _from_config(cls, config: Config) -> "BuildInfoTool":
@@ -499,9 +509,9 @@ class TSDBStatusTool(BaseTool):
         super().__init__(config=config, input_model=TSDBStatusInput, description=self.description)
 
     async def run(self, args: TSDBStatusInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {"limit": args.limit} if args.limit is not None else None
-            return await client._make_request("GET", "status/tsdb", params=params)
+            return await client.get("/status/tsdb", params=params)
 
     @classmethod
     def _from_config(cls, config: Config) -> "TSDBStatusTool":
@@ -523,9 +533,9 @@ class CreateSnapshotTool(BaseTool):
         super().__init__(config=config, input_model=CreateSnapshotInput, description=self.description)
 
     async def run(self, args: CreateSnapshotInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {"skip_head": "true" if args.skip_head else None}
-            return await client._make_request("POST", "admin/tsdb/snapshot", params=params)
+            return await client.post("/admin/tsdb/snapshot", content=params)
 
     @classmethod
     def _from_config(cls, config: Config) -> "CreateSnapshotTool":
@@ -549,13 +559,13 @@ class DeleteSeriesTool(BaseTool):
         super().__init__(config=config, input_model=DeleteSeriesInput, description=self.description)
 
     async def run(self, args: DeleteSeriesInput, cancellation_token: CancellationToken) -> None:
-        async with HttpClient(self.config.base_url) as client:
+        async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "match[]": args.match,
                 "start": client._format_time(args.start) if args.start else None,
                 "end": client._format_time(args.end) if args.end else None,
             }
-            await client._make_request("POST", "admin/tsdb/delete_series", params=params)
+            await client.post("/admin/tsdb/delete_series", content=params)
 
     @classmethod
     def _from_config(cls, config: Config) -> "DeleteSeriesTool":
@@ -577,8 +587,8 @@ class CleanTombstonesTool(BaseTool):
         super().__init__(config=config, input_model=CleanTombstonesInput, description=self.description)
 
     async def run(self, args: CleanTombstonesInput, cancellation_token: CancellationToken) -> None:
-        async with HttpClient(self.config.base_url) as client:
-            await client._make_request("POST", "admin/tsdb/clean_tombstones")
+        async with get_http_client(self.config, cancellation_token) as client:
+            await client.post("/admin/tsdb/clean_tombstones")
 
     @classmethod
     def _from_config(cls, config: Config) -> "CleanTombstonesTool":
@@ -600,8 +610,8 @@ class WALReplayTool(BaseTool):
         super().__init__(config=config, input_model=WALReplayInput, description=self.description)
 
     async def run(self, args: WALReplayInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
-            return await client._make_request("GET", "status/walreplay")
+        async with get_http_client(self.config, cancellation_token) as client:
+            return await client.get("/status/walreplay")
 
     @classmethod
     def _from_config(cls, config: Config) -> "WALReplayTool":
@@ -623,8 +633,8 @@ class NotificationsTool(BaseTool):
         super().__init__(config=config, input_model=NotificationsInput, description=self.description)
 
     async def run(self, args: NotificationsInput, cancellation_token: CancellationToken) -> Any:
-        async with HttpClient(self.config.base_url) as client:
-            return await client._make_request("GET", "notifications")
+        async with get_http_client(self.config, cancellation_token) as client:
+            return await client.get("/notifications")
 
     @classmethod
     def _from_config(cls, config: Config) -> "NotificationsTool":
