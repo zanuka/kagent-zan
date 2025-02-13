@@ -2,17 +2,17 @@ package api
 
 import "fmt"
 
-func (c *Client) ListTeams(userID string) ([]TeamResponse, error) {
-	var teams []TeamResponse
+func (c *Client) ListTeams(userID string) ([]Team, error) {
+	var teams []Team
 	err := c.doRequest("GET", fmt.Sprintf("/teams/?user_id=%s", userID), nil, &teams)
 	return teams, err
 }
 
-func (c *Client) CreateTeam(team *TeamResponse) error {
+func (c *Client) CreateTeam(team *Team) error {
 	return c.doRequest("POST", "/teams/", team, team)
 }
 
-func (c *Client) GetTeam(teamLabel string, userID string) (*TeamResponse, error) {
+func (c *Client) GetTeam(teamLabel string, userID string) (*Team, error) {
 	allTeams, err := c.ListTeams(userID)
 	if err != nil {
 		return nil, err

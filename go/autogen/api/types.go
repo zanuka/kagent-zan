@@ -50,8 +50,8 @@ type TeamComponent struct {
 	Config           TeamConfig         `json:"config"`
 }
 
-// TeamResponse represents the full team response structure
-type TeamResponse struct {
+// Team represents the full team response structure
+type Team struct {
 	ID        int           `json:"id"`
 	CreatedAt string        `json:"created_at,omitempty"`
 	UpdatedAt string        `json:"updated_at,omitempty"`

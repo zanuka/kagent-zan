@@ -121,7 +121,7 @@ func (a *autogenReconciler) reconcileTeams(ctx context.Context, teams ...*v1alph
 	return nil
 }
 
-func (a *autogenReconciler) upsertTeam(team *api.TeamResponse) error {
+func (a *autogenReconciler) upsertTeam(team *api.Team) error {
 	return a.autogenClient.CreateTeam(team)
 }
 

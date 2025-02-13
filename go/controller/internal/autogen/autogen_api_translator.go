@@ -17,7 +17,7 @@ type AutogenApiTranslator interface {
 	TranslateSelectorGroupChat(
 		ctx context.Context,
 		team *v1alpha1.AutogenTeam,
-	) (*api.TeamResponse, error)
+	) (*api.Team, error)
 }
 
 type autogenApiTranslator struct {
@@ -40,7 +40,7 @@ func NewAutogenApiTranslator(
 func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 	ctx context.Context,
 	team *v1alpha1.AutogenTeam,
-) (*api.TeamResponse, error) {
+) (*api.Team, error) {
 
 	// get model config
 	modelConfig := &v1alpha1.AutogenModelConfig{}
@@ -159,7 +159,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		return nil, err
 	}
 
-	return &api.TeamResponse{
+	return &api.Team{
 		ID:     generateIdFromString(team.Name + "-" + team.Namespace),
 		UserID: "guestuser@gmail.com", // always use global id
 		Component: api.TeamComponent{

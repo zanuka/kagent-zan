@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kagent-dev/kagent/cli/internal/cli"
-	"github.com/kagent-dev/kagent/cli/internal/config"
+	"github.com/kagent-dev/kagent/go/cli/internal/cli"
+	"github.com/kagent-dev/kagent/go/cli/internal/config"
 )
 
 func main() {

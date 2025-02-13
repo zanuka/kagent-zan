@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/kagent-dev/kagent/cli/internal/api"
+	"github.com/kagent-dev/kagent/go/autogen/api"
 )
 
 // Config holds the WebSocket client configuration

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/kagent-dev/kagent/cli/internal/api"
+	"github.com/kagent-dev/kagent/go/autogen/api"
 )
 
 const (

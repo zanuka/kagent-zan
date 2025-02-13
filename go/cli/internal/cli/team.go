@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/kagent-dev/kagent/cli/internal/api"
-	"github.com/kagent-dev/kagent/cli/internal/config"
+	"github.com/kagent-dev/kagent/go/autogen/api"
+	"github.com/kagent-dev/kagent/go/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -72,7 +72,7 @@ func runTeamList(cmd *cobra.Command, args []string) error {
 	for i, team := range teams {
 		rows[i] = []string{
 			fmt.Sprintf("%d", team.ID),
-			*team.Component.Label,
+			team.Component.Label,
 			team.CreatedAt,
 		}
 	}
@@ -91,7 +91,7 @@ func runTeamCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error reading file %s: %w", filePath, err)
 	}
 
-	var team api.CreateTeamRequest
+	var team api.Team
 	if err := json.Unmarshal(jsonFile, &team); err != nil {
 		return fmt.Errorf("error parsing YAML: %w", err)
 	}

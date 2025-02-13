@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -93,8 +92,6 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 	if err := json.Unmarshal(b, &apiResp); err != nil {
 		return fmt.Errorf("error decoding response [%s]: %w", b, err)
 	}
-
-	log.Printf("API Response: %s\n", b)
 
 	// Check response status
 	if !apiResp.Status {

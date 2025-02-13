@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/kagent-dev/kagent/cli/internal/api"
-	"github.com/kagent-dev/kagent/cli/internal/config"
+	"github.com/kagent-dev/kagent/go/autogen/api"
+	"github.com/kagent-dev/kagent/go/cli/internal/config"
 	"github.com/spf13/cobra"
 )
 

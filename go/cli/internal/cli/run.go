@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/kagent-dev/kagent/cli/internal/api"
-	"github.com/kagent-dev/kagent/cli/internal/config"
-	"github.com/kagent-dev/kagent/cli/internal/ws"
+	"github.com/kagent-dev/kagent/go/autogen/api"
+	"github.com/kagent-dev/kagent/go/cli/internal/config"
+	"github.com/kagent-dev/kagent/go/cli/internal/ws"
 	"github.com/spf13/cobra"
 	"golang.org/x/exp/rand"
 )
