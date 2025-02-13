@@ -101,13 +101,13 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
         setLoading(false);
       
       // Close any active WebSocket connection if it's not a newly created run
-      if (activeSocket) {
+      if (activeSocket && selectedRun.id !== currentRun?.id) {
         activeSocket.close();
         setActiveSocket(null);
         activeSocketRef.current = null;
       }
     }
-  }, [selectedRun, activeSocket]);
+  }, [selectedRun, activeSocket, currentRun?.id]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

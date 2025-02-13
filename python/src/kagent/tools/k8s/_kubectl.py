@@ -28,7 +28,7 @@ def _get_services(
     output: Annotated[Optional[str], "The output format of the service information"],
 ) -> str:
     if service_name and all_namespaces:
-        raise ValueError("Cannot specify both service_name and all_namespaces=True")
+        all_namespaces = False
 
     return _run_kubectl_command(
         f"get services {service_name + ' ' if service_name else ''}{'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
@@ -43,7 +43,8 @@ def _get_resources(
     output: Annotated[Optional[str], "The output format of the resource information"],
 ) -> str:
     if name and all_namespaces:
-        raise ValueError("Cannot specify both name and all_namespaces=True")
+        # only use the name if provided, and ignore all_namespaces
+        all_namespaces = False
 
     return _run_kubectl_command(
         f"get {resource_type} {name if name else ''} {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
@@ -82,10 +83,9 @@ get_services = FunctionTool(
 
 GetServices, GetServicesConfig = create_typed_fn_tool(get_services, "kagent.tools.k8s.GetServices", "GetServices")
 
-
 apply_manifest = FunctionTool(
     _apply_manifest,
-    description="Apply a manifest file to the Kubernetes cluster.",
+    description="Apply a YAML resource file to the Kubernetes cluster.",
     name="_apply_manifest",
 )
 

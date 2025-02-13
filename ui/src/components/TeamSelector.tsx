@@ -49,10 +49,30 @@ const TeamSelector = ({ agentTeams, onTeamSelect }: TeamSelectorProps) => {
       const parsed = JSON.parse(content);
       setParsedJson(parsed);
 
+      // The JSON that's pasted in can either be in the format of an actual team 
+      // that already includes the user_id, version and other fields. For example:
+      // {
+      //   "id": 0,
+      //   "user_id": "someone",
+      //   "version": "0.0.1",
+      //   "component": {
+      //     <TEAM JSON HERE>
+      //    }
+      //  }
+      // OR it could be just the TEAM JSON. In that case, we'll just add the user_id
+
+
       if (parsed.user_id && parsed.user_id !== userId) {
         setShowUserIdAlert(true);
       } else {
-        handleFinalImport(parsed);
+        // Wrap the JSON in the team format
+        const wrappedJson = {
+          user_id: userId,
+          version: "0.0.1",
+          component: parsed,
+        };
+
+        handleFinalImport(wrappedJson);
       }
     } catch (error) {
       console.error("Invalid JSON content:", error);
@@ -117,10 +137,10 @@ const TeamSelector = ({ agentTeams, onTeamSelect }: TeamSelectorProps) => {
             {agentTeams.map((team) => (
               <SelectItem key={team.id} value={team.id?.toString() || "-1"} className="hover:bg-[#3A3A3A] focus:bg-[#3A3A3A] p-3 cursor-pointer data-[state=checked]:bg-[#3A3A3A]">
                 <div className="space-y-2">
-                  <div className="font-medium text-white">{team.component.label}</div>
-                  <p className="text-sm text-white/50 line-clamp-2 max-w-sm">{team.component.description || "No description available"}</p>
+                  <div className="font-medium text-white">{team.component?.label || "No label available"}</div>
+                  <p className="text-sm text-white/50 line-clamp-2 max-w-sm">{team.component?.description || "No description available"}</p>
                   <div className="space-y-1 pt-2 border-t border-[#3A3A3A]">
-                    {team.component.config.participants.map((participant, idx) =>
+                    {team.component?.config.participants.map((participant, idx) =>
                       renderAgentItem(participant.config as AssistantAgentConfig | UserProxyAgentConfig, participant.provider.includes("AssistantAgent") ? "assistant" : "user", idx)
                     )}
                   </div>
