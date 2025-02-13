@@ -59,7 +59,6 @@ export function AgentDetailsPanel({ selectedTeam, isOpen, onToggle }: AgentDetai
     return renderSingleCondition(condition);
   };
   const renderAgentTools = (tools: Component<ToolConfig>[] = []) => {
-    console.log("tools", tools);
     if (tools.length === 0) {
       return <div className="text-sm text-white/40 italic">No tools available</div>;
     }
@@ -84,7 +83,6 @@ export function AgentDetailsPanel({ selectedTeam, isOpen, onToggle }: AgentDetai
     );
   };
 
-  console.log("selectedTeam", selectedTeam);
   return (
     <div
       className={`fixed top-0 right-0 h-screen transition-all duration-300 ease-in-out 

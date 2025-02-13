@@ -245,7 +245,6 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
 
           // Only close socket on completion, not on stop
           if (newStatus === "complete" && activeSocket) {
-            console.log("Closing socket after completion");
             activeSocket.close();
             setActiveSocket(null);
             activeSocketRef.current = null;
@@ -290,8 +289,6 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
           console.warn("No current run to cancel");
           return current;
         }
-
-        console.log("Updating run status to stopped:", current);
 
         return {
           ...current,

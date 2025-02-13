@@ -1,5 +1,5 @@
 import { getBackendUrl } from "@/lib/utils";
-import { AgentMessageConfig, CreateRunResponse, Message, Session, Team, WebSocketMessage } from "@/types/datamodel";
+import { AgentMessageConfig, CreateRunResponse, Message, Session } from "@/types/datamodel";
 
 export interface RunWithSession {
   run: CreateRunResponse;
@@ -44,42 +44,3 @@ export const createMessage = (config: AgentMessageConfig, runId: string, session
   message_meta: {
   },
 });
-
-export const setupWebSocket = (runId: string, query: string, team_config: Team | null, onMessage: (message: WebSocketMessage) => void): WebSocket => {
-  if (!team_config) {
-    throw new Error("Team config is required");
-  }
-  const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${wsProtocol}//localhost:8081/api/ws/runs/${runId}`;
-
-  const socket = new WebSocket(wsUrl);
-
-  socket.onopen = () => {
-    socket.send(
-      JSON.stringify({
-        type: "start",
-        task: query,
-        team_config: team_config.component,
-      })
-    );
-  };
-
-  socket.onmessage = (event) => {
-    try {
-      const message = JSON.parse(event.data);
-      onMessage(message);
-    } catch (error) {
-      console.error("WebSocket message parsing error:", error);
-    }
-  };
-
-  socket.onclose = () => {
-    console.log("WebSocket closed");
-  };
-
-  socket.onerror = (error) => {
-    console.error("WebSocket error:", error);
-  };
-
-  return socket;
-};

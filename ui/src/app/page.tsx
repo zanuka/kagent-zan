@@ -150,7 +150,6 @@ export default function Home() {
 
         // Get the newly created team data
         const responseJson = await response.json();
-        console.log("Created team response:", responseJson);
         
         if (!responseJson.status || !responseJson.data) {
           throw new Error("Invalid response format from team creation");
