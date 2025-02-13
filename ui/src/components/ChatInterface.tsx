@@ -101,13 +101,13 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
         setLoading(false);
       
       // Close any active WebSocket connection if it's not a newly created run
-      if (activeSocket) {
+      if (activeSocket && selectedRun.id !== currentRun?.id) {
         activeSocket.close();
         setActiveSocket(null);
         activeSocketRef.current = null;
       }
     }
-  }, [selectedRun, activeSocket]);
+  }, [selectedRun, activeSocket, currentRun?.id]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,7 +245,6 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
 
           // Only close socket on completion, not on stop
           if (newStatus === "complete" && activeSocket) {
-            console.log("Closing socket after completion");
             activeSocket.close();
             setActiveSocket(null);
             activeSocketRef.current = null;
@@ -290,8 +289,6 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
           console.warn("No current run to cancel");
           return current;
         }
-
-        console.log("Updating run status to stopped:", current);
 
         return {
           ...current,

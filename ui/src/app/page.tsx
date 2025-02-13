@@ -102,8 +102,24 @@ export default function Home() {
   // Effect to filter sessions when team changes
   useEffect(() => {
     if (selectedTeam) {
-      setSessions((prev) => prev.filter((s) => s.session.team_id === selectedTeam.id));
+      // Filter sessions for the selected team
+      const teamSessions = sessions.filter((s) => s.session.team_id === selectedTeam.id);
+      setSessions(teamSessions);
+
+      // Update viewState with the most recent session for this team
+      if (teamSessions.length > 0) {
+        const mostRecent = teamSessions[0];
+        setViewState({
+          session: mostRecent.session,
+          run: mostRecent.runs[0],
+          team: selectedTeam,
+        });
+      } else {
+        // Clear viewState if no sessions exist for this team
+        setViewState(null);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTeam]);
 
   const handleNewSession = (newSession: Session, newRun: Run) => {
@@ -119,23 +135,50 @@ export default function Home() {
   const handleTeamSelection = async (team: Team | null, teamJson: string | null = null) => {
     // TODO: I don't really like how this is done, there should be a separate 'handleTeamCreation' function instead
     if (teamJson) {
-      const response = await fetch(getBackendUrl() + "/teams", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(teamJson),
-      });
+      try {
+        const response = await fetch(getBackendUrl() + "/teams", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(teamJson),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to create team");
+        if (!response.ok) {
+          throw new Error("Failed to create team");
+        }
+
+        // Get the newly created team data
+        const responseJson = await response.json();
+        
+        if (!responseJson.status || !responseJson.data) {
+          throw new Error("Invalid response format from team creation");
+        }
+        
+        const createdTeam = responseJson.data;
+        
+        // Update agentTeams state with fresh data
+        const updatedTeams = await fetchApi<Team[]>("/teams", userId);
+        setAgentTeams(updatedTeams);
+        
+        // Find the newly created team in the updated teams list by ID
+        const newTeam = updatedTeams.find(t => t.id === createdTeam.id);
+        if (!newTeam) {
+          throw new Error("Could not find newly created team");
+        }
+        
+        // Set the newly created team as selected
+        setSelectedTeam(newTeam);
+      } catch (error) {
+        console.error("Error in team creation/selection:", error);
+        throw error;
       }
+    } else {
+      setSelectedTeam(team);
     }
-
-    setSelectedTeam(team);
+    
     setShowTeamSelector(false);
   };
-
   const handleViewRun = async (sessionId: number, runId: string) => {
     const sessionWithRuns = sessions.find((s) => s.session.id === sessionId);
     if (!sessionWithRuns) return;
@@ -227,10 +270,10 @@ export default function Home() {
         ${isRightSidebarOpen ? "mr-96" : "mr-12"}`}
       >
         <div className="mx-auto max-w-5xl">
-          <ChatInterface selectedAgentTeam={viewState?.team || selectedTeam} selectedRun={viewState?.run} selectedSession={viewState?.session} onNewSession={handleNewSession} />
+          <ChatInterface selectedAgentTeam={selectedTeam} selectedRun={viewState?.run} selectedSession={viewState?.session} onNewSession={handleNewSession} />
         </div>
       </div>
-      <AgentDetailsPanel selectedTeam={viewState?.team || selectedTeam} isOpen={isRightSidebarOpen} onToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)} />
+      <AgentDetailsPanel selectedTeam={selectedTeam} isOpen={isRightSidebarOpen} onToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)} />
     </>
   );
 }
