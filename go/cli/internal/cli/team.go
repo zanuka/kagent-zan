@@ -67,11 +67,10 @@ func runTeamList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Prepare table data
-	headers := []string{"ID", "NAME", "CREATED"}
+	headers := []string{"NAME", "CREATED"}
 	rows := make([][]string, len(teams))
 	for i, team := range teams {
 		rows[i] = []string{
-			fmt.Sprintf("%d", team.ID),
 			team.Component.Label,
 			team.CreatedAt,
 		}
