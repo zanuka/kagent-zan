@@ -18,15 +18,17 @@ export function getWebSocketUrl() {
 }
 
 
-export async function fetchApi<T>(path: string, userId: string): Promise<T> {
+export async function fetchApi<T>(path: string, userId: string, options: RequestInit = {}): Promise<T> {
   try {
     const url = `${getBackendUrl()}${path}`;
     const urlWithUser = url.includes("?") ? `${url}&user_id=${userId}` : `${url}?user_id=${userId}`;
 
     const response = await fetch(urlWithUser, {
+      ...options,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        ...options.headers,
       },
       // Add timeout to prevent hanging requests
       signal: AbortSignal.timeout(15000), // 15 second timeout
@@ -130,4 +132,27 @@ export const messageUtils = {
   isUser(source: string): boolean {
     return source === "user";
   },
+};
+
+export const createNewSession = async (
+  agentId: string | number,
+  userId: string
+) => {
+  return fetchApi(`/teams/${agentId}/sessions`, userId, {
+    method: 'POST',
+  });
+};
+
+export const getAgentSessions = async (
+  agentId: string | number,
+  userId: string
+) => {
+  return fetchApi(`/teams/${agentId}/sessions`, userId);
+};
+
+export const getSessionDetails = async (
+  sessionId: string | number,
+  userId: string
+) => {
+  return fetchApi(`/sessions/${sessionId}`, userId);
 };

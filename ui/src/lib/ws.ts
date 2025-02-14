@@ -1,8 +1,8 @@
 import { getBackendUrl } from "@/lib/utils";
-import { AgentMessageConfig, CreateRunResponse, Message, Session } from "@/types/datamodel";
+import { AgentMessageConfig, Message, Run, Session } from "@/types/datamodel";
 
-export interface RunWithSession {
-  run: CreateRunResponse;
+interface RunWithSession {
+  run: Run;
   session: Session;
 }
 
@@ -28,8 +28,24 @@ export const createRunWithSession = async (teamId: number, userId: string): Prom
   }
 
   const runResponse = await response.json();
+
+  // Ensure we're getting the correct ID from the response
+  const run: Run = {
+    id: runResponse.data.run_id || runResponse.data.id,
+    created_at: new Date().toISOString(),
+    status: "created",
+    task: { content: "", source: "user" },
+    team_result: null,
+    messages: [],
+  };
+
+  // Verify we have a run ID
+  if (!run.id) {
+    throw new Error('No run ID in response');
+  }
+
   return {
-    run: runResponse.data as CreateRunResponse,
+    run,
     session,
   };
 };

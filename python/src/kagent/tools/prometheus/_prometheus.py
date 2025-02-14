@@ -20,9 +20,6 @@ class Config(BaseModel):
 
 def get_http_client(config: Config, cancellation_token: CancellationToken) -> httpx.AsyncClient:
     """Create an HTTP client for the API"""
-    if cancellation_token.is_canceled:
-        raise Exception("Request canceled")
-
     if config.username and config.password:
         auth = httpx.BasicAuth(config.username, config.password)
         return httpx.AsyncClient(base_url=config.base_url, auth=auth)
@@ -76,7 +73,8 @@ class QueryTool(BaseTool):
     async def run(self, args: QueryInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {"query": args.query}
-            return await client.get("/query", params=params)
+            response = await client.get("/query", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryTool":
@@ -110,7 +108,9 @@ class QueryRangeTool(BaseTool):
                 "step": str(args.step),
                 "timeout": args.timeout,
             }
-            return await client.get("/query_range", params=params)
+            response = await client.get("/query_range", params=params)
+            return response.json()
+
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryRangeTool":
@@ -143,7 +143,7 @@ class SeriesQueryTool(BaseTool):
                 "limit": args.limit,
             }
             result = await client.get("/series", params=params)
-            return result.get("data", [])
+            return result.json().get("data", [])
 
     @classmethod
     def _from_config(cls, config: Config) -> "SeriesQueryTool":
@@ -176,7 +176,7 @@ class LabelNamesTool(BaseTool):
                 "limit": args.limit,
             }
             result = await client.get("/labels", params=params)
-            return result.get("data", [])
+            return result.json().get("data", [])
 
     @classmethod
     def _from_config(cls, config: Config) -> "LabelNamesTool":
@@ -211,7 +211,7 @@ class LabelValuesTool(BaseTool):
                 "limit": args.limit,
             }
             result = await client.get(f"/label/{encoded_label}/values", params=params)
-            return result.get("data", [])
+            return result.json().get("data", [])
 
     @classmethod
     def _from_config(cls, config: Config) -> "LabelValuesTool":
@@ -245,7 +245,8 @@ class TargetsTool(BaseTool):
                 "state": args.state.value if args.state else None,
                 "scrape_pool": args.scrape_pool,
             }
-            return await client.get("/targets", params=params)
+            response = await client.get("/targets", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "TargetsTool":
@@ -285,7 +286,8 @@ class RulesTool(BaseTool):
                 "group_limit": args.group_limit,
                 "group_next_token": args.group_next_token,
             }
-            return await client.get("/rules", params=params)
+            response = await client.get("/rules", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "RulesTool":
@@ -310,7 +312,8 @@ class AlertsTool(BaseTool):
 
     async def run(self, args: AlertsInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/alerts")
+            response = await client.get("/alerts")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "AlertsTool":
@@ -341,7 +344,7 @@ class TargetMetadataTool(BaseTool):
                 "limit": args.limit,
             }
             result = await client.get("/targets/metadata", params=params)
-            return result.get("data", [])
+            return result.json().get("data", [])
 
     @classmethod
     def _from_config(cls, config: Config) -> "TargetMetadataTool":
@@ -364,7 +367,8 @@ class AlertmanagersTool(BaseTool):
 
     async def run(self, args: AlertmanagersInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/alertmanagers")
+            response = await client.get("/alertmanagers")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "AlertmanagersTool":
@@ -395,7 +399,7 @@ class MetadataTool(BaseTool):
                 "limit_per_metric": args.limit_per_metric,
             }
             result = await client.get("/metadata", params=params)
-            return result.get("data", {})
+            return result.json().get("data", {})
 
     @classmethod
     def _from_config(cls, config: Config) -> "MetadataTool":
@@ -418,7 +422,8 @@ class StatusConfigTool(BaseTool):
 
     async def run(self, args: StatusConfigInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/config")
+            response = await client.get("/status/config")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "StatusConfigTool":
@@ -441,7 +446,9 @@ class StatusFlagsTool(BaseTool):
 
     async def run(self, args: StatusFlagsInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/flags")
+            response = await client.get("/status/flags")
+            return response.json()
+
 
     @classmethod
     def _from_config(cls, config: Config) -> "StatusFlagsTool":
@@ -464,7 +471,8 @@ class RuntimeInfoTool(BaseTool):
 
     async def run(self, args: RuntimeInfoInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/runtimeinfo")
+            response = await client.get("/status/runtimeinfo")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "RuntimeInfoTool":
@@ -487,7 +495,8 @@ class BuildInfoTool(BaseTool):
 
     async def run(self, args: BuildInfoInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/buildinfo")
+            response = await client.get("/status/buildinfo")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "BuildInfoTool":
@@ -511,7 +520,8 @@ class TSDBStatusTool(BaseTool):
     async def run(self, args: TSDBStatusInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {"limit": args.limit} if args.limit is not None else None
-            return await client.get("/status/tsdb", params=params)
+            response = await client.get("/status/tsdb", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "TSDBStatusTool":
@@ -535,7 +545,8 @@ class CreateSnapshotTool(BaseTool):
     async def run(self, args: CreateSnapshotInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {"skip_head": "true" if args.skip_head else None}
-            return await client.post("/admin/tsdb/snapshot", content=params)
+            response = await client.post("/admin/tsdb/snapshot", content=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "CreateSnapshotTool":
@@ -565,7 +576,8 @@ class DeleteSeriesTool(BaseTool):
                 "start": client._format_time(args.start) if args.start else None,
                 "end": client._format_time(args.end) if args.end else None,
             }
-            await client.post("/admin/tsdb/delete_series", content=params)
+            response = client.post("/admin/tsdb/delete_series", content=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "DeleteSeriesTool":
@@ -588,7 +600,8 @@ class CleanTombstonesTool(BaseTool):
 
     async def run(self, args: CleanTombstonesInput, cancellation_token: CancellationToken) -> None:
         async with get_http_client(self.config, cancellation_token) as client:
-            await client.post("/admin/tsdb/clean_tombstones")
+            response = await client.post("/admin/tsdb/clean_tombstones")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "CleanTombstonesTool":
@@ -611,7 +624,8 @@ class WALReplayTool(BaseTool):
 
     async def run(self, args: WALReplayInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/walreplay")
+            response = await client.get("/status/walreplay")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "WALReplayTool":
@@ -634,7 +648,8 @@ class NotificationsTool(BaseTool):
 
     async def run(self, args: NotificationsInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/notifications")
+            response = await client.get("/notifications")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "NotificationsTool":
