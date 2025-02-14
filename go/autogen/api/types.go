@@ -220,16 +220,7 @@ type ToolComponent struct {
 	Label         *string    `json:"label,omitempty"`
 }
 
-type ToolConfig struct {
-	SourceCode             string        `json:"source_code"`
-	Name                   string        `json:"name"`
-	Description            string        `json:"description"`
-	GlobalImports          []interface{} `json:"global_imports"`
-	HasCancellationSupport bool          `json:"has_cancellation_support"`
-
-	// for BUILTIN TOOL type
-	FnName string `json:"fn_name,omitempty"`
-}
+type ToolConfig struct{}
 
 // ChatCompletionContext Configuration
 type ChatCompletionContextComponent struct {

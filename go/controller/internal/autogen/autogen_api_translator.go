@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -22,18 +21,13 @@ type AutogenApiTranslator interface {
 
 type autogenApiTranslator struct {
 	kube client.Client
-
-	// map of tool ref to builtin function name
-	builtinTools syncutils.AtomicMap[string, string]
 }
 
 func NewAutogenApiTranslator(
 	kube client.Client,
-	builtinTools syncutils.AtomicMap[string, string],
 ) AutogenApiTranslator {
 	return &autogenApiTranslator{
-		kube:         kube,
-		builtinTools: builtinTools,
+		kube: kube,
 	}
 }
 
@@ -105,20 +99,16 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		//TODO: currently only supports builtin tools
 		var tools []api.ToolComponent
 		for _, toolRef := range agent.Spec.Tools {
-			// fetch fn name from builtin tools
-			fnName, ok := a.builtinTools.Get(toolRef)
-			if !ok {
-				return nil, fmt.Errorf("builtin tool %s not found", toolRef)
+			toolProvider, toolConfig, err := translateToolConfig(ctx, a.kube, toolRef, team.Namespace)
+			if err != nil {
+				return nil, err
 			}
 
 			tool := api.ToolComponent{
-				Provider:      "autogen_agentchat.tools.BuiltinTool",
+				Provider:      toolProvider,
 				ComponentType: "tool",
 				Version:       makePtr(1),
-				//ComponentVersion: 1,
-				Component: api.ToolConfig{
-					FnName: fnName,
-				},
+				Component:     toolConfig,
 			}
 			tools = append(tools, tool)
 		}
@@ -178,6 +168,18 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 			},
 		},
 	}, nil
+}
+
+func translateToolConfig(
+	ctx context.Context,
+	kube client.Client,
+	ref string,
+	namespace string,
+) (string, api.ToolConfig, error) {
+	// right now we only support builtin tools, so we just return the ref
+	// later this can fetch user-defined tools from k8s and translate them
+	// to autogen-compatible tools
+	return ref, api.ToolConfig{}, nil
 }
 
 func makePtr[T any](v T) *T {

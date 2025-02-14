@@ -56,7 +56,30 @@ var _ = Describe("E2e", func() {
 			},
 		}
 
-		participant1 := &v1alpha1.AutogenAgent{
+		kubectlUser := &v1alpha1.AutogenAgent{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kubectl-user",
+				Namespace: namespace,
+			},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AutogenAgent",
+				APIVersion: "agent.ai.solo.io/v1alpha1",
+			},
+			Spec: v1alpha1.AutogenAgentSpec{
+				Name:          "Kubernetes CLI Execution Agent",
+				Description:   "The Kubectl User is responsible for running kubectl commands corresponding to user requests.",
+				SystemMessage: readFileAsString("systemprompts/kubectl-user-system-prompt.txt"),
+				Tools: []string{
+					string(v1alpha1.BuiltinTool_KubectlGetPods),
+					string(v1alpha1.BuiltinTool_KubectlGetServices),
+					string(v1alpha1.BuiltinTool_KubectlApplyManifest),
+					string(v1alpha1.BuiltinTool_KubectlGetResources),
+					string(v1alpha1.BuiltinTool_KubectlGetPodLogs),
+				},
+			},
+		}
+
+		kubeExpert := &v1alpha1.AutogenAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kube-expert",
 				Namespace: namespace,
@@ -66,27 +89,9 @@ var _ = Describe("E2e", func() {
 				APIVersion: "agent.ai.solo.io/v1alpha1",
 			},
 			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "kubernetesExpert",
-				Description:   "The Kubernetes Expert is responsible for solving Kubernetes related problems",
+				Name:          "Kubernetes Expert AI Agent",
+				Description:   "The Kubernetes Expert AI Agent specializing in cluster operations, troubleshooting, and maintenance.",
 				SystemMessage: readFileAsString("systemprompts/kube-expert-system-prompt.txt"),
-				Tools:         nil,
-			},
-		}
-
-		participant2 := &v1alpha1.AutogenAgent{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "prometheus-expert",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenAgent",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
-			},
-			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "prometheusExpert",
-				Description:   "The Prometheus Expert is responsible for solving Prometheus related problems",
-				SystemMessage: readFileAsString("systemprompts/prometheus-expert-system-prompt.txt"),
-				Tools:         nil,
 			},
 		}
 
@@ -101,10 +106,10 @@ var _ = Describe("E2e", func() {
 			},
 			Spec: v1alpha1.AutogenTeamSpec{
 				Participants: []string{
-					participant1.Name,
-					participant2.Name,
+					kubectlUser.Name,
+					kubeExpert.Name,
 				},
-				Description: "a team that debugs kubernetes and prometheus issues",
+				Description: "A team that debugs kubernetes issues.",
 				SelectorTeamConfig: v1alpha1.SelectorTeamConfig{
 					ModelConfig: modelConfig.Name,
 				},
@@ -115,7 +120,7 @@ var _ = Describe("E2e", func() {
 			},
 		}
 
-		writeKubeObjects(apikeySecret, modelConfig, participant1, participant2, apiTeam)
+		writeKubeObjects(apikeySecret, modelConfig, kubeExpert, kubectlUser, apiTeam)
 
 		Expect(true).To(BeTrue())
 	})
