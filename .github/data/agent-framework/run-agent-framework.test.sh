@@ -10,8 +10,11 @@ CLUSTER1=cluster1
 test_dir=$(pwd)
 # Loop through each challenge defined in the .github/data/agent-framework directory
 for scenario_dir in *; do
+  if [ ! -d "$scenario_dir" ]; then
+    continue
+  fi
   pushd $scenario_dir
-  npm i
+  pnpm i || npm i
   echo "pwd=$(pwd)"
   for challenge_file in *.yaml; do
     # Extract the challenge name and description from the YAML metadata file
@@ -44,6 +47,7 @@ for scenario_dir in *; do
         done
         sh "$challenge_file".$i.sh
     done
+    rm -f "$challenge_file".*.sh
     echo "Waiting for pods to be stable..."
     # while kubectl --context ${CLUSTER1} get pods -A | grep ContainerCreating; do sleep 5; done
     while kubectl --context ${CLUSTER1} get pods -A | grep Terminating; do sleep 5; done
@@ -57,6 +61,7 @@ for scenario_dir in *; do
     ############# BEGIN CHANGE THIS FOR YOUR OWN RESOLUTION TOOL
     log "Trying to fix the broken environment using the Agent Framework..."
     #pnpm start:cli -p "${USER_PROMPT}" -u -f kubernetesExpert > $test_dir/$NAME.thought.log
+    echo "Thought process of AI agent: [...]" > $test_dir/$NAME.thought.log
     ############# END CHANGE THIS FOR YOUR OWN RESOLUTION TOOL
     popd
 
@@ -64,10 +69,12 @@ for scenario_dir in *; do
     kubectl --context ${CLUSTER1} get pods -A
     if mocha ./test.js --timeout 10000; then
       log "---------------> challenge SUCCESSFUL <------------------"
-      touch $test_dir/$NAME.success
+      rm -f $test_dir/$NAME.failure
+      mv $test_dir/$NAME.thought.log $test_dir/$NAME.success || touch $test_dir/$NAME.success
     else
       log "---------------> challenge FAILED <----------------------"
-      touch $test_dir/$NAME.failure
+      rm -f $test_dir/$NAME.success
+      mv $test_dir/$NAME.thought.log $test_dir/$NAME.failure || touch $test_dir/$NAME.failure
     fi
   done
   popd
