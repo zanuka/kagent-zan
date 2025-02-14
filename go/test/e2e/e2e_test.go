@@ -69,13 +69,6 @@ var _ = Describe("E2e", func() {
 				Name:          "planning_agent",
 				Description:   "The Planning Agent is responsible for planning and scheduling tasks. The planning agent is also responsible for deciding when the user task has been accomplished and terminating the conversation.",
 				SystemMessage: readFileAsString("systemprompts/planning-agent-system-prompt.txt"),
-				Tools: []string{
-					string(v1alpha1.BuiltinTool_KubectlGetPods),
-					string(v1alpha1.BuiltinTool_KubectlGetServices),
-					string(v1alpha1.BuiltinTool_KubectlApplyManifest),
-					string(v1alpha1.BuiltinTool_KubectlGetResources),
-					string(v1alpha1.BuiltinTool_KubectlGetPodLogs),
-				},
 			},
 		}
 
@@ -147,6 +140,7 @@ var _ = Describe("E2e", func() {
 		}
 
 		writeKubeObjects(
+			"manifests/kubeobjects.yaml",
 			apikeySecret,
 			modelConfig,
 			planningAgent,
@@ -159,7 +153,7 @@ var _ = Describe("E2e", func() {
 	})
 })
 
-func writeKubeObjects(objects ...metav1.Object) {
+func writeKubeObjects(file string, objects ...metav1.Object) {
 	var bytes []byte
 	for _, obj := range objects {
 		data, err := yaml.Marshal(obj)
@@ -168,7 +162,7 @@ func writeKubeObjects(objects ...metav1.Object) {
 		bytes = append(bytes, []byte("---\n")...)
 	}
 
-	err := os.WriteFile("manifests/kubeobjects.yaml", bytes, 0644)
+	err := os.WriteFile(file, bytes, 0644)
 	Expect(err).NotTo(HaveOccurred())
 }
 
