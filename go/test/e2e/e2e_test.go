@@ -66,7 +66,7 @@ var _ = Describe("E2e", func() {
 				APIVersion: "agent.ai.solo.io/v1alpha1",
 			},
 			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "Kubernetes CLI Execution Agent",
+				Name:          "kubectl_execution_agent",
 				Description:   "The Kubectl User is responsible for running kubectl commands corresponding to user requests.",
 				SystemMessage: readFileAsString("systemprompts/kubectl-user-system-prompt.txt"),
 				Tools: []string{
@@ -89,7 +89,7 @@ var _ = Describe("E2e", func() {
 				APIVersion: "agent.ai.solo.io/v1alpha1",
 			},
 			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "Kubernetes Expert AI Agent",
+				Name:          "kubernetes_expert_agent",
 				Description:   "The Kubernetes Expert AI Agent specializing in cluster operations, troubleshooting, and maintenance.",
 				SystemMessage: readFileAsString("systemprompts/kube-expert-system-prompt.txt"),
 			},

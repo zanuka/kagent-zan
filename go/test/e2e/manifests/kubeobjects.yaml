@@ -28,7 +28,7 @@ metadata:
 spec:
   description: The Kubernetes Expert AI Agent specializing in cluster operations,
     troubleshooting, and maintenance.
-  name: Kubernetes Expert AI Agent
+  name: kubernetes_expert_agent
   systemMessage: |-
     You are a Kubernetes Expert AI Agent specializing in cluster operations, troubleshooting, and maintenance. You possess deep knowledge of Kubernetes architecture, components, and best practices, with a focus on helping users resolve complex operational challenges while maintaining security and stability.
 
@@ -190,7 +190,7 @@ metadata:
 spec:
   description: The Kubectl User is responsible for running kubectl commands corresponding
     to user requests.
-  name: Kubernetes CLI Execution Agent
+  name: kubectl_execution_agent
   systemMessage: |-
     You are a Kubernetes CLI Execution Agent specialized in running kubectl commands to fetch and analyze data from Kubernetes clusters. Your primary focus is on executing read-only operations safely and providing structured output for analysis.
 

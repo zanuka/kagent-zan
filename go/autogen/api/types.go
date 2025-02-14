@@ -129,7 +129,7 @@ type AgentConfig struct {
 	ToResizeViewport  *bool           `json:"to_resize_viewport,omitempty"`
 
 	// AssistantAgentConfig fields
-	Tools                 []ToolComponent                 `json:"tools,omitempty"`
+	Tools                 []ToolComponent                 `json:"tools"`
 	ModelContext          *ChatCompletionContextComponent `json:"model_context,omitempty"`
 	SystemMessage         *string                         `json:"system_message,omitempty"`
 	ReflectOnToolUse      bool                            `json:"reflect_on_tool_use"`

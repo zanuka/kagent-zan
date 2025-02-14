@@ -25,7 +25,7 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY .python-version .
 COPY uv.lock .
-COPY src .
+COPY src src
 COPY README.md .
 
 # Install dependencies using uv
