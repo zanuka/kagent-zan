@@ -43,7 +43,7 @@ interface ChatInterfaceProps {
   selectedAgentTeam?: Team | null;
   selectedSession?: Session;
   selectedRun?: Run;
-  onNewSession: (session: Session, run: Run) => void;
+  onNewSession: (session: Session, run: Run, options?: { navigate?: boolean }) => void;
   isReadOnly?: boolean
 }
 
@@ -136,10 +136,10 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
         setCurrentSession(newSession);
       }
 
-      const initialMessage = createMessage({ content: message, source: "user" }, run.run_id, currentSession?.id || newSession.id || 0, userId);
+      const initialMessage = createMessage({ content: message, source: "user" }, run.id, currentSession?.id || newSession.id || 0, userId);
 
       const newRun = {
-        id: run.run_id,
+        id: run.id,
         created_at: new Date().toISOString(),
         status: "active" as RunStatus,
         task: initialMessage.config,
@@ -149,23 +149,24 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
       };
 
       // signal back so we can update the sidebar
-      onNewSession(newSession, newRun);
+      onNewSession(newSession, newRun, { navigate:false});
       setCurrentRun(newRun);
 
       // Setup the websocket
-      const wsUrl = `${getWebSocketUrl()}/ws/runs/${run.run_id}`;
+      const wsUrl = `${getWebSocketUrl()}/ws/runs/${run.id}`;
       const socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {
         setActiveSocket(socket);
         activeSocketRef.current = socket;
 
-        socket.send(
-          JSON.stringify({
+        const startMessage = {
             type: "start",
             task: message,
             team_config: selectedAgentTeam?.component,
-          })
+        }
+        socket.send(
+          JSON.stringify(startMessage)
         );
       };
 
@@ -264,6 +265,10 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
             status: current.status === "stopped" ? "stopped" : "awaiting_input",
             messages: current.messages,
           };
+
+        case "system":
+            console.log('System message:', message.data);
+            return current;
 
         default:
           console.warn("Unhandled message type:", message.type);

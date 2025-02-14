@@ -245,7 +245,7 @@ export interface SessionRuns {
 }
 
 export interface WebSocketMessage {
-  type: "message" | "result" | "completion" | "input_request" | "error" | "llm_call_event";
+  type: "message" | "result" | "completion" | "input_request" | "error" | "llm_call_event" | "system";
   data?: AgentMessageConfig | TaskResult;
   status?: RunStatus;
   error?: string;

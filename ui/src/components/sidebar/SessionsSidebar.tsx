@@ -13,12 +13,11 @@ interface SessionsSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   sessions?: SessionWithRuns[];
-  onDeleteRun: (sessionId: number, runId: string) => Promise<void>;
+  onDeleteSession: (sessionId: number) => Promise<void>;
   onViewRun: (sessionId: number, runId: string) => Promise<void>;
-  setShowTeamSelector: (show: boolean) => void;
 }
 
-export default function SessionsSidebar({ isOpen, onToggle, sessions = [], onDeleteRun, onViewRun, setShowTeamSelector }: SessionsSidebarProps) {
+export default function SessionsSidebar({ isOpen, onToggle, sessions = [], onDeleteSession, onViewRun }: SessionsSidebarProps) {
   const { userId } = useUserStore();
   const [showSettings, setShowSettings] = useState(false);
 
@@ -85,18 +84,18 @@ export default function SessionsSidebar({ isOpen, onToggle, sessions = [], onDel
           <div className="flex-1 flex flex-col">
             {!hasNoSessions && (
               <div className="p-4">
-                <ActionButtons setShowTeamSelector={setShowTeamSelector} />
+                <ActionButtons />
               </div>
             )}
 
             <ScrollArea className="flex-1 overflow-y-auto">
               {hasNoSessions ? (
-                <EmptyState setShowTeamSelector={setShowTeamSelector} />
+                <EmptyState />
               ) : (
                 <div className="space-y-8 p-2">
-                  {groupedSessions.today.length > 0 && <SessionGroup title="Today" sessions={groupedSessions.today} onViewRun={onViewRun} onDeleteRun={onDeleteRun} />}
-                  {groupedSessions.yesterday.length > 0 && <SessionGroup title="Yesterday" sessions={groupedSessions.yesterday} onViewRun={onViewRun} onDeleteRun={onDeleteRun} />}
-                  {groupedSessions.older.length > 0 && <SessionGroup title="Older" sessions={groupedSessions.older} onViewRun={onViewRun} onDeleteRun={onDeleteRun} />}
+                  {groupedSessions.today.length > 0 && <SessionGroup title="Today" sessions={groupedSessions.today} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
+                  {groupedSessions.yesterday.length > 0 && <SessionGroup title="Yesterday" sessions={groupedSessions.yesterday} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
+                  {groupedSessions.older.length > 0 && <SessionGroup title="Older" sessions={groupedSessions.older} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
                 </div>
               )}
             </ScrollArea>
