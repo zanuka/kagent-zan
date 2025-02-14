@@ -1,0 +1,23 @@
+apiVersion: agent-framework.solo.io/v1alpha1
+kind: Challenge
+metadata:
+  name: pod-resource-quota-exceeded
+spec:
+  description: Namespace resource quota is exceeded, pod cannot be created
+  prompt: |
+    There is a kubernetes cluster running in context 'cluster1'.
+    Calling the frontend service at http://frontend-v1:8080 I see backend-v2 pods stuck in pending state due to quota.
+    You can find a mocha file 'test.js' in the directory $(git rev-parse --show-toplevel)/.github/data/agent-framework/scenario1
+  steps:
+    - run: |
+        kubectl apply --context ${CLUSTER1} -f - <<EOF
+        apiVersion: v1
+        kind: ResourceQuota
+        metadata:
+          name: pod-quota
+          namespace: default
+        spec:
+          hard:
+            pods: "1"
+        EOF
+        kubectl --context ${CLUSTER1} delete rs -l "app=backend,version=v2"
