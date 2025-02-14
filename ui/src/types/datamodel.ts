@@ -76,9 +76,8 @@ export interface FunctionToolConfig {
   global_imports: any[]; // Sequence[Import] equivalent
   has_cancellation_support: boolean;
 }
-
-export interface BuiltInToolConfig {
-  fn_name: string;
+export interface KAgentToolConfig {
+  // Nothing for now, but this is where the config would go
 }
 
 // Provider-based Configs
@@ -197,7 +196,7 @@ export type AgentConfig = MultimodalWebSurferConfig | AssistantAgentConfig | Use
 
 export type ModelConfig = OpenAIClientConfig | AzureOpenAIClientConfig;
 
-export type ToolConfig = FunctionToolConfig | BuiltInToolConfig;
+export type ToolConfig = FunctionToolConfig | KAgentToolConfig;
 
 export type ChatCompletionContextConfig = UnboundedChatCompletionContextConfig;
 
