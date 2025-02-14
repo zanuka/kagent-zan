@@ -18,7 +18,10 @@ COLLECTION_NAME = "documentation"
 PRODUCT_DB_MAP = {
     "kubernetes": "kubernetes.db",
     "istio": "istio.db",
-    "argo": "argo.db"}
+    "argo": "argo.db",
+    "helm": "helm.db",
+    "prometheus": "prometheus.db",
+}
 
 
 class QueryResult:
@@ -63,14 +66,14 @@ class SQLiteDownloader:
             db_url = f"{self.base_url}/{db_filename}"
 
             try:
-                logging.error(f"Downloading database for {product_name} from {db_url}")
+                logging.debug(f"Downloading database for {product_name} from {db_url}")
                 response = requests.get(db_url, stream=True)
                 response.raise_for_status()
 
                 with open(db_path, "wb") as f:
                     for chunk in response.iter_content(chunk_size=8192):
                         f.write(chunk)
-                logging.error(f"Successfully downloaded database for {product_name}")
+                logging.debug(f"Successfully downloaded database for {product_name}")
 
             except requests.exceptions.RequestException as e:
                 logging.error(f"Error downloading database for {product_name}: {e}", file=sys.stderr)
