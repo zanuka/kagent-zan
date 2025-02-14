@@ -78,13 +78,13 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		ComponentType: "model",
 		Version:       makePtr(1),
 		//ComponentVersion: 1,
-		Component: api.ModelConfig{
+		Config: api.ModelConfig{
 			Model:  modelConfig.Spec.Model,
 			APIKey: makePtr(string(modelApiKey)),
 		},
 	}
 
-	var participants []api.AgentComponent
+	var participants []api.TeamParticipant
 	for _, agentName := range team.Spec.Participants {
 		agent := &v1alpha1.AutogenAgent{}
 		err := fetchObjKube(
@@ -110,7 +110,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 				Provider:      toolProvider,
 				ComponentType: "tool",
 				Version:       makePtr(1),
-				Component:     toolConfig,
+				Config:        toolConfig,
 			}
 			tools = append(tools, tool)
 		}
@@ -119,14 +119,14 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		if agent.Spec.SystemMessage == "" {
 			sysMsgPtr = nil
 		}
-		participant := api.AgentComponent{
+		participant := api.TeamParticipant{
 			//TODO: currently only supports assistant agents
 			Provider:      "autogen_agentchat.agents.AssistantAgent",
 			ComponentType: "agent",
 			Version:       makePtr(1),
 			Description:   makePtr(agent.Spec.Description),
 			//ComponentVersion: 1,
-			Component: api.AgentConfig{
+			Config: api.AgentConfig{
 				Name:        agent.Spec.Name,
 				ModelClient: modelClient,
 				Tools:       tools,
@@ -218,7 +218,7 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Component: api.TerminationConfig{
+			Config: api.TerminationConfig{
 				MaxMessages: makePtr(terminationCondition.MaxMessageTermination.MaxMessages),
 			},
 		}, nil
@@ -228,7 +228,7 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Component: api.TerminationConfig{
+			Config: api.TerminationConfig{
 				Text: makePtr(terminationCondition.TextMentionTermination.Text),
 			},
 		}, nil
@@ -251,7 +251,7 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Component: api.TerminationConfig{
+			Config: api.TerminationConfig{
 				Conditions: conditions,
 			},
 		}, nil
