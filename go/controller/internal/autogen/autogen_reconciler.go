@@ -122,6 +122,18 @@ func (a *autogenReconciler) reconcileTeams(ctx context.Context, teams ...*v1alph
 }
 
 func (a *autogenReconciler) upsertTeam(team *api.Team) error {
+	// delete if team exists
+	existingTeam, err := a.autogenClient.GetTeam(team.Component.Label, GlobalUserID)
+	if err != nil {
+		return fmt.Errorf("failed to get existing team %s: %v", team.Component.Label, err)
+	}
+	if existingTeam != nil {
+		err = a.autogenClient.DeleteTeam(team.ID, GlobalUserID)
+		if err != nil {
+			return fmt.Errorf("failed to delete existing team %s: %v", team.Component.Label, err)
+		}
+	}
+
 	return a.autogenClient.CreateTeam(team)
 }
 

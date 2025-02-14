@@ -235,7 +235,6 @@ func main() {
 
 	apiTranslator := autogen.NewAutogenApiTranslator(
 		kubeClient,
-		builtinTools,
 	)
 
 	autogenReconciler := autogen.NewAutogenReconciler(

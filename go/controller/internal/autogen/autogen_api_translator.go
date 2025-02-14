@@ -12,6 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const GlobalUserID = "guestuser@gmail.com"
+
 type AutogenApiTranslator interface {
 	TranslateSelectorGroupChat(
 		ctx context.Context,
@@ -151,7 +153,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 
 	return &api.Team{
 		ID:     generateIdFromString(team.Name + "-" + team.Namespace),
-		UserID: "guestuser@gmail.com", // always use global id
+		UserID: GlobalUserID, // always use global id
 		Component: api.TeamComponent{
 			Provider:         "autogen_agentchat.teams.SelectorGroupChat",
 			ComponentType:    "team",
