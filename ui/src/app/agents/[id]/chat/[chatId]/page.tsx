@@ -29,7 +29,7 @@ export default function AgentChatLayout() {
   const [error, setError] = useState<string | null>(null);
 
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
 
   useEffect(() => {
     // Clean up the stored session/run data after they're loaded by AgentChatLayout

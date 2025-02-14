@@ -1,5 +1,6 @@
 import { MessageSquare, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 const EmptyState = () => (
   <div className="h-full flex flex-col items-center justify-center p-8 text-center">
@@ -12,12 +13,14 @@ const EmptyState = () => (
   </div>
 );
 
-const ActionButtons = () => (
-  <div className="space-y-3">
-    <Button variant="secondary" className="w-full  transition-colors gap-2">
+const ActionButtons = () => {
+  const router = useRouter();
+  
+  return <div className="space-y-3">
+    <Button variant="secondary" onClick={() => router.push("/") } className="w-full  transition-colors gap-2">
       <Users className="h-4 w-4" />
       Switch Agent
     </Button>
   </div>
-);
+};
 export { EmptyState, ActionButtons };
