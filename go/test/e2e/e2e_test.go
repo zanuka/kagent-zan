@@ -56,6 +56,29 @@ var _ = Describe("E2e", func() {
 			},
 		}
 
+		planningAgent := &v1alpha1.AutogenAgent{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "planning-agent",
+				Namespace: namespace,
+			},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AutogenAgent",
+				APIVersion: "agent.ai.solo.io/v1alpha1",
+			},
+			Spec: v1alpha1.AutogenAgentSpec{
+				Name:          "planning_agent",
+				Description:   "The Planning Agent is responsible for planning and scheduling tasks. The planning agent is also responsible for deciding when the user task has been accomplished and terminating the conversation.",
+				SystemMessage: readFileAsString("systemprompts/planning-agent-system-prompt.txt"),
+				Tools: []string{
+					string(v1alpha1.BuiltinTool_KubectlGetPods),
+					string(v1alpha1.BuiltinTool_KubectlGetServices),
+					string(v1alpha1.BuiltinTool_KubectlApplyManifest),
+					string(v1alpha1.BuiltinTool_KubectlGetResources),
+					string(v1alpha1.BuiltinTool_KubectlGetPodLogs),
+				},
+			},
+		}
+
 		kubectlUser := &v1alpha1.AutogenAgent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kubectl-user",
@@ -106,21 +129,31 @@ var _ = Describe("E2e", func() {
 			},
 			Spec: v1alpha1.AutogenTeamSpec{
 				Participants: []string{
+					planningAgent.Name,
 					kubectlUser.Name,
 					kubeExpert.Name,
 				},
 				Description: "A team that debugs kubernetes issues.",
 				SelectorTeamConfig: v1alpha1.SelectorTeamConfig{
-					ModelConfig: modelConfig.Name,
+					ModelConfig:    modelConfig.Name,
+					SelectorPrompt: "Please select a team member to help you with your Kubernetes issue.",
 				},
 				TerminationCondition: v1alpha1.TerminationCondition{
-					MaxMessageTermination: &v1alpha1.MaxMessageTermination{MaxMessages: 10},
+					MaxMessageTermination:  &v1alpha1.MaxMessageTermination{MaxMessages: 10},
+					TextMentionTermination: &v1alpha1.TextMentionTermination{Text: "TERMINATE"},
 				},
 				MaxTurns: 10,
 			},
 		}
 
-		writeKubeObjects(apikeySecret, modelConfig, kubeExpert, kubectlUser, apiTeam)
+		writeKubeObjects(
+			apikeySecret,
+			modelConfig,
+			planningAgent,
+			kubeExpert,
+			kubectlUser,
+			apiTeam,
+		)
 
 		Expect(true).To(BeTrue())
 	})

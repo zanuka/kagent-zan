@@ -27,11 +27,11 @@ rules:
   - get
   - patch
   - update
-# get list watch secrets
+# get list watch core resources
 - apiGroups:
   - ""
   resources:
-  - secrets
+  - "*"
   verbs:
   - get
   - list
