@@ -44,15 +44,21 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 	magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
 
 	var modelConfigName string
-	var selectorPrompt string
 	var groupChatType string
+	var teamConfig api.TeamConfig
 	if selectorTeamConfig != nil {
 		modelConfigName = selectorTeamConfig.ModelConfig
-		selectorPrompt = selectorTeamConfig.SelectorPrompt
+		teamConfig.SelectorPrompt = selectorTeamConfig.SelectorPrompt
 		groupChatType = "SelectorGroupChat"
 	} else if magenticOneTeamConfig != nil {
 		modelConfigName = magenticOneTeamConfig.ModelConfig
 		groupChatType = "MagenticOneGroupChat"
+		teamConfig.MaxStalls = magenticOneTeamConfig.MaxStalls
+		if teamConfig.MaxStalls == 0 {
+			// default to 3
+			teamConfig.MaxStalls = 3
+		}
+		teamConfig.FinalAnswerPrompt = magenticOneTeamConfig.FinalAnswerPrompt
 	} else {
 		return nil, fmt.Errorf("no model config specified")
 	}
@@ -90,7 +96,7 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 		return nil, fmt.Errorf("model api key not found")
 	}
 
-	modelClient := &api.ModelComponent{
+	teamConfig.ModelClient = &api.ModelComponent{
 		Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
 		ComponentType: "model",
 		Version:       makePtr(1),
@@ -145,7 +151,7 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 			//ComponentVersion: 1,
 			Config: api.AgentConfig{
 				Name:        agent.Spec.Name,
-				ModelClient: modelClient,
+				ModelClient: teamConfig.ModelClient,
 				Tools:       tools,
 				ModelContext: &api.ChatCompletionContextComponent{
 					Provider:      "autogen_core.model_context.UnboundedChatCompletionContext",
@@ -162,11 +168,13 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 		}
 		participants = append(participants, participant)
 	}
+	teamConfig.Participants = participants
 
 	terminationCondition, err := translateTerminationCondition(team.Spec.TerminationCondition)
 	if err != nil {
 		return nil, err
 	}
+	teamConfig.TerminationCondition = terminationCondition
 
 	return &api.Team{
 		ID:     generateIdFromString(team.Name + "-" + team.Namespace),
@@ -178,13 +186,7 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 			ComponentVersion: 1,
 			Description:      makePtr(team.Spec.Description),
 			Label:            team.Name,
-			Config: api.TeamConfig{
-				Participants:         participants,
-				ModelClient:          modelClient,
-				TerminationCondition: terminationCondition,
-				SelectorPrompt:       selectorPrompt,
-				AllowRepeatedSpeaker: false,
-			},
+			Config:           teamConfig,
 		},
 	}, nil
 }

@@ -41,7 +41,9 @@ type SelectorTeamConfig struct {
 }
 
 type MagenticOneTeamConfig struct {
-	ModelConfig string `json:"modelConfig"`
+	ModelConfig       string `json:"modelConfig"`
+	MaxStalls         int    `json:"maxStalls"`
+	FinalAnswerPrompt string `json:"finalAnswerPrompt"`
 }
 
 type TerminationCondition struct {

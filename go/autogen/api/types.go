@@ -77,10 +77,13 @@ type TeamConfig struct {
 	TerminationCondition *TerminationComponent `json:"termination_condition,omitempty"`
 	MaxTurns             *int                  `json:"max_turns,omitempty"`
 
+	ModelClient *ModelComponent `json:"model_client,omitempty"`
 	// SelectorGroupChat specific fields
-	ModelClient          *ModelComponent `json:"model_client,omitempty"`
-	SelectorPrompt       string          `json:"selector_prompt"`
-	AllowRepeatedSpeaker bool            `json:"allow_repeated_speaker"`
+	SelectorPrompt       string `json:"selector_prompt"`
+	AllowRepeatedSpeaker bool   `json:"allow_repeated_speaker"`
+	// MagentoOneGroupChat specific fields
+	MaxStalls         int    `json:"max_stalls"`
+	FinalAnswerPrompt string `json:"final_answer_prompt"`
 }
 
 // Config types
