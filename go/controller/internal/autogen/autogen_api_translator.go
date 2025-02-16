@@ -15,7 +15,7 @@ import (
 const GlobalUserID = "guestuser@gmail.com"
 
 type AutogenApiTranslator interface {
-	TranslateSelectorGroupChat(
+	TranslateGroupChat(
 		ctx context.Context,
 		team *v1alpha1.AutogenTeam,
 	) (*api.Team, error)
@@ -33,18 +33,35 @@ func NewAutogenApiTranslator(
 	}
 }
 
-func (a *autogenApiTranslator) TranslateSelectorGroupChat(
+func (a *autogenApiTranslator) TranslateGroupChat(
 	ctx context.Context,
 	team *v1alpha1.AutogenTeam,
 ) (*api.Team, error) {
 
 	// get model config
 	modelConfig := &v1alpha1.AutogenModelConfig{}
+	selectorTeamConfig := team.Spec.SelectorTeamConfig
+	magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
+
+	var modelConfigName string
+	var selectorPrompt string
+	var groupChatType string
+	if selectorTeamConfig != nil {
+		modelConfigName = selectorTeamConfig.ModelConfig
+		selectorPrompt = selectorTeamConfig.SelectorPrompt
+		groupChatType = "SelectorGroupChat"
+	} else if magenticOneTeamConfig != nil {
+		modelConfigName = magenticOneTeamConfig.ModelConfig
+		groupChatType = "MagenticOneGroupChat"
+	} else {
+		return nil, fmt.Errorf("no model config specified")
+	}
+
 	err := fetchObjKube(
 		ctx,
 		a.kube,
 		modelConfig,
-		team.Spec.SelectorTeamConfig.ModelConfig,
+		modelConfigName,
 		team.Namespace,
 	)
 	if err != nil {
@@ -155,7 +172,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		ID:     generateIdFromString(team.Name + "-" + team.Namespace),
 		UserID: GlobalUserID, // always use global id
 		Component: api.TeamComponent{
-			Provider:         "autogen_agentchat.teams.SelectorGroupChat",
+			Provider:         "autogen_agentchat.teams." + groupChatType,
 			ComponentType:    "team",
 			Version:          1,
 			ComponentVersion: 1,
@@ -165,7 +182,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 				Participants:         participants,
 				ModelClient:          modelClient,
 				TerminationCondition: terminationCondition,
-				SelectorPrompt:       team.Spec.SelectorTeamConfig.SelectorPrompt,
+				SelectorPrompt:       selectorPrompt,
 				AllowRepeatedSpeaker: false,
 			},
 		},

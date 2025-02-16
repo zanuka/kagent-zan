@@ -25,16 +25,23 @@ import (
 
 // AutogenTeamSpec defines the desired state of AutogenTeam.
 type AutogenTeamSpec struct {
-	Participants         []string             `json:"participants"`
-	Description          string               `json:"description"`
-	SelectorTeamConfig   SelectorTeamConfig   `json:"selectorTeamConfig"`
-	TerminationCondition TerminationCondition `json:"terminationCondition"`
-	MaxTurns             int64                `json:"maxTurns"`
+	Participants []string `json:"participants"`
+	Description  string   `json:"description"`
+	// +kubebuilder:validation:Optional
+	SelectorTeamConfig *SelectorTeamConfig `json:"selectorTeamConfig"`
+	// +kubebuilder:validation:Optional
+	MagenticOneTeamConfig *MagenticOneTeamConfig `json:"magenticOneTeamConfig"`
+	TerminationCondition  TerminationCondition   `json:"terminationCondition"`
+	MaxTurns              int64                  `json:"maxTurns"`
 }
 
 type SelectorTeamConfig struct {
 	SelectorPrompt string `json:"selectorPrompt"`
 	ModelConfig    string `json:"modelConfig"`
+}
+
+type MagenticOneTeamConfig struct {
+	ModelConfig string `json:"modelConfig"`
 }
 
 type TerminationCondition struct {

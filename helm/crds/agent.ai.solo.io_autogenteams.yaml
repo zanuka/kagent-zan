@@ -41,6 +41,13 @@ spec:
             properties:
               description:
                 type: string
+              magenticOneTeamConfig:
+                properties:
+                  modelConfig:
+                    type: string
+                required:
+                - modelConfig
+                type: object
               maxTurns:
                 format: int64
                 type: integer
@@ -105,7 +112,6 @@ spec:
             - description
             - maxTurns
             - participants
-            - selectorTeamConfig
             - terminationCondition
             type: object
           status:

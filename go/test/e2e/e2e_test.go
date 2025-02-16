@@ -127,9 +127,12 @@ var _ = Describe("E2e", func() {
 					kubeExpert.Name,
 				},
 				Description: "A team that debugs kubernetes issues.",
-				SelectorTeamConfig: v1alpha1.SelectorTeamConfig{
-					ModelConfig:    modelConfig.Name,
-					SelectorPrompt: "Please select a team member to help you with your Kubernetes issue.",
+				//SelectorTeamConfig: &v1alpha1.SelectorTeamConfig{
+				//	ModelConfig:    modelConfig.Name,
+				//	SelectorPrompt: "Please select a team member to help you with your Kubernetes issue.",
+				//},
+				MagenticOneTeamConfig: &v1alpha1.MagenticOneTeamConfig{
+					ModelConfig: modelConfig.Name,
 				},
 				TerminationCondition: v1alpha1.TerminationCondition{
 					MaxMessageTermination:  &v1alpha1.MaxMessageTermination{MaxMessages: 10},
