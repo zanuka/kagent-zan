@@ -5,7 +5,7 @@ import ToolDisplay from "@/components/ToolDisplay";
 
 interface ToolCallDisplayProps {
   currentMessage: Message;
-  currentRun: Run;
+  currentRun: Run | null;
 }
 
 const ToolCallDisplay = ({ currentMessage, currentRun }: ToolCallDisplayProps) => {
@@ -15,7 +15,7 @@ const ToolCallDisplay = ({ currentMessage, currentRun }: ToolCallDisplayProps) =
   useEffect(() => {
     const newToolState = new Map();
 
-    if (!currentRun?.messages) return;
+    if (!currentRun || !currentRun?.messages) return;
 
     // Get all messages from the same source as the current message
     const sourceMessages = currentRun.messages.filter((msg) => msg.config.source === currentMessage.config.source);

@@ -1,58 +1,74 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { createRunWithSession } from "@/lib/ws";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { useUserStore } from "@/lib/userStore";
-import { Loader2 } from "lucide-react";
+import ChatInterface from "@/components/ChatInterface";
+import { ChatLayout } from "@/components/ChatLayout";
+import { LoadingState } from "@/components/LoadingState";
+import { ErrorState } from "@/components/ErrorState";
+import { useChatData } from "@/lib/useChatData";
+import useChatStore from "@/lib/useChatStore";
 
-export default function NewChatPage() {
+export default function ChatPage() {
   const params = useParams();
-  const router = useRouter();
   const { userId } = useUserStore();
-  const [error, setError] = useState<string | null>(null);
-  
+  const agentId = params.id as string;
+
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+
+  // Get chat data and actions from custom hook
+  const [{ agent, sessions, viewState, isLoading, error }, { handleNewSession, handleDeleteSession, handleViewRun }] = useChatData({
+    agentId,
+    userId,
+  });
+
+  // Get chat store state and actions
+  const { cleanup, startNewChat } = useChatStore();
+
+  // Cleanup on unmount
   useEffect(() => {
-    const createNewSession = async () => {
-      try {
-        const { session, run } = await createRunWithSession(parseInt(params.id as string), userId);
-        
-        // Log to verify we're getting the correct data
-        console.log('Created session:', session.id, 'run:', run.id);
-        
-        // Only navigate if we have both session and run
-        if (session?.id) {
-          // Store the session and run in localStorage temporarily
-          window.localStorage.setItem('currentSession', JSON.stringify(session));
-          window.localStorage.setItem('currentRun', JSON.stringify(run));
-          
-          router.push(`/agents/${params.id}/chat/${session.id}`);
-        } else {
-          setError("Failed to create new session - no session ID returned");
-        }
-      } catch (error) {
-        console.error("Error creating new session:", error);
-        setError("Failed to create new chat session");
-      }
-    };
+    return () => cleanup();
+  }, [cleanup]);
 
-    createNewSession();
-  }, [params.id, userId, router]);
+  // Handle loading states
+  if (isLoading) return <LoadingState />;
+  if (error) return <ErrorState message={error} />;
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#1A1A1A]">
-        <div className="text-red-500">{error}</div>
-      </div>
-    );
-  }
+  // Handle starting a new chat session
+  const onNewSession = async () => {
+    await startNewChat(parseInt(agentId), userId);
+
+    // Get the current session and run from the chat store
+    const currentSession = useChatStore.getState().session;
+    const currentRun = useChatStore.getState().run;
+
+    if (currentSession) {
+      // Update the sessions list with the new session
+      await handleNewSession(currentSession, currentRun || undefined);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#1A1A1A]">
-      <div className="flex items-center gap-2 text-white/50">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Creating new chat...
-      </div>
-    </div>
+    <>
+      {isLoading && <LoadingState />}
+
+      <ChatLayout
+        isLeftSidebarOpen={isLeftSidebarOpen}
+        isRightSidebarOpen={isRightSidebarOpen}
+        onLeftSidebarToggle={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+        onRightSidebarToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+        selectedTeam={agent}
+        sidebarProps={{
+          selectedTeam: agent,
+          sessions,
+          onDeleteSession: handleDeleteSession,
+          onViewRun: handleViewRun,
+        }}
+      >
+        <ChatInterface selectedAgentTeam={agent} isReadOnly={false} selectedSession={viewState?.session} selectedRun={viewState?.run} onNewSession={onNewSession} />
+      </ChatLayout>
+    </>
   );
 }

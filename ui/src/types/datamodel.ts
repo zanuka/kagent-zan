@@ -220,6 +220,12 @@ export interface Message extends DBModel {
   message_meta: MessageMeta;
 }
 
+export interface InitialMessage {
+  type: "start";
+  task: string;
+  team_config?: Component<TeamConfig>
+}
+
 export interface MessageMeta {
   task?: string;
   task_result?: TaskResult;

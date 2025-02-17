@@ -34,7 +34,7 @@ export const TruncatableText = memo(
       if (isJson) {
         return <pre className="whitespace-pre-wrap">{displayContent}</pre>;
       }
-      return <ReactMarkdown>{displayContent}</ReactMarkdown>;
+      return <ReactMarkdown className="prose-md prose prose-invert max-w-none">{displayContent}</ReactMarkdown>;
     };
 
     return (
@@ -68,9 +68,7 @@ export const TruncatableText = memo(
                   </DialogHeader>
                   <ScrollArea className="mt-4 w-full max-h-[60vh] overflow-y-auto">
                     <div className="px-6 pb-6">
-                      <div className="prose prose-invert max-w-none">
-                      <ReactMarkdown>{content}</ReactMarkdown>
-                      </div>
+                      <ReactMarkdown className="prose-md prose prose-invert max-w-none">{content}</ReactMarkdown>
                     </div>
                   </ScrollArea>
                 </DialogContent>

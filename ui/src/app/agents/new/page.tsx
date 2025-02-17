@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getBackendUrl } from "@/lib/utils";
+import { getBackendUrl, isIdentifier } from "@/lib/utils";
 import { useUserStore } from "@/lib/userStore";
 import { Bot, ArrowLeft, Loader2, FunctionSquare } from "lucide-react";
 import { Model, Tool } from "@/lib/types";
@@ -32,7 +32,9 @@ export default function NewAgentPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
-  const [selectedModel, setSelectedModel] = useState<Model>("");
+
+  // Default to the first model
+  const [selectedModel, setSelectedModel] = useState<Model>(AVAILABLE_MODELS[0]);
 
   // Tools state
   const [selectedTools, setSelectedTools] = useState<Tool[]>([]);
@@ -45,9 +47,10 @@ export default function NewAgentPage() {
   const validateForm = () => {
     const newErrors: ValidationErrors = {};
 
-    // TODO: agent name should be unique, and can't contain spaces (I think)
     if (!name.trim()) {
       newErrors.name = "Agent name is required";
+    } else if (!isIdentifier(name)) {
+      newErrors.name = "Agent name can't contain spaces or special characters";
     } else if (name.length > 50) {
       newErrors.name = "Agent name must be less than 50 characters";
     }

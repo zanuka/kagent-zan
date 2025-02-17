@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FunctionCall, FunctionExecutionResult } from "@/types/datamodel";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
-import { FunctionSquare, CheckCircle, Clock, Code, ChevronUp, ChevronDown, Loader2, Text } from "lucide-react";
+import { FunctionSquare, CheckCircle, Clock, Code, ChevronUp, ChevronDown, Loader2, Text, Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
@@ -12,6 +12,7 @@ interface ToolDisplayProps {
 const ToolDisplay = ({ call, result }: ToolDisplayProps) => {
   const [areArgumentsExpanded, setAreArgumentsExpanded] = useState(false);
   const [areResultsExpanded, setAreResultsExpanded] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const hasResult = result !== undefined;
   const [contentHeight, setContentHeight] = useState(0);
@@ -22,6 +23,18 @@ const ToolDisplay = ({ call, result }: ToolDisplayProps) => {
       setContentHeight(contentRef.current.scrollHeight);
     }
   }, [result]);
+
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(result?.content || '');
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
+  };
+
 
   return (
     <Card className="w-full mx-auto my-1 bg-neutral-800 border-none rounded-none min-w-full">
@@ -86,9 +99,25 @@ const ToolDisplay = ({ call, result }: ToolDisplayProps) => {
                 {areResultsExpanded ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
               </Button>
               {areResultsExpanded && (
+                <div className="relative">
+
                 <ScrollArea className="max-h-96 overflow-y-auto p-4 bg-white/10 w-full mt-2">
                   <pre className="text-sm text-white/70 whitespace-pre-wrap break-words">{result.content}</pre>
                 </ScrollArea>
+
+                <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 p-2 text-white/70 hover:bg-neutral-800 hover:text-white/90"
+            onClick={handleCopy}
+          >
+            {isCopied ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </Button>
+                </div>
               )}
               </>
         
