@@ -1,5 +1,26 @@
 package api
 
+// Team represents the full team response structure
+type Team struct {
+	ID        int           `json:"id"`
+	CreatedAt string        `json:"created_at,omitempty"`
+	UpdatedAt string        `json:"updated_at,omitempty"`
+	UserID    string        `json:"user_id"`
+	Version   string        `json:"version"`
+	Component TeamComponent `json:"component"`
+}
+
+// TeamComponent represents the component field in the Team response
+type TeamComponent struct {
+	Provider         string     `json:"provider"`
+	ComponentType    string     `json:"component_type"`
+	Version          int        `json:"version"`
+	ComponentVersion int        `json:"component_version"`
+	Description      *string    `json:"description"`
+	Config           TeamConfig `json:"config"`
+	Label            string     `json:"label"`
+}
+
 // APIResponse is the common response wrapper for all API responses
 type APIResponse struct {
 	Status  bool        `json:"status"`
@@ -19,57 +40,6 @@ type CreateSession struct {
 	UserID string `json:"user_id"`
 	TeamID int    `json:"team_id"`
 	Name   string `json:"name"`
-}
-
-// BaseComponent represents the common fields in all components
-type BaseComponent struct {
-	Provider         string      `json:"provider"`
-	ComponentType    string      `json:"component_type"`
-	Version          int         `json:"version"`
-	ComponentVersion int         `json:"component_version"`
-	Description      *string     `json:"description"`
-	Config           interface{} `json:"config"`
-	Label            *string     `json:"label,omitempty"`
-}
-
-// TeamResponseConfig represents the team component configuration
-type TeamResponseConfig struct {
-	Participants         []BaseComponent `json:"participants"`
-	TerminationCondition *BaseComponent  `json:"termination_condition,omitempty"`
-}
-
-// TeamComponent represents the component field in the Team response
-type TeamComponent struct {
-	Provider         string             `json:"provider"`
-	ComponentType    string             `json:"component_type"`
-	Version          int                `json:"version"`
-	ComponentVersion int                `json:"component_version"`
-	Description      *string            `json:"description"`
-	Component        TeamResponseConfig `json:"component"`
-	Label            string             `json:"label"`
-	Config           TeamConfig         `json:"config"`
-}
-
-// TeamResponse represents the full team response structure
-type TeamResponse struct {
-	ID        int           `json:"id"`
-	CreatedAt string        `json:"created_at,omitempty"`
-	UpdatedAt string        `json:"updated_at,omitempty"`
-	UserID    string        `json:"user_id"`
-	Version   string        `json:"version"`
-	Component TeamComponent `json:"component"`
-}
-
-// AgentConfig represents the configuration for an agent
-type AgentResponseConfig struct {
-	Name                  string          `json:"name"`
-	ModelClient           *BaseComponent  `json:"model_client"`
-	Tools                 []BaseComponent `json:"tools,omitempty"`
-	ModelContext          *BaseComponent  `json:"model_context,omitempty"`
-	Description           string          `json:"description"`
-	SystemMessage         string          `json:"system_message"`
-	ReflectOnToolUse      bool            `json:"reflect_on_tool_use"`
-	ToolCallSummaryFormat string          `json:"tool_call_summary_format"`
 }
 
 // ModelResponseConfig represents the configuration for a model
@@ -103,23 +73,23 @@ type BuiltInToolConfig struct {
 // TeamConfig represents either a SelectorGroupChatConfig or RoundRobinGroupChatConfig
 type TeamConfig struct {
 	// Shared fields between both configs
-	Participants         []AgentComponent      `json:"participants"`
+	Participants         []TeamParticipant     `json:"participants"`
 	TerminationCondition *TerminationComponent `json:"termination_condition,omitempty"`
 	MaxTurns             *int                  `json:"max_turns,omitempty"`
 
 	// SelectorGroupChat specific fields
 	ModelClient          *ModelComponent `json:"model_client,omitempty"`
-	SelectorPrompt       string          `json:"selector_prompt,omitempty"`
-	AllowRepeatedSpeaker bool            `json:"allow_repeated_speaker,omitempty"`
+	SelectorPrompt       string          `json:"selector_prompt"`
+	AllowRepeatedSpeaker bool            `json:"allow_repeated_speaker"`
 }
 
-// Component types
-type AgentComponent struct {
+// Config types
+type TeamParticipant struct {
 	Provider      string      `json:"provider"`
 	ComponentType string      `json:"component_type"`
 	Version       *int        `json:"version,omitempty"`
 	Description   *string     `json:"description,omitempty"`
-	Component     AgentConfig `json:"component"`
+	Config        AgentConfig `json:"config"`
 	Label         *string     `json:"label,omitempty"`
 }
 
@@ -128,7 +98,7 @@ type ModelComponent struct {
 	ComponentType string      `json:"component_type"`
 	Version       *int        `json:"version,omitempty"`
 	Description   *string     `json:"description,omitempty"`
-	Component     ModelConfig `json:"component"`
+	Config        ModelConfig `json:"config"`
 	Label         *string     `json:"label,omitempty"`
 }
 
@@ -137,7 +107,7 @@ type TerminationComponent struct {
 	ComponentType string            `json:"component_type"`
 	Version       *int              `json:"version,omitempty"`
 	Description   *string           `json:"description,omitempty"`
-	Component     TerminationConfig `json:"component"`
+	Config        TerminationConfig `json:"config"`
 	Label         *string           `json:"label,omitempty"`
 }
 
@@ -159,10 +129,10 @@ type AgentConfig struct {
 	ToResizeViewport  *bool           `json:"to_resize_viewport,omitempty"`
 
 	// AssistantAgentConfig fields
-	Tools                 []ToolComponent                 `json:"tools,omitempty"`
+	Tools                 []ToolComponent                 `json:"tools"`
 	ModelContext          *ChatCompletionContextComponent `json:"model_context,omitempty"`
 	SystemMessage         *string                         `json:"system_message,omitempty"`
-	ReflectOnToolUse      bool                            `json:"reflect_on_tool_use,omitempty"`
+	ReflectOnToolUse      bool                            `json:"reflect_on_tool_use"`
 	ToolCallSummaryFormat string                          `json:"tool_call_summary_format,omitempty"`
 }
 
@@ -216,20 +186,11 @@ type ToolComponent struct {
 	ComponentType string     `json:"component_type"`
 	Version       *int       `json:"version,omitempty"`
 	Description   *string    `json:"description,omitempty"`
-	Component     ToolConfig `json:"component"`
+	Config        ToolConfig `json:"config"`
 	Label         *string    `json:"label,omitempty"`
 }
 
-type ToolConfig struct {
-	SourceCode             string        `json:"source_code"`
-	Name                   string        `json:"name"`
-	Description            string        `json:"description"`
-	GlobalImports          []interface{} `json:"global_imports"`
-	HasCancellationSupport bool          `json:"has_cancellation_support"`
-
-	// for BUILTIN TOOL type
-	FnName string `json:"fn_name,omitempty"`
-}
+type ToolConfig struct{}
 
 // ChatCompletionContext Configuration
 type ChatCompletionContextComponent struct {
@@ -237,7 +198,7 @@ type ChatCompletionContextComponent struct {
 	ComponentType string                      `json:"component_type"`
 	Version       *int                        `json:"version,omitempty"`
 	Description   *string                     `json:"description,omitempty"`
-	Component     ChatCompletionContextConfig `json:"component"`
+	Config        ChatCompletionContextConfig `json:"config"`
 	Label         *string                     `json:"label,omitempty"`
 }
 
