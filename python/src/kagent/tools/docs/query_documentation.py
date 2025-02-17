@@ -14,14 +14,7 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 
 
-class Config(BaseModel):
-    """Base configuration for all Documentation search tools"""
-
-    docs_base_path: Optional[str] = Field(
-        default="", description="Base path for the documentation database. If empty, the database will be downloaded."
-    )
-
-
+DEFAULT_DB_URL = "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"
 COLLECTION_NAME = "documentation"
 
 # Map of supported products and their database files
@@ -32,6 +25,18 @@ PRODUCT_DB_MAP = {
     "helm": "helm.db",
     "prometheus": "prometheus.db",
 }
+
+
+class Config(BaseModel):
+    """Base configuration for all Documentation search tools"""
+
+    docs_base_path: Optional[str] = Field(
+        default="", description="Base path for the documentation database. If empty, the database will be downloaded."
+    )
+    docs_download_url: Optional[str] = Field(
+        default=DEFAULT_DB_URL,
+        description="Base URL for downloading the documentation database. If empty, the default URL will be used.",
+    )
 
 
 class QueryResult:
@@ -62,7 +67,7 @@ class SQLiteDownloader:
     def get_db_path(self, product_name: str) -> Path:
         """Get local path for cached database."""
         self.validate_product(product_name)
-        cache_dir = Path.home() / ".cache" / "doc-query"
+        cache_dir = Path.home() / ".kagent/cache" / "doc-query"
         cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir / self.product_map[product_name]
 
@@ -86,19 +91,13 @@ class SQLiteDownloader:
                 logging.debug(f"Successfully downloaded database for {product_name}")
 
             except requests.exceptions.RequestException as e:
-                logging.error(f"Error downloading database for {product_name}: {e}", file=sys.stderr)
+                logging.error(f"Error downloading database for {product_name}: {e}")
                 raise
 
         return db_path
 
 
 openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
-# Initialize SQLite downloader with base S3 URL and product mapping
-db_downloader = SQLiteDownloader(
-    base_url=os.environ.get("DB_BASE_URL", "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"),
-    product_map=PRODUCT_DB_MAP,
-)
 
 
 class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
@@ -160,9 +159,22 @@ class QueryTool(BaseTool):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config=config, input_model=QueryInput, description=self.description)
+        # Initialize SQLite downloader with base S3 URL and product mapping
+        self.db_downloader = SQLiteDownloader(
+            base_url=config.docs_download_url
+            or os.environ.get("DB_BASE_URL", "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"),
+            product_map=PRODUCT_DB_MAP,
+        )
 
     async def run(self, args: QueryInput, cancellation_token: CancellationToken) -> Any:
-        return query_documentation(args.query, args.product_name, args.version, args.limit, self.config.docs_base_path)
+        db_path = self.config.docs_base_path
+        if db_path == "":
+            try:
+                db_path = self.db_downloader.download_if_needed(args.product_name)
+            except Exception as e:
+                logging.error(f"Failed to get database: {e}")
+                raise
+        return query_documentation(args.query, args.product_name, args.version, args.limit, db_path)
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryTool":
@@ -172,13 +184,6 @@ class QueryTool(BaseTool):
 def query_collection(
     query_embedding: List[float], filter: dict, top_k: int = 10, db_path: str = None
 ) -> List[QueryResult]:
-    if db_path == "":
-        try:
-            db_path = db_downloader.download_if_needed(filter["product_name"])
-        except Exception as e:
-            logging.error(f"Failed to get database: {e}", file=sys.stderr)
-            raise
-
     conn = sqlite3.connect(str(db_path))
     conn.enable_load_extension(True)
     sqlite_vec.load(conn)
@@ -186,9 +191,7 @@ def query_collection(
 
     cursor = conn.cursor()
 
-    query = """
-        SELECT *, distance FROM vec_items WHERE embedding MATCH ?
-    """
+    query = """SELECT *, distance FROM vec_items WHERE embedding MATCH ?"""
     params = [np.array(query_embedding, dtype=np.float32).tobytes()]
 
     if "product_name" in filter:
