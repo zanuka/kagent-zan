@@ -709,10 +709,20 @@ set_rollout_image = FunctionTool(
     name="set_rollout_image",
 )
 
-SetRolloutImage, SetRolloutImageConfig = create_typed_fn_tool(set_rollout_image, "kagent.tools.argo.SetRolloutImage", "SetRolloutImage")
-CreateRolloutResource, CreateRolloutResourceConfig = create_typed_fn_tool(create_rollout_resource, "kagent.tools.argo.CreateRolloutResource", "CreateRolloutResource")
-StatusRollout, StatusRolloutConfig = create_typed_fn_tool(status_rollout, "kagent.tools.argo.StatusRollout", "StatusRollout")
+SetRolloutImage, SetRolloutImageConfig = create_typed_fn_tool(
+    set_rollout_image, "kagent.tools.argo.SetRolloutImage", "SetRolloutImage"
+)
+CreateRolloutResource, CreateRolloutResourceConfig = create_typed_fn_tool(
+    create_rollout_resource, "kagent.tools.argo.CreateRolloutResource", "CreateRolloutResource"
+)
+StatusRollout, StatusRolloutConfig = create_typed_fn_tool(
+    status_rollout, "kagent.tools.argo.StatusRollout", "StatusRollout"
+)
 PauseRollout, PauseRolloutConfig = create_typed_fn_tool(pause_rollout, "kagent.tools.argo.PauseRollout", "PauseRollout")
-PromoteRollout, PromoteRolloutConfig = create_typed_fn_tool(promote_rollout, "kagent.tools.argo.PromoteRollout", "PromoteRollout")
+PromoteRollout, PromoteRolloutConfig = create_typed_fn_tool(
+    promote_rollout, "kagent.tools.argo.PromoteRollout", "PromoteRollout"
+)
 GetRollout, GetRolloutConfig = create_typed_fn_tool(get_rollout, "kagent.tools.argo.GetRollout", "GetRollout")
-VerifyInstall, VerifyInstallConfig = create_typed_fn_tool(verify_install, "kagent.tools.argo.VerifyInstall", "VerifyInstall")
+VerifyInstall, VerifyInstallConfig = create_typed_fn_tool(
+    verify_install, "kagent.tools.argo.VerifyInstall", "VerifyInstall"
+)

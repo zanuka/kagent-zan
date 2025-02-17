@@ -1,4 +1,4 @@
-from ._argo_rollouts import (
+from ._kubectl_argo_rollouts import (
     CreateRolloutResource,
     GetRollout,
     PauseRollout,
@@ -8,6 +8,8 @@ from ._argo_rollouts import (
     VerifyInstall,
 )
 
+from ._argo_crds import GenerateResource
+
 __all__ = [
     "CreateRolloutResource",
     "GetRollout",
@@ -16,4 +18,5 @@ __all__ = [
     "SetRolloutImage",
     "StatusRollout",
     "VerifyInstall",
+    "GenerateResource",
 ]
