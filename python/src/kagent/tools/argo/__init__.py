@@ -5,7 +5,8 @@ from ._kubectl_argo_rollouts import (
     PromoteRollout,
     SetRolloutImage,
     StatusRollout,
-    VerifyInstall,
+    VerifyKubectlPluginInstall,
+    VerifyArgoRolloutsControllerInstall,
 )
 
 from ._argo_crds import GenerateResource
@@ -17,6 +18,7 @@ __all__ = [
     "PromoteRollout",
     "SetRolloutImage",
     "StatusRollout",
-    "VerifyInstall",
+    "VerifyKubectlPluginInstall",
+    "VerifyArgoRolloutsControllerInstall",
     "GenerateResource",
 ]

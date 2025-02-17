@@ -6,16 +6,55 @@ from autogen_core.tools import FunctionTool
 from .._utils import create_typed_fn_tool
 
 
-async def _verify_install() -> str:
+async def _verify_argo_rollouts_controller_install(
+    ns: Annotated[Optional[str], "The namespace to check for the argo rollouts controller. Defaults to argo-rollouts"] = "argo-rollouts",
+    label: Annotated[Optional[str], "The label to check for the argo rollouts controller. Defaults to app.kubernetes.io/component=rollouts-controller"] = "app.kubernetes.io/component=rollouts-controller",
+) -> str:
     """
-    Run the istioctl verify-install command to check Istio installation status.
-
-    This function runs the 'istioctl verify-install' command to verify the health and status
-    of an Istio installation in the current Kubernetes environment.
+    Check the argo rollouts controller is running in the kubernetes cluster.
+    Optionally specify a namespace and label.
     """
     try:
         process = await asyncio.create_subprocess_exec(
-            "istioctl", "verify-install", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, text=True
+            "kubectl",
+            "get",
+            "pods",
+            "-n",
+            ns,
+            "-l",
+            label,
+            "-o",
+            "jsonpath={.items[*].status.phase}",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            return f"Error: {stderr}"
+
+        # Check if all pods are in the "Running" state
+        if all(status == "Running" for status in stdout.split()):
+            return "All pods are running"
+        else:
+            return "Error: Not all pods are running " + str(stdout)
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+verify_argo_rollouts_controller_install = FunctionTool(
+    _verify_argo_rollouts_controller_install,
+    description="Verify Argo Rollouts controller is running in the kubernetes cluster",
+    name="verify_argo_rollouts_controller_install",
+)
+
+
+async def _verify_kubectl_plugin_install() -> str:
+    """
+    Run the kubectl argo rollouts version command to check the kubectl argo rollouts plugin is installed.
+    """
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "argo", "version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, text=True
         )
         stdout, stderr = await process.communicate()
         if process.returncode != 0:
@@ -25,10 +64,10 @@ async def _verify_install() -> str:
         return f"Error: {str(e)}"
 
 
-verify_install = FunctionTool(
-    _verify_install,
-    description="Verify Istio installation status",
-    name="verify_install",
+verify_kubectl_plugin_install = FunctionTool(
+    _verify_kubectl_plugin_install,
+    description="Verify Argo Rollouts kubectl plugin installation status",
+    name="verify_kubectl_plugin_install",
 )
 
 
@@ -723,6 +762,11 @@ PromoteRollout, PromoteRolloutConfig = create_typed_fn_tool(
     promote_rollout, "kagent.tools.argo.PromoteRollout", "PromoteRollout"
 )
 GetRollout, GetRolloutConfig = create_typed_fn_tool(get_rollout, "kagent.tools.argo.GetRollout", "GetRollout")
-VerifyInstall, VerifyInstallConfig = create_typed_fn_tool(
-    verify_install, "kagent.tools.argo.VerifyInstall", "VerifyInstall"
+VerifyKubectlPluginInstall, VerifyKubectlPluginInstallConfig = create_typed_fn_tool(
+    verify_kubectl_plugin_install, "kagent.tools.argo.VerifyKubectlPluginInstall", "VerifyKubectlPluginInstall"
+)
+VerifyArgoRolloutsControllerInstall, VerifyArgoRolloutsControllerInstallConfig = create_typed_fn_tool(
+    verify_argo_rollouts_controller_install,
+    "kagent.tools.argo.VerifyArgoRolloutsControllerInstall",
+    "VerifyArgoRolloutsControllerInstall",
 )
