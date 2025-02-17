@@ -37,7 +37,7 @@ VIRTUAL_SERVICE_PROMPT = """
           name: Hosts
           type: string
         - description: 'CreationTimestamp is a timestamp representing the server time
-            when this object was created. 
+            when this object was created.
           jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
