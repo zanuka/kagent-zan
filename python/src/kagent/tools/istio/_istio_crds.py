@@ -92,4 +92,6 @@ generate_resource = FunctionTool(
     name="generate_istio_resource",
 )
 
-GenerateResource, GenerateResourceConfig = create_typed_fn_tool(generate_resource, "kagent.tools.istio.GenerateResource", "GenerateResource")
+GenerateResource, GenerateResourceConfig = create_typed_fn_tool(
+    generate_resource, "kagent.tools.istio.GenerateResource", "GenerateResource"
+)

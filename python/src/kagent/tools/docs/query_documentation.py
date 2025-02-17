@@ -1,14 +1,45 @@
+import logging
 import os
-import sys
-import json
 import sqlite3
-import numpy as np
 from pathlib import Path
-from qdrant_client import QdrantClient
-from qdrant_client.models import VectorParams, Filter
-from openai import OpenAI
+from typing import Any, Dict, List, Optional, Type
 
-COLLECTION_NAME = 'documentation' # Change this to the name of your collection
+import numpy as np
+import requests
+import sqlite_vec
+from autogen_core import CancellationToken, Component
+from autogen_core.tools import BaseTool
+from openai import OpenAI
+from pydantic import BaseModel, Field
+
+# Default base URL for downloading the documentation database
+DEFAULT_DB_URL = "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"
+
+# Map of supported products and their database files
+PRODUCT_DB_MAP = {
+    "kubernetes": "kubernetes.db",
+    "istio": "istio.db",
+    "argo": "argo.db",
+    "helm": "helm.db",
+    "prometheus": "prometheus.db",
+}
+
+
+class Config(BaseModel):
+    """Configuration for Documentation search tools."""
+
+    docs_base_path: Optional[str] = Field(
+        default="", description="Base path for the documentation database. If empty, the database will be downloaded."
+    )
+    docs_download_url: Optional[str] = Field(
+        default=DEFAULT_DB_URL,
+        description="Base URL for downloading the documentation database. If empty, the default URL will be used.",
+    )
+    openai_api_key: str = Field(
+        default=os.environ.get("OPENAI_API_KEY", ""),
+        description="API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used.",
+    )
+
 
 class QueryResult:
     def __init__(self, chunk_id, distance, content, url=None, **kwargs):
@@ -19,66 +50,134 @@ class QueryResult:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-# Initialize Qdrant Client (only if using Qdrant)
-use_qdrant = os.environ.get('USE_QDRANT', 'true').lower() == 'true'
-qdrant_client = QdrantClient(url=os.environ.get('QDRANT_URL', 'http://localhost:6333')) if use_qdrant else None
 
-# OpenAI client
-openai = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
+class SQLiteDownloader:
+    def __init__(self, base_url: str, product_map: Dict[str, str]):
+        self.base_url = base_url
+        self.product_map = product_map
+        self._db_cache = {}
 
-def create_embeddings(text: str):
-    response = openai.embeddings.create(model='text-embedding-3-large', input=text)
-    return response.data[0].embedding
+    def validate_product(self, product_name: str) -> None:
+        """Validate if the product is supported."""
+        if not product_name:
+            raise ValueError("Product name cannot be empty")
+        if product_name not in self.product_map:
+            raise ValueError(
+                f"Unsupported product: {product_name}. Supported products: {', '.join(self.product_map.keys())}"
+            )
 
-def query_collection(query_embedding, filter: dict, top_k: int = 10):
-    if use_qdrant:
-        # Query Qdrant
+    def get_db_path(self, product_name: str) -> Path:
+        """Get local path for cached database."""
+        self.validate_product(product_name)
+        cache_dir = Path.home() / ".kagent/cache" / "doc-query"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir / self.product_map[product_name]
 
-        # Construct filter for Qdrant query
-        qdrant_filter = Filter(
-            must=[{"key": key, "match": {"value": value}} for key, value in filter.items() if key != 'product_name']
-        )
+    def download_if_needed(self, product_name: str) -> Path:
+        """Download the SQLite database if not in cache."""
+        self.validate_product(product_name)
+        db_path = self.get_db_path(product_name)
 
-        # Perform the search in Qdrant
-        search_result = qdrant_client.search(
-            collection_name=COLLECTION_NAME,
-            query_vector=query_embedding,
-            limit=top_k,
-            query_filter=qdrant_filter
-        )
-
-        # Format the results to match the QueryResult structure
-        results = []
-        for hit in search_result:
-            results.append(QueryResult(
-                chunk_id=hit.id,
-                distance=hit.score,
-                content=hit.payload['content'],
-                url=hit.payload.get('url')
-            ))
-
-    else:
-        # Query SQLite
-        db_path = Path(__file__).parent / f"{filter['product_name']}.db"
-        
         if not db_path.exists():
-            print(f"Database file not found at {db_path}", file=sys.stderr)
-            sys.exit(1)
+            db_filename = self.product_map[product_name]
+            db_url = f"{self.base_url}/{db_filename}"
 
+            try:
+                logging.debug(f"Downloading database for {product_name} from {db_url}")
+                response = requests.get(db_url, stream=True)
+                response.raise_for_status()
+
+                with open(db_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                logging.debug(f"Successfully downloaded database for {product_name}")
+
+            except requests.exceptions.RequestException as e:
+                logging.error(f"Error downloading database for {product_name}: {e}")
+                raise
+
+        return db_path
+
+
+class QueryInput(BaseModel):
+    query: str = Field(
+        description="The search query to use for finding relevant documentation. Be specific and include relevant keywords."
+    )
+    product_name: str = Field(
+        description="The name of the product to search within. Examples include: 'istio', 'kubernetes', 'prometheus', 'argo', 'helm'."
+    )
+    version: Optional[str] = Field(
+        default=None,
+        description="The specific version of the product documentation to search. Use the full version number without the 'v' prefix.",
+    )
+    limit: Optional[int] = Field(
+        default=4, description="Optional. The maximum number of search results to return. Defaults to 4."
+    )
+
+
+class QueryTool(BaseTool, Component[Config]):
+    """Tool for querying documentation for a specific product."""
+
+    component_type = "tool"
+    component_config_schema = Config
+    component_provider_override = "kagent.tools.docs.QueryTool"
+    _description = """Searches a vector database for relevant documentation related to various software projects."""
+
+    def __init__(self, config: Config) -> None:
+        # Initialize SQLite downloader with base S3 URL and product mapping if override is not provided
+        self.db_downloader = SQLiteDownloader(
+            base_url=config.docs_download_url
+            or os.environ.get("DB_BASE_URL", "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"),
+            product_map=PRODUCT_DB_MAP,
+        )
+        # Initialize OpenAI with API key from config
+        self.openai = OpenAI(api_key=config.openai_api_key)
+        self.config: Config = config
+
+        super().__init__(QueryInput, BaseModel, "query_tool", description=self._description)
+
+    async def run(self, args: QueryInput, cancellation_token: CancellationToken) -> Any:
+        db_path = self.config.docs_base_path
+        if db_path == "":
+            try:
+                db_path = self.db_downloader.download_if_needed(args.product_name)
+            except Exception as e:
+                logging.error(f"Failed to get database: {e}")
+                raise
+        return self.query_documentation(args.query, args.product_name, args.version, args.limit, db_path)
+
+    def _to_config(self) -> Config:
+        """Convert to config object."""
+        return self.config.copy()
+
+    @classmethod
+    def _from_config(cls, config: Config) -> "QueryTool":
+        return cls(config)
+
+    def create_embeddings(self, text: str) -> List[float]:
+        response = self.openai.embeddings.create(model="text-embedding-3-large", input=text)
+        return response.data[0].embedding
+
+    def query_collection(
+        self, query_embedding: List[float], filter: dict, top_k: int = 10, db_path: str | None = None
+    ) -> List[QueryResult]:
         conn = sqlite3.connect(str(db_path))
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+        conn.enable_load_extension(False)
+
         cursor = conn.cursor()
 
-        query = """
-            SELECT *, distance FROM vec_items WHERE embedding MATCH ?
-        """
+        query = """SELECT *, distance FROM vec_items WHERE embedding MATCH ?"""
         params = [np.array(query_embedding, dtype=np.float32).tobytes()]
 
-        if 'product_name' in filter:
+        if "product_name" in filter:
             query += " AND product_name = ?"
-            params.append(filter['product_name'])
-        if 'version' in filter:
+            params.append(filter["product_name"])
+
+        if "version" in filter:
             query += " AND version = ?"
-            params.append(filter['version'])
+            params.append(filter["version"])
 
         query += " ORDER BY distance LIMIT ?;"
         params.append(top_k)
@@ -89,25 +188,40 @@ def query_collection(query_embedding, filter: dict, top_k: int = 10):
 
         results = []
         for row in rows:
-            row_dict = dict(zip([column[0] for column in cursor.description], row))
-            row_dict.pop('embedding', None)
+            row_dict = dict(zip([column[0] for column in cursor.description], row, strict=True))
+            row_dict.pop("embedding", None)
             results.append(QueryResult(**row_dict))
 
-    return results
+        return results
 
-def query_documentation(query_text: str, product_name: str, version: str = None, limit: int = 4):
-    try:
-        # Create embeddings for the query text
-        query_embedding = create_embeddings(query_text)
-        
-        # Query the appropriate collection (SQLite or Qdrant)
-        filter = {'product_name': product_name}
-        if version:
-            filter['version'] = version
-        
-        results = query_collection(query_embedding, filter, limit)
-        
-        return [{'distance': qr.distance, 'content': qr.content} for qr in results]
-    except Exception as e:
-        print("An error occurred:", e, file=sys.stderr)
-        raise
+    def query_documentation(
+        self, query_text: str, product_name: str, version: str | None = None, limit: int = 4, db_path: str | None = None
+    ) -> List[Dict[str, Any]]:
+        """Query documentation for a specific product."""
+        if query_text == "" or product_name == "":
+            raise ValueError("Both query and product must be specified")
+
+        try:
+            if product_name not in PRODUCT_DB_MAP:
+                raise ValueError(
+                    f"Unsupported product: {product_name}. Supported product: {', '.join(PRODUCT_DB_MAP.keys())}"
+                )
+
+            version = version if version and version.strip() else None
+
+            query_embedding = self.create_embeddings(query_text)
+
+            filter = {"product_name": product_name}
+            if version:
+                filter["version"] = version
+
+            results = self.query_collection(query_embedding, filter, limit, db_path)
+            return [{"distance": qr.distance, "content": qr.content} for qr in results]
+
+        except Exception as e:
+            logging.error("An error occurred: %s", e)
+            raise
+
+    def list_supported_product(self) -> List[str]:
+        """Return a list of supported products."""
+        return list(PRODUCT_DB_MAP.keys())

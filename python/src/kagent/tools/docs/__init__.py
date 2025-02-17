@@ -1,7 +1,9 @@
-from ._search_documentation import (
-    search_documentation,
+from .query_documentation import (
+    Config,
+    QueryTool,
 )
 
 __all__ = [
-    "search_documentation",
+    "Config",
+    "QueryTool",
 ]
