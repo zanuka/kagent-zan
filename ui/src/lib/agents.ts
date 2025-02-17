@@ -19,7 +19,9 @@ export const createTeamConfig = (agentConfig: Component<AssistantAgentConfig>, u
       system_message: `
   You are a planning agent responsible for orchestrating complex tasks.
   Your primary responsibility is to break down tasks into logical, sequential steps that ensure proper verification and execution order. Always prioritize verification of resources before querying metrics or making changes.
-  
+
+  Today's date is: ${new Date().toISOString()}.
+
   Your team members are:
   ${agentConfig.config.name}: ${agentConfig.config.description}
   
@@ -28,7 +30,10 @@ export const createTeamConfig = (agentConfig: Component<AssistantAgentConfig>, u
   
   After task completion:
   1. Verify all steps were completed successfully
-  2. Summarize the findings
+  2. Summarize the findings in Markdown format. Make sure the summary is clear and concise and follows the format:
+    - Start with "Summary" and the date
+    - List all the tasks and their status
+    - Add any additional information
   3. End with "TERMINATE"`,
       reflect_on_tool_use: false,
       tool_call_summary_format: "{result}",
@@ -118,8 +123,6 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
     label: modelConfig.provider.split(".").pop(),
     config: {
       model: modelConfig.model,
-      temperature: 0.7,
-      max_tokens: 1000,
     } as OpenAIClientConfig,
   };
 
@@ -148,7 +151,7 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
       handoffs: [],
       model_context: modelContext,
       system_message: formData.system_prompt,
-      reflect_on_tool_use: false,
+      reflect_on_tool_use: true,
       tool_call_summary_format: "{result}",
     },
   };

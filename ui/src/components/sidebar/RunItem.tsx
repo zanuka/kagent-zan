@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AlertCircle, AlertTriangle, CheckCircle, Loader2, MessageSquare, StopCircle, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
-import { format } from "date-fns";
+import { getRelativeTimeString } from "@/lib/utils";
 
 interface StatusIconProps {
   status: RunStatus;
@@ -54,8 +54,10 @@ const RunItem = ({ sessionId, run, onClick, onDelete }: RunItemProps) => {
       <Button onClick={() => onClick(sessionId, run.id)} variant="ghost" className="w-full justify-start text-white/70 hover:text-white hover:bg-transparent gap-2 py-4">
         <StatusIcon status={run.status} />
         <div className="flex flex-col items-start gap-1 min-w-0">
-          <span className="truncate max-w-[300px] text-sm">{String(run.task?.content)}</span>
-          <span className="text-xs text-white/50">{format(new Date(run.created_at), "h:mm a")}</span>
+          <span className="truncate max-w-[300px] text-sm text-white/80">{String(run.task?.content)}</span>
+          <div className="inline-flex gap-2 items-center">
+            <span className="text-xs text-white/60">{getRelativeTimeString(run.created_at)}</span>
+          </div>
         </div>
       </Button>
       <AlertDialog>

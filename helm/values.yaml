@@ -1,0 +1,52 @@
+# Default values for autogenstudio
+replicaCount: 1
+
+controller:
+  image:
+    registry: gcr.io
+    repository: solo-io-kagent/autogenstudio-controller
+    tag: ""  # Will default to Chart version
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+web:
+  image:
+    registry: gcr.io
+    repository: solo-io-kagent/autogenstudio-web
+    tag: ""
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8081  # the web UI runs on port 8081
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000

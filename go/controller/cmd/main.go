@@ -19,11 +19,15 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
+	"github.com/go-logr/logr"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
 	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
-	"os"
-	"path/filepath"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -55,6 +59,8 @@ func init() {
 
 	utilruntime.Must(agentv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
+
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 }
 
 // nolint:gocyclo
@@ -71,7 +77,7 @@ func main() {
 	var tlsOpts []func(*tls.Config)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8082", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -87,8 +93,8 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 
-	flag.StringVar(&autogenStudioBaseURL, "autogen-base-url", "http://localhost:8081/api", "The base url of the Autogen Studio server.")
-	flag.StringVar(&autogenStudioWsURL, "autogen-ws-url", "ws://localhost:8081/api/ws", "The base url of the Autogen Studio websocket server.")
+	flag.StringVar(&autogenStudioBaseURL, "autogen-base-url", "http://127.0.0.1:8081/api", "The base url of the Autogen Studio server.")
+	flag.StringVar(&autogenStudioWsURL, "autogen-ws-url", "ws://127.0.0.1:8081/api/ws", "The base url of the Autogen Studio websocket server.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -219,11 +225,16 @@ func main() {
 		autogenStudioWsURL,
 	)
 
+	// wait for autogen to become ready on port 8081 before starting the manager
+	if err := waitForAutogenReady(setupLog, autogenClient, time.Minute*5, time.Second*5); err != nil {
+		setupLog.Error(err, "failed to wait for autogen to become ready")
+		os.Exit(1)
+	}
+
 	kubeClient := mgr.GetClient()
 
 	apiTranslator := autogen.NewAutogenApiTranslator(
 		kubeClient,
-		builtinTools,
 	)
 
 	autogenReconciler := autogen.NewAutogenReconciler(
@@ -302,5 +313,36 @@ func main() {
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
+	}
+}
+
+func waitForAutogenReady(
+	log logr.Logger,
+	client *api.Client,
+	timeout, interval time.Duration,
+) error {
+	log.Info("waiting for autogen to become ready")
+	return waitForReady(func() error {
+		version, err := client.GetVersion()
+		if err != nil {
+			log.Error(err, "autogen is not ready")
+			return err
+		}
+		log.Info("autogen is ready", "version", version)
+		return nil
+	}, timeout, interval)
+}
+
+func waitForReady(f func() error, timeout, interval time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timed out after %v", timeout)
+		}
+		if err := f(); err == nil {
+			return nil
+		}
+
+		time.Sleep(interval)
 	}
 }

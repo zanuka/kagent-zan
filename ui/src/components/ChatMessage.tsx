@@ -1,44 +1,52 @@
 import { messageUtils } from "@/lib/utils";
-import type { Run, Message } from "@/types/datamodel";
-import LLMCallModal from "./LLMCallModal";
-import ToolCallDisplay from "./ToolCallDisplay";
+import type {  Message, Run } from "@/types/datamodel";
 import { TruncatableText } from "./TruncatableText";
+import ToolCallDisplay from "./ToolCallDisplay";
+import LLMCallModal from "./LLMCallModal";
 
 interface ChatMessageProps {
   message: Message;
-  currentRun: Run;
+  run: Run | null;
 }
 
-export default function ChatMessage({ message, currentRun }: ChatMessageProps) {
-  if (!message) {
+export default function ChatMessage({ message, run }: ChatMessageProps) {
+  if (!message || !message.config) {
     return null;
   }
 
-  const isUser = message.config.source === "user";
-  const content = message.config.content;
+  const messageObject = message.config;
+  const messageContent = messageObject.content; 
 
-  // Skip rendering result messages entirely since they're handled by ToolCallDisplay
-  if (messageUtils.isFunctionExecutionResult(content)) {
-    return null;
+
+  if (messageUtils.isTeamResult(messageObject)) {
+    return (
+      <div className="text-sm text-white/80 bg-neutral-800 border border-white/50 p-4">
+        <span className="font-semibold">Task completed</span>
+        <ul className="mt-2 text-white/60 ">
+          <li>Duration: {Math.floor(messageObject.duration)} seconds </li>
+          <li>Messages sent: {messageObject.task_result.messages.length}</li>
+        </ul>
+      </div>
+    )
   }
 
-  if (message.config.source === "llm_call_event") {
-    return <LLMCallModal content={String(content)} />;
+  if (messageUtils.isFunctionExecutionResult(messageContent) || 
+      messageUtils.isToolCallContent(messageContent) && run) { 
+        return <ToolCallDisplay currentMessage={message} currentRun={run} />
   }
+
+  if (messageUtils.isLlmCallEvent(messageContent)) {
+    return <LLMCallModal content={String(messageContent)} />
+  }
+
+  const source = message.config.source;
+  const isUser = source === "user";
 
   return (
     <div className={`flex items-center gap-2 text-sm text-white/50 ${isUser ? "border-l-blue-500 bg-neutral-800 border border-[#3A3A3A]" : "border-l-violet-500 bg-transparent"} border-l-2 py-2 px-4`}>
       <div className="flex flex-col gap-1 w-full">
         <div className="text-xs font-bold text-white/80">{isUser ? "User" : message.config.source}</div>
-        <div>
-          {messageUtils.isToolCallContent(content) || messageUtils.isFunctionExecutionResult(content) ? (
-            <ToolCallDisplay currentMessage={message} currentRun={currentRun} />
-          ) : message.config.source === "llm_call_event" ? (
-            <LLMCallModal content={String(content)} />
-          ) : (
-            <TruncatableText className="break-all" content={String(content)} />
-          )}
-        </div>
+          <TruncatableText className="break-all" content={String(messageObject.content)} />
       </div>
     </div>
   );

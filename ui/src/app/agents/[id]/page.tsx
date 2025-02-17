@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { fetchApi } from "@/lib/utils";
 import { useUserStore } from "@/lib/userStore";
-import { Loader2 } from "lucide-react";
 import type { Team } from "@/types/datamodel";
+import { ErrorState } from "@/components/ErrorState";
+import { LoadingState } from "@/components/LoadingState";
 
 export default function AgentPage() {
   const router = useRouter();
@@ -14,11 +15,11 @@ export default function AgentPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkAgent = async () => {
+    const validateAndRedirect = async () => {
       try {
-        // Try to fetch the agent
+        // Verify the agent exists before redirecting
         await fetchApi<Team>(`/teams/${params.id}`, userId);
-        // If successful, redirect to chat
+        // If successful, redirect to the chat page
         router.replace(`/agents/${params.id}/chat`);
       } catch (error) {
         console.error("Error checking agent:", error);
@@ -30,24 +31,12 @@ export default function AgentPage() {
       }
     };
 
-    checkAgent();
-  }, [router, params.id, userId]);
+    validateAndRedirect();
+  }, [params.id, userId, router]);
 
   if (error) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#1A1A1A] gap-2">
-        <div className="text-red-500">{error}</div>
-        <div className="text-white/50 text-sm">Redirecting to agents list...</div>
-      </div>
-    );
+    return <ErrorState message={error} />;
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#1A1A1A]">
-      <div className="flex items-center gap-2 text-white/50">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Loading...
-      </div>
-    </div>
-  );
+  return <LoadingState />;
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
-	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
@@ -44,9 +43,6 @@ var _ = Describe("AutogenClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		kubeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-
-		builtinTools := syncutils.NewAtomicMap[string, string]()
-		builtinTools.Set("k8s-get-pod", "k8s.get_pod")
 
 		// add a team
 		namespace := "team-ns"
@@ -135,7 +131,7 @@ var _ = Describe("AutogenClient", func() {
 		err = kubeClient.Create(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 
-		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient, builtinTools).TranslateSelectorGroupChat(ctx, apiTeam)
+		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient).TranslateSelectorGroupChat(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(autogenTeam).NotTo(BeNil())
 

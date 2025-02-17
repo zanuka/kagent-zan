@@ -1,9 +1,0 @@
-apiVersion: agent.ai.solo.io/v1alpha1
-kind: AutogenTool
-metadata:
-  labels:
-    app.kubernetes.io/name: controller
-    app.kubernetes.io/managed-by: kustomize
-  name: autogentool-sample
-spec:
-  # TODO(user): Add fields here
