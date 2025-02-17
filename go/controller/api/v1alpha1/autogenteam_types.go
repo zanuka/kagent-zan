@@ -31,8 +31,10 @@ type AutogenTeamSpec struct {
 	SelectorTeamConfig *SelectorTeamConfig `json:"selectorTeamConfig"`
 	// +kubebuilder:validation:Optional
 	MagenticOneTeamConfig *MagenticOneTeamConfig `json:"magenticOneTeamConfig"`
-	TerminationCondition  TerminationCondition   `json:"terminationCondition"`
-	MaxTurns              int64                  `json:"maxTurns"`
+	// +kubebuilder:validation:Optional
+	SwarmTeamConfig      *SwarmTeamConfig     `json:"swarmTeamConfig"`
+	TerminationCondition TerminationCondition `json:"terminationCondition"`
+	MaxTurns             int64                `json:"maxTurns"`
 }
 
 type SelectorTeamConfig struct {
@@ -45,6 +47,8 @@ type MagenticOneTeamConfig struct {
 	MaxStalls         int    `json:"maxStalls"`
 	FinalAnswerPrompt string `json:"finalAnswerPrompt"`
 }
+
+type SwarmTeamConfig struct{}
 
 type TerminationCondition struct {
 	// ONEOF: maxMessageTermination, textMentionTermination, orTermination

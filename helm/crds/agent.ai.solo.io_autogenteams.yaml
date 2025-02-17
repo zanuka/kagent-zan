@@ -43,9 +43,15 @@ spec:
                 type: string
               magenticOneTeamConfig:
                 properties:
+                  finalAnswerPrompt:
+                    type: string
+                  maxStalls:
+                    type: integer
                   modelConfig:
                     type: string
                 required:
+                - finalAnswerPrompt
+                - maxStalls
                 - modelConfig
                 type: object
               maxTurns:
@@ -64,6 +70,8 @@ spec:
                 required:
                 - modelConfig
                 - selectorPrompt
+                type: object
+              swarmTeamConfig:
                 type: object
               terminationCondition:
                 properties:

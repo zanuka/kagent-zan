@@ -42,6 +42,7 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 	modelConfig := &v1alpha1.AutogenModelConfig{}
 	selectorTeamConfig := team.Spec.SelectorTeamConfig
 	magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
+	swarmTeamConfig := team.Spec.SwarmTeamConfig
 
 	var modelConfigName string
 	var groupChatType string
@@ -59,6 +60,8 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 			teamConfig.MaxStalls = 3
 		}
 		teamConfig.FinalAnswerPrompt = magenticOneTeamConfig.FinalAnswerPrompt
+	} else if swarmTeamConfig != nil {
+		groupChatType = "SwarmGroupChat"
 	} else {
 		return nil, fmt.Errorf("no model config specified")
 	}
