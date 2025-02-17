@@ -1,7 +1,6 @@
 import logging
 import os
 import sqlite3
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
@@ -13,9 +12,8 @@ from autogen_core.tools import BaseTool
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-
+# Default base URL for downloading the documentation database
 DEFAULT_DB_URL = "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"
-COLLECTION_NAME = "documentation"
 
 # Map of supported products and their database files
 PRODUCT_DB_MAP = {
@@ -28,7 +26,7 @@ PRODUCT_DB_MAP = {
 
 
 class Config(BaseModel):
-    """Base configuration for all Documentation search tools"""
+    """Configuration for Documentation search tools."""
 
     docs_base_path: Optional[str] = Field(
         default="", description="Base path for the documentation database. If empty, the database will be downloaded."
@@ -102,14 +100,14 @@ class SQLiteDownloader:
 
 
 class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
-    """Base class for all Documentation search tools"""
+    """Base class for all Documentation search tools."""
 
     component_type = "tool"
     component_config_schema = Config
 
     @property
     def component_provider_override(self) -> str:
-        """Build the component provider path from the class name"""
+        """Build the component provider path from the class name."""
         return f"kagent.tools.docs.{self.__class__.__name__}"
 
     def __init__(
@@ -122,40 +120,39 @@ class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
         self.config = config
 
     def _to_config(self) -> Config:
-        """Convert to config object"""
+        """Convert to config object."""
         return self.config.copy()
 
     @classmethod
     def _from_config(cls, config: Config) -> "BaseTool":
-        """Create instance from config"""
+        """Create instance from config."""
         raise NotImplementedError("Use specific tool implementations")
 
 
 class QueryInput(BaseModel):
     query: str = Field(
-        description="The search query to use for finding relevant documentation. Be specific and include relevant keywords. For example, 'how to configure traffic splitting', 'what is a virtual service', 'how to debug an istio sidecar', etc."
+        description="The search query to use for finding relevant documentation. Be specific and include relevant keywords."
     )
     product_name: str = Field(
-        description="The name of the product to search within. Examples include: 'istio', 'kubernetes', 'prometheus', 'argo', 'helm'"
+        description="The name of the product to search within. Examples include: 'istio', 'kubernetes', 'prometheus', 'argo', 'helm'."
     )
     version: Optional[str] = Field(
         default=None,
-        description="The specific version of the product documentation to search. Use the full version number without the 'v' prefix. For example, '1.17.2', '2.4.0', etc. If a version is not specified or unknown, leave this parameter empty to search all available versions.",
+        description="The specific version of the product documentation to search. Use the full version number without the 'v' prefix.",
     )
     limit: Optional[int] = Field(
-        default=4,
-        description="Optional. The maximum number of search results to return. Use this to limit the amount of information returned, especially when expecting a large number of results. Defaults to 4.",
+        default=4, description="Optional. The maximum number of search results to return. Defaults to 4."
     )
 
 
 class QueryTool(BaseTool):
-    """Tool for querying documentation for a specific product"""
+    """Tool for querying documentation for a specific product."""
 
-    description = """Searches a vector database for relevant documentation related to various software projects. Use this tool to find information about specific topics, features, or concepts within the product's documentation. This is useful for grounding answers in official documentation and retrieving relevant information quickly and efficiently."""
+    description = """Searches a vector database for relevant documentation related to various software projects."""
 
     def __init__(self, config: Config) -> None:
         super().__init__(config=config, input_model=QueryInput, description=self.description)
-        # Initialize SQLite downloader with base S3 URL and product mapping
+        # Initialize SQLite downloader with base S3 URL and product mapping if override is not provided
         self.db_downloader = SQLiteDownloader(
             base_url=config.docs_download_url
             or os.environ.get("DB_BASE_URL", "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"),
@@ -221,40 +218,17 @@ class QueryTool(BaseTool):
     def query_documentation(
         self, query_text: str, product_name: str, version: str = None, limit: int = 4, db_path: str = None
     ) -> List[Dict[str, Any]]:
-        """
-        Query documentation for a specific product.
-
-        Args:
-            db_path (str): Path to the SQLite database file
-            query_text (str): The search query to use for finding relevant documentation
-            product_name (str): Name of the product (must be in PRODUCT_DB_MAP)
-            version (str, optional): Specific version to query (without 'v' prefix)
-            limit (int, optional): Maximum number of results to return (default: 4)
-
-        Returns:
-            List[Dict[str, Any]]: List of matching documentation chunks with distances
-
-        Raises:
-            ValueError: If query_text or product_name is empty, or if product is not supported
-        """
+        """Query documentation for a specific product."""
         if query_text == "" or product_name == "":
             raise ValueError("Both query and product must be specified")
 
         try:
-            # Input validation to match function tool requirements
-            if not query_text or not product_name:
-                raise ValueError("Both query and product must be specified")
-
             if product_name not in PRODUCT_DB_MAP:
                 raise ValueError(
                     f"Unsupported product: {product_name}. Supported product: {', '.join(PRODUCT_DB_MAP.keys())}"
                 )
 
-            # Handle None or empty version string consistently
             version = version if version and version.strip() else None
-
-            # Use default limit if None provided
-            limit = limit if limit is not None else 4
 
             query_embedding = self.create_embeddings(query_text)
 
