@@ -89,7 +89,9 @@ apply_manifest = FunctionTool(
     name="_apply_manifest",
 )
 
-ApplyManifest, ApplyManifestConfig = create_typed_fn_tool(apply_manifest, "kagent.tools.k8s.ApplyManifest", "ApplyManifest")
+ApplyManifest, ApplyManifestConfig = create_typed_fn_tool(
+    apply_manifest, "kagent.tools.k8s.ApplyManifest", "ApplyManifest"
+)
 
 
 get_resources = FunctionTool(

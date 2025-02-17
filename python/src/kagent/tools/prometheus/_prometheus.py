@@ -26,6 +26,7 @@ def get_http_client(config: Config, cancellation_token: CancellationToken) -> ht
     else:
         return httpx.AsyncClient(base_url=config.base_url)
 
+
 class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
     """Base class for all Prometheus tools"""
 
@@ -110,7 +111,6 @@ class QueryRangeTool(BaseTool):
             }
             response = await client.get("/query_range", params=params)
             return response.json()
-
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryRangeTool":
@@ -448,7 +448,6 @@ class StatusFlagsTool(BaseTool):
         async with get_http_client(self.config, cancellation_token) as client:
             response = await client.get("/status/flags")
             return response.json()
-
 
     @classmethod
     def _from_config(cls, config: Config) -> "StatusFlagsTool":

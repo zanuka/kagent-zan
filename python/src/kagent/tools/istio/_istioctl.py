@@ -16,7 +16,9 @@ verify_install = FunctionTool(
     name="verify_install",
 )
 
-VerifyInstall, VerifyInstallConfig = create_typed_fn_tool(verify_install, "kagent.tools.istio.VerifyInstall", "VerifyInstall")
+VerifyInstall, VerifyInstallConfig = create_typed_fn_tool(
+    verify_install, "kagent.tools.istio.VerifyInstall", "VerifyInstall"
+)
 
 
 async def _proxy_config(
