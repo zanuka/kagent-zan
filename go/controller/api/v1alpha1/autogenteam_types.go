@@ -48,7 +48,9 @@ type MagenticOneTeamConfig struct {
 	FinalAnswerPrompt string `json:"finalAnswerPrompt"`
 }
 
-type SwarmTeamConfig struct{}
+type SwarmTeamConfig struct {
+	ModelConfig string `json:"modelConfig"`
+}
 
 type TerminationCondition struct {
 	// ONEOF: maxMessageTermination, textMentionTermination, orTermination

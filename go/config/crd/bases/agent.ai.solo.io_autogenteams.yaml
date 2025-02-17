@@ -72,6 +72,11 @@ spec:
                 - selectorPrompt
                 type: object
               swarmTeamConfig:
+                properties:
+                  modelConfig:
+                    type: string
+                required:
+                - modelConfig
                 type: object
               terminationCondition:
                 properties:

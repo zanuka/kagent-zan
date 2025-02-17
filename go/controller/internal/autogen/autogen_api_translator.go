@@ -39,7 +39,6 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 ) (*api.Team, error) {
 
 	// get model config
-	modelConfig := &v1alpha1.AutogenModelConfig{}
 	selectorTeamConfig := team.Spec.SelectorTeamConfig
 	magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
 	swarmTeamConfig := team.Spec.SwarmTeamConfig
@@ -62,10 +61,12 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 		teamConfig.FinalAnswerPrompt = magenticOneTeamConfig.FinalAnswerPrompt
 	} else if swarmTeamConfig != nil {
 		groupChatType = "SwarmGroupChat"
+		modelConfigName = swarmTeamConfig.ModelConfig
 	} else {
 		return nil, fmt.Errorf("no model config specified")
 	}
 
+	modelConfig := &v1alpha1.AutogenModelConfig{}
 	err := fetchObjKube(
 		ctx,
 		a.kube,
