@@ -18,6 +18,14 @@ class Config(BaseModel):
     password: str = Field(default="", description="Password for basic auth")
 
 
+def _format_time(time: Union[datetime, float]) -> str:
+    """Format time as a string"""
+    if isinstance(time, datetime):
+        return time.isoformat()
+    else:
+        return str(time)
+
+
 def get_http_client(config: Config, cancellation_token: CancellationToken) -> httpx.AsyncClient:
     """Create an HTTP client for the API"""
     if config.username and config.password:
@@ -25,6 +33,7 @@ def get_http_client(config: Config, cancellation_token: CancellationToken) -> ht
         return httpx.AsyncClient(base_url=config.base_url, auth=auth)
     else:
         return httpx.AsyncClient(base_url=config.base_url)
+
 
 class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
     """Base class for all Prometheus tools"""
@@ -58,6 +67,10 @@ class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
 
 class QueryInput(BaseModel):
     query: str = Field(description="Prometheus expression query string")
+    time: Optional[Union[datetime, float]] = Field(
+        default=None, description="Evaluation timestamp in RFC3339 or unix timestamp format"
+    )
+    timeout: Optional[str] = Field(default=None, description="Evaluation timeout")
 
 
 class QueryTool(BaseTool):
@@ -103,14 +116,13 @@ class QueryRangeTool(BaseTool):
         async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "query": args.query,
-                "start": client._format_time(args.start),
-                "end": client._format_time(args.end),
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
                 "step": str(args.step),
                 "timeout": args.timeout,
             }
             response = await client.get("/query_range", params=params)
             return response.json()
-
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryRangeTool":
@@ -138,8 +150,8 @@ class SeriesQueryTool(BaseTool):
         async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "match[]": args.match,
-                "start": client._format_time(args.start) if args.start else None,
-                "end": client._format_time(args.end) if args.end else None,
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
                 "limit": args.limit,
             }
             result = await client.get("/series", params=params)
@@ -170,8 +182,8 @@ class LabelNamesTool(BaseTool):
     async def run(self, args: LabelNamesInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {
-                "start": client._format_time(args.start) if args.start else None,
-                "end": client._format_time(args.end) if args.end else None,
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
                 "match[]": args.match,
                 "limit": args.limit,
             }
@@ -205,8 +217,8 @@ class LabelValuesTool(BaseTool):
         async with get_http_client(self.config, cancellation_token) as client:
             encoded_label = urllib.parse.quote(args.label_name)
             params = {
-                "start": client._format_time(args.start) if args.start else None,
-                "end": client._format_time(args.end) if args.end else None,
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
                 "match[]": args.match,
                 "limit": args.limit,
             }
@@ -449,7 +461,6 @@ class StatusFlagsTool(BaseTool):
             response = await client.get("/status/flags")
             return response.json()
 
-
     @classmethod
     def _from_config(cls, config: Config) -> "StatusFlagsTool":
         return cls(config)
@@ -573,8 +584,8 @@ class DeleteSeriesTool(BaseTool):
         async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "match[]": args.match,
-                "start": client._format_time(args.start) if args.start else None,
-                "end": client._format_time(args.end) if args.end else None,
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
             }
             response = client.post("/admin/tsdb/delete_series", content=params)
             return response.json()
@@ -629,28 +640,4 @@ class WALReplayTool(BaseTool):
 
     @classmethod
     def _from_config(cls, config: Config) -> "WALReplayTool":
-        return cls(config)
-
-
-class NotificationsInput(BaseModel):
-    pass
-
-
-class NotificationsTool(BaseTool):
-    """Tool for getting active Prometheus notifications"""
-
-    description = """Retrieves information about active notifications in Prometheus. 
-        Use this tool to monitor current notification status and delivery state. 
-        Shows details about pending and in-progress alert notifications."""
-
-    def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=NotificationsInput, description=self.description)
-
-    async def run(self, args: NotificationsInput, cancellation_token: CancellationToken) -> Any:
-        async with get_http_client(self.config, cancellation_token) as client:
-            response = await client.get("/notifications")
-            return response.json()
-
-    @classmethod
-    def _from_config(cls, config: Config) -> "NotificationsTool":
         return cls(config)
