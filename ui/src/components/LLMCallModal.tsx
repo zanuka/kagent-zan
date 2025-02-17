@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, Bot, User, Info, Terminal, Cpu } from "lucide-react";
+import { MessageSquare, Bot, User, Info, Terminal, Cpu, Ellipsis } from "lucide-react";
 
 interface Message {
   content: string;
@@ -26,7 +26,7 @@ interface LLMResponse {
   model: string;
 }
 
-interface LLMCall {
+export interface LLMCall {
   type: string;
   messages: Message[];
   response: LLMResponse;
@@ -78,9 +78,8 @@ const LLMCallModal = ({ content }: LLMCallModalProps) => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <div className="flex items-center gap-2 text-white/80 hover:text-white text-xs underline cursor-pointer text-left">
-          <MessageSquare className="w-4 h-4" />
-          View details
+        <div className="flex items-center gap-2 text-white/80 hover:text-violet-500 text-xs underline cursor-pointer text-left">
+          <Ellipsis className="w-4 h-4" />
         </div>
       </DialogTrigger>
       <DialogContent className="bg-neutral-900 text-white border border-neutral-700 max-w-4xl max-h-[80vh]">

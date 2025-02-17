@@ -13,7 +13,7 @@ const SessionGroup = ({ title, sessions, onViewRun, onDeleteSession }: SessionGr
     <div className="space-y-4">
       {sessions.map((sessionWithRuns) => (
         <div key={sessionWithRuns.session.id} className="space-y-1">
-          <div className="px-2 text-xs text-white/30">{sessionWithRuns.session.name || `Session ${sessionWithRuns.session.id}`}</div>
+          <div className="px-2 text-xs text-white/30">{sessionWithRuns.session.name || `Chat ${sessionWithRuns.session.id}`}</div>
           {sessionWithRuns.runs.map((run) => (
             <RunItem key={run.id} sessionId={sessionWithRuns.session.id!} run={run} onClick={onViewRun} onDelete={onDeleteSession} />
           ))}
