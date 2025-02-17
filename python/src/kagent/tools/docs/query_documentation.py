@@ -99,36 +99,6 @@ class SQLiteDownloader:
         return db_path
 
 
-class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
-    """Base class for all Documentation search tools."""
-
-    component_type = "tool"
-    component_config_schema = Config
-
-    @property
-    def component_provider_override(self) -> str:
-        """Build the component provider path from the class name."""
-        return f"kagent.tools.docs.{self.__class__.__name__}"
-
-    def __init__(
-        self,
-        config: Config,
-        input_model: Type[BaseModel],
-        description: str,
-    ) -> None:
-        super().__init__(input_model, Any, self.__class__.__name__, description)
-        self.config = config
-
-    def _to_config(self) -> Config:
-        """Convert to config object."""
-        return self.config.copy()
-
-    @classmethod
-    def _from_config(cls, config: Config) -> "BaseTool":
-        """Create instance from config."""
-        raise NotImplementedError("Use specific tool implementations")
-
-
 class QueryInput(BaseModel):
     query: str = Field(
         description="The search query to use for finding relevant documentation. Be specific and include relevant keywords."
@@ -145,13 +115,15 @@ class QueryInput(BaseModel):
     )
 
 
-class QueryTool(BaseTool):
+class QueryTool(BaseTool, Component[Config]):
     """Tool for querying documentation for a specific product."""
 
-    description = """Searches a vector database for relevant documentation related to various software projects."""
+    component_type = "tool"
+    component_config_schema = Config
+    component_provider_override = "kagent.tools.docs.QueryTool"
+    _description = """Searches a vector database for relevant documentation related to various software projects."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=QueryInput, description=self.description)
         # Initialize SQLite downloader with base S3 URL and product mapping if override is not provided
         self.db_downloader = SQLiteDownloader(
             base_url=config.docs_download_url
@@ -160,6 +132,9 @@ class QueryTool(BaseTool):
         )
         # Initialize OpenAI with API key from config
         self.openai = OpenAI(api_key=config.openai_api_key)
+        self.config: Config = config
+
+        super().__init__(QueryInput, BaseModel, "query_tool", description=self._description)
 
     async def run(self, args: QueryInput, cancellation_token: CancellationToken) -> Any:
         db_path = self.config.docs_base_path
@@ -171,6 +146,10 @@ class QueryTool(BaseTool):
                 raise
         return self.query_documentation(args.query, args.product_name, args.version, args.limit, db_path)
 
+    def _to_config(self) -> Config:
+        """Convert to config object."""
+        return self.config.copy()
+
     @classmethod
     def _from_config(cls, config: Config) -> "QueryTool":
         return cls(config)
@@ -180,7 +159,7 @@ class QueryTool(BaseTool):
         return response.data[0].embedding
 
     def query_collection(
-        self, query_embedding: List[float], filter: dict, top_k: int = 10, db_path: str = None
+        self, query_embedding: List[float], filter: dict, top_k: int = 10, db_path: str | None = None
     ) -> List[QueryResult]:
         conn = sqlite3.connect(str(db_path))
         conn.enable_load_extension(True)
@@ -216,7 +195,7 @@ class QueryTool(BaseTool):
         return results
 
     def query_documentation(
-        self, query_text: str, product_name: str, version: str = None, limit: int = 4, db_path: str = None
+        self, query_text: str, product_name: str, version: str | None = None, limit: int = 4, db_path: str | None = None
     ) -> List[Dict[str, Any]]:
         """Query documentation for a specific product."""
         if query_text == "" or product_name == "":
