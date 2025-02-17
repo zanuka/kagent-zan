@@ -37,6 +37,10 @@ class Config(BaseModel):
         default=DEFAULT_DB_URL,
         description="Base URL for downloading the documentation database. If empty, the default URL will be used.",
     )
+    openai_api_key: str = Field(
+        default=os.environ.get("OPENAI_API_KEY", ""),
+        description="API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used.",
+    )
 
 
 class QueryResult:
@@ -97,9 +101,6 @@ class SQLiteDownloader:
         return db_path
 
 
-openai = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
-
 class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
     """Base class for all Documentation search tools"""
 
@@ -128,11 +129,6 @@ class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
     def _from_config(cls, config: Config) -> "BaseTool":
         """Create instance from config"""
         raise NotImplementedError("Use specific tool implementations")
-
-
-def create_embeddings(text: str) -> List[float]:
-    response = openai.embeddings.create(model="text-embedding-3-large", input=text)
-    return response.data[0].embedding
 
 
 class QueryInput(BaseModel):
@@ -165,6 +161,8 @@ class QueryTool(BaseTool):
             or os.environ.get("DB_BASE_URL", "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"),
             product_map=PRODUCT_DB_MAP,
         )
+        # Initialize OpenAI with API key from config
+        self.openai = OpenAI(api_key=config.openai_api_key)
 
     async def run(self, args: QueryInput, cancellation_token: CancellationToken) -> Any:
         db_path = self.config.docs_base_path
@@ -174,102 +172,103 @@ class QueryTool(BaseTool):
             except Exception as e:
                 logging.error(f"Failed to get database: {e}")
                 raise
-        return query_documentation(args.query, args.product_name, args.version, args.limit, db_path)
+        return self.query_documentation(args.query, args.product_name, args.version, args.limit, db_path)
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryTool":
         return cls(config)
 
+    def create_embeddings(self, text: str) -> List[float]:
+        response = self.openai.embeddings.create(model="text-embedding-3-large", input=text)
+        return response.data[0].embedding
 
-def query_collection(
-    query_embedding: List[float], filter: dict, top_k: int = 10, db_path: str = None
-) -> List[QueryResult]:
-    conn = sqlite3.connect(str(db_path))
-    conn.enable_load_extension(True)
-    sqlite_vec.load(conn)
-    conn.enable_load_extension(False)
+    def query_collection(
+        self, query_embedding: List[float], filter: dict, top_k: int = 10, db_path: str = None
+    ) -> List[QueryResult]:
+        conn = sqlite3.connect(str(db_path))
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+        conn.enable_load_extension(False)
 
-    cursor = conn.cursor()
+        cursor = conn.cursor()
 
-    query = """SELECT *, distance FROM vec_items WHERE embedding MATCH ?"""
-    params = [np.array(query_embedding, dtype=np.float32).tobytes()]
+        query = """SELECT *, distance FROM vec_items WHERE embedding MATCH ?"""
+        params = [np.array(query_embedding, dtype=np.float32).tobytes()]
 
-    if "product_name" in filter:
-        query += " AND product_name = ?"
-        params.append(filter["product_name"])
+        if "product_name" in filter:
+            query += " AND product_name = ?"
+            params.append(filter["product_name"])
 
-    if "version" in filter:
-        query += " AND version = ?"
-        params.append(filter["version"])
+        if "version" in filter:
+            query += " AND version = ?"
+            params.append(filter["version"])
 
-    query += " ORDER BY distance LIMIT ?;"
-    params.append(top_k)
+        query += " ORDER BY distance LIMIT ?;"
+        params.append(top_k)
 
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-    conn.close()
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        conn.close()
 
-    results = []
-    for row in rows:
-        row_dict = dict(zip([column[0] for column in cursor.description], row, strict=True))
-        row_dict.pop("embedding", None)
-        results.append(QueryResult(**row_dict))
+        results = []
+        for row in rows:
+            row_dict = dict(zip([column[0] for column in cursor.description], row, strict=True))
+            row_dict.pop("embedding", None)
+            results.append(QueryResult(**row_dict))
 
-    return results
+        return results
 
+    def query_documentation(
+        self, query_text: str, product_name: str, version: str = None, limit: int = 4, db_path: str = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Query documentation for a specific product.
 
-def query_documentation(
-    query_text: str, product_name: str, version: str = None, limit: int = 4, db_path: str = None
-) -> List[Dict[str, Any]]:
-    """
-    Query documentation for a specific product.
+        Args:
+            db_path (str): Path to the SQLite database file
+            query_text (str): The search query to use for finding relevant documentation
+            product_name (str): Name of the product (must be in PRODUCT_DB_MAP)
+            version (str, optional): Specific version to query (without 'v' prefix)
+            limit (int, optional): Maximum number of results to return (default: 4)
 
-    Args:
-        db_path (str): Path to the SQLite database file
-        query_text (str): The search query to use for finding relevant documentation
-        product_name (str): Name of the product (must be in PRODUCT_DB_MAP)
-        version (str, optional): Specific version to query (without 'v' prefix)
-        limit (int, optional): Maximum number of results to return (default: 4)
+        Returns:
+            List[Dict[str, Any]]: List of matching documentation chunks with distances
 
-    Returns:
-        List[Dict[str, Any]]: List of matching documentation chunks with distances
-
-    Raises:
-        ValueError: If query_text or product_name is empty, or if product is not supported
-    """
-    if query_text == "" or product_name == "":
-        raise ValueError("Both query and product must be specified")
-
-    try:
-        # Input validation to match function tool requirements
-        if not query_text or not product_name:
+        Raises:
+            ValueError: If query_text or product_name is empty, or if product is not supported
+        """
+        if query_text == "" or product_name == "":
             raise ValueError("Both query and product must be specified")
 
-        if product_name not in PRODUCT_DB_MAP:
-            raise ValueError(
-                f"Unsupported product: {product_name}. Supported product: {', '.join(PRODUCT_DB_MAP.keys())}"
-            )
+        try:
+            # Input validation to match function tool requirements
+            if not query_text or not product_name:
+                raise ValueError("Both query and product must be specified")
 
-        # Handle None or empty version string consistently
-        version = version if version and version.strip() else None
+            if product_name not in PRODUCT_DB_MAP:
+                raise ValueError(
+                    f"Unsupported product: {product_name}. Supported product: {', '.join(PRODUCT_DB_MAP.keys())}"
+                )
 
-        # Use default limit if None provided
-        limit = limit if limit is not None else 4
+            # Handle None or empty version string consistently
+            version = version if version and version.strip() else None
 
-        query_embedding = create_embeddings(query_text)
+            # Use default limit if None provided
+            limit = limit if limit is not None else 4
 
-        filter = {"product_name": product_name}
-        if version:
-            filter["version"] = version
+            query_embedding = self.create_embeddings(query_text)
 
-        results = query_collection(query_embedding, filter, limit, db_path)
-        return [{"distance": qr.distance, "content": qr.content} for qr in results]
+            filter = {"product_name": product_name}
+            if version:
+                filter["version"] = version
 
-    except Exception as e:
-        logging.error("An error occurred: %s", e)
-        raise
+            results = self.query_collection(query_embedding, filter, limit, db_path)
+            return [{"distance": qr.distance, "content": qr.content} for qr in results]
 
+        except Exception as e:
+            logging.error("An error occurred: %s", e)
+            raise
 
-def list_supported_product() -> List[str]:
-    """Return a list of supported products."""
-    return list(PRODUCT_DB_MAP.keys())
+    def list_supported_product(self) -> List[str]:
+        """Return a list of supported products."""
+        return list(PRODUCT_DB_MAP.keys())
