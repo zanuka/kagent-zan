@@ -44,14 +44,42 @@ const defaultPrometheusConfig: PrometheusToolConfig = {
   password: undefined,
 }
 
+interface DocumentationConfig {
+  docs_base_path?: string;
+  docs_download_url?: string;
+  openai_api_key?: string;
+}
+
+
+const defaultDocumentationConfig: DocumentationConfig = {
+  docs_base_path: undefined,
+  docs_download_url: undefined,
+  openai_api_key: undefined,
+}
+
 // Used to render the UI
 export const TOOL_CONFIGS = {
-  'kagent.tools.prometheus': createConfigMetadata<PrometheusToolConfig>(defaultPrometheusConfig)
+  'kagent.tools.prometheus': createConfigMetadata<PrometheusToolConfig>(defaultPrometheusConfig),
+  'kagent.tools.docs': createConfigMetadata<DocumentationConfig>(defaultDocumentationConfig),
 } as const;
+
+export const getToolType = (provider: string): keyof typeof TOOL_CONFIGS | "unknown" => {
+  if (provider.startsWith("kagent.tools.prometheus")) return "kagent.tools.prometheus";
+  if (provider.startsWith("kagent.tools.docs")) return "kagent.tools.docs";
+  return "unknown";
+};
 
 
 // TODO: This will come from the backend
 export const TOOLS: Tool[] = [
+  {
+    provider: "kagent.tools.docs.QueryTool",
+    label: "QueryTool",
+    version: 1,
+    component_version: 1,
+    description: "Searches a vector database for relevant documentation of products such as Istio, Kubernetes, Prometheus",
+    config: defaultDocumentationConfig,
+  },
   {
     provider: "kagent.tools.prometheus.QueryTool",
     label: "QueryTool",
