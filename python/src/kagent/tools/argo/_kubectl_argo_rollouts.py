@@ -7,8 +7,13 @@ from .._utils import create_typed_fn_tool
 
 
 async def _verify_argo_rollouts_controller_install(
-    ns: Annotated[Optional[str], "The namespace to check for the argo rollouts controller. Defaults to argo-rollouts"] = "argo-rollouts",
-    label: Annotated[Optional[str], "The label to check for the argo rollouts controller. Defaults to app.kubernetes.io/component=rollouts-controller"] = "app.kubernetes.io/component=rollouts-controller",
+    ns: Annotated[
+        Optional[str], "The namespace to check for the argo rollouts controller. Defaults to argo-rollouts"
+    ] = "argo-rollouts",
+    label: Annotated[
+        Optional[str],
+        "The label to check for the argo rollouts controller. Defaults to app.kubernetes.io/component=rollouts-controller",
+    ] = "app.kubernetes.io/component=rollouts-controller",
 ) -> str:
     """
     Check the argo rollouts controller is running in the kubernetes cluster.
