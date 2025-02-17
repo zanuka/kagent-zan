@@ -37,7 +37,6 @@ type SelectorTeamConfig struct {
 	ModelConfig    string `json:"modelConfig"`
 }
 
-// +kubebuilder:validation:XValidation:message="There must one termination type set",rule="1 == (self.maxMessageTermination != null?1:0) + (self.textMentionTermination != null?1:0) + (self.orTermination != null?1:0)"
 type TerminationCondition struct {
 	// ONEOF: maxMessageTermination, textMentionTermination, orTermination
 	MaxMessageTermination  *MaxMessageTermination  `json:"maxMessageTermination,omitempty"`

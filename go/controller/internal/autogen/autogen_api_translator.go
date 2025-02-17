@@ -7,40 +7,36 @@ import (
 	"fmt"
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const GlobalUserID = "guestuser@gmail.com"
+
 type AutogenApiTranslator interface {
 	TranslateSelectorGroupChat(
 		ctx context.Context,
 		team *v1alpha1.AutogenTeam,
-	) (*api.TeamResponse, error)
+	) (*api.Team, error)
 }
 
 type autogenApiTranslator struct {
 	kube client.Client
-
-	// map of tool ref to builtin function name
-	builtinTools syncutils.AtomicMap[string, string]
 }
 
 func NewAutogenApiTranslator(
 	kube client.Client,
-	builtinTools syncutils.AtomicMap[string, string],
 ) AutogenApiTranslator {
 	return &autogenApiTranslator{
-		kube:         kube,
-		builtinTools: builtinTools,
+		kube: kube,
 	}
 }
 
 func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 	ctx context.Context,
 	team *v1alpha1.AutogenTeam,
-) (*api.TeamResponse, error) {
+) (*api.Team, error) {
 
 	// get model config
 	modelConfig := &v1alpha1.AutogenModelConfig{}
@@ -82,13 +78,13 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		ComponentType: "model",
 		Version:       makePtr(1),
 		//ComponentVersion: 1,
-		Component: api.ModelConfig{
+		Config: api.ModelConfig{
 			Model:  modelConfig.Spec.Model,
 			APIKey: makePtr(string(modelApiKey)),
 		},
 	}
 
-	var participants []api.AgentComponent
+	var participants []api.TeamParticipant
 	for _, agentName := range team.Spec.Participants {
 		agent := &v1alpha1.AutogenAgent{}
 		err := fetchObjKube(
@@ -105,20 +101,16 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		//TODO: currently only supports builtin tools
 		var tools []api.ToolComponent
 		for _, toolRef := range agent.Spec.Tools {
-			// fetch fn name from builtin tools
-			fnName, ok := a.builtinTools.Get(toolRef)
-			if !ok {
-				return nil, fmt.Errorf("builtin tool %s not found", toolRef)
+			toolProvider, toolConfig, err := translateToolConfig(ctx, a.kube, toolRef, team.Namespace)
+			if err != nil {
+				return nil, err
 			}
 
 			tool := api.ToolComponent{
-				Provider:      "autogen_agentchat.tools.BuiltinTool",
+				Provider:      toolProvider,
 				ComponentType: "tool",
 				Version:       makePtr(1),
-				//ComponentVersion: 1,
-				Component: api.ToolConfig{
-					FnName: fnName,
-				},
+				Config:        toolConfig,
 			}
 			tools = append(tools, tool)
 		}
@@ -127,14 +119,14 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		if agent.Spec.SystemMessage == "" {
 			sysMsgPtr = nil
 		}
-		participant := api.AgentComponent{
+		participant := api.TeamParticipant{
 			//TODO: currently only supports assistant agents
 			Provider:      "autogen_agentchat.agents.AssistantAgent",
 			ComponentType: "agent",
 			Version:       makePtr(1),
 			Description:   makePtr(agent.Spec.Description),
 			//ComponentVersion: 1,
-			Component: api.AgentConfig{
+			Config: api.AgentConfig{
 				Name:        agent.Spec.Name,
 				ModelClient: modelClient,
 				Tools:       tools,
@@ -159,15 +151,16 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		return nil, err
 	}
 
-	return &api.TeamResponse{
+	return &api.Team{
 		ID:     generateIdFromString(team.Name + "-" + team.Namespace),
-		UserID: "guestuser@gmail.com", // always use global id
+		UserID: GlobalUserID, // always use global id
 		Component: api.TeamComponent{
 			Provider:         "autogen_agentchat.teams.SelectorGroupChat",
 			ComponentType:    "team",
 			Version:          1,
 			ComponentVersion: 1,
 			Description:      makePtr(team.Spec.Description),
+			Label:            team.Name,
 			Config: api.TeamConfig{
 				Participants:         participants,
 				ModelClient:          modelClient,
@@ -177,6 +170,18 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 			},
 		},
 	}, nil
+}
+
+func translateToolConfig(
+	ctx context.Context,
+	kube client.Client,
+	ref string,
+	namespace string,
+) (string, api.ToolConfig, error) {
+	// right now we only support builtin tools, so we just return the ref
+	// later this can fetch user-defined tools from k8s and translate them
+	// to autogen-compatible tools
+	return ref, api.ToolConfig{}, nil
 }
 
 func makePtr[T any](v T) *T {
@@ -213,7 +218,7 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Component: api.TerminationConfig{
+			Config: api.TerminationConfig{
 				MaxMessages: makePtr(terminationCondition.MaxMessageTermination.MaxMessages),
 			},
 		}, nil
@@ -223,7 +228,7 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Component: api.TerminationConfig{
+			Config: api.TerminationConfig{
 				Text: makePtr(terminationCondition.TextMentionTermination.Text),
 			},
 		}, nil
@@ -246,7 +251,7 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Component: api.TerminationConfig{
+			Config: api.TerminationConfig{
 				Conditions: conditions,
 			},
 		}, nil

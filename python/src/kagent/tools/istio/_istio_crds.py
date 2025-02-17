@@ -1,10 +1,10 @@
-from enum import Enum
 from typing import Annotated
 
 from autogen_core.models import SystemMessage, UserMessage
 from autogen_core.tools import FunctionTool
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
+from .._utils import create_typed_fn_tool
 from .prompts import (
     AUTH_POLICY_PROMPT,
     GATEWAY_PROMPT,
@@ -91,3 +91,5 @@ generate_resource = FunctionTool(
     description="Generates an Istio resource YAML configuration from a detailed description",
     name="generate_istio_resource",
 )
+
+GenerateResource, GenerateResourceConfig = create_typed_fn_tool(generate_resource, "kagent.tools.istio.GenerateResource", "GenerateResource")
