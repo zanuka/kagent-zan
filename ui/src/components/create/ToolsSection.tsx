@@ -6,7 +6,7 @@ import { Plus, FunctionSquare, X, Search, Check, Settings2 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { Tool } from "@/lib/types";
-import { InterfaceField, TOOL_CONFIGS } from "@/lib/data";
+import { getToolType, InterfaceField, TOOL_CONFIGS } from "@/lib/data";
 import { Label } from "../ui/label";
 
 interface ToolsSectionProps {
@@ -24,10 +24,6 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
   const [showConfig, setShowConfig] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const getToolType = (provider: string): keyof typeof TOOL_CONFIGS | "unknown" => {
-    if (provider.startsWith("kagent.tools.prometheus")) return "kagent.tools.prometheus";
-    return "unknown";
-  };
 
   const handleConfigSave = (toolProvider: string, newConfig: any) => {
     if (!configTool) return;
