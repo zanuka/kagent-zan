@@ -1,4 +1,4 @@
-from ._istio_crds import Config, IstioCRDTool
+from ._istio_crds import IstioCRDTool, IstioCRDToolConfig
 from ._istioctl import (
     AnalyzeClusterConfig,
     ApplyWaypoint,
@@ -29,5 +29,5 @@ __all__ = [
     "WaypointStatus",
     "ZTunnelConfig",
     "IstioCRDTool",
-    "Config",
+    "IstioCRDToolConfig",
 ]

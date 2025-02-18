@@ -16,7 +16,7 @@ from .prompts import (
 from .prompts.base import IstioResources
 
 
-class Config(BaseModel):
+class IstioCRDToolConfig(BaseModel):
     """Base configuration for the Istio CRD tools."""
     model: str = Annotated[Optional[str], "The OpenAI model to use for generating the CRD. Defaults to gpt-4o-mini"]
     openai_api_key: str = Annotated[Optional[str], "API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used."]
@@ -25,7 +25,7 @@ class IstioCRDToolInput(BaseModel):
     istio_resource: Annotated[IstioResources, "Type of resource to generate"]
     policy_description: Annotated[str, "Detailed description of the policy to generate YAML for"]
 
-class IstioCRDTool(BaseTool, Component[Config]):
+class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
     """
     Base class for Istio CRD tools that generate YAML configuration from a detailed description.
 
@@ -34,16 +34,16 @@ class IstioCRDTool(BaseTool, Component[Config]):
     """
 
     component_type = "tool"
-    component_type_schema = Config
+    component_type_schema = IstioCRDToolConfig
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: IstioCRDToolConfig) -> None:
         self._model = config.model
         self._openai_api_key = config.openai_api_key
         self._model_client = OpenAIChatCompletionClient(
             model=self._model,
             api_key=self._openai_api_key or os.environ.get("OPENAI_API_KEY"),
         )
-        self.config: Config = config
+        self.config: IstioCRDToolConfig = config
 
         super().__init__(IstioCRDToolInput, description="Generates an Istio resource YAML configuration from a detailed description.")
 
@@ -66,11 +66,11 @@ class IstioCRDTool(BaseTool, Component[Config]):
         else:
             return "Unsupported Istio resource type"
 
-    def _to_config(self) -> Config:
-        return Config(model=self._model, openai_api_key=self._openai_api_key)
+    def _to_config(self) -> IstioCRDToolConfig:
+        return IstioCRDToolConfig(model=self._model, openai_api_key=self._openai_api_key)
 
     @classmethod
-    def _from_config(cls, config: Config) -> "IstioCRDTool":
+    def _from_config(cls, config: IstioCRDToolConfig) -> "IstioCRDTool":
         return cls(config)
 
     async def _generate_crd(self, system_prompt: str, policy_description: str, cancellation_token: CancellationToken) -> str:
