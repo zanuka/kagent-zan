@@ -86,25 +86,9 @@ async def _promote_rollout(
     ],
     as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
     cache_dir: Annotated[Optional[str], "Path to the cache directory. Default is None"],
-    certificate_authority: Annotated[Optional[str], "Path to a certificate authority file. Default is None"],
-    client_certificate: Annotated[Optional[str], "Path to a client certificate file for TLS. Default is None"],
-    client_key: Annotated[Optional[str], "Path to a client key file for TLS. Default is None"],
     cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
     context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    disable_compression: Annotated[
-        Optional[bool], "If true, opt-out of response compression for all requests. Default is False"
-    ],
-    insecure_skip_tls_verify: Annotated[
-        Optional[bool], "If true, skip server certificate validation. Default is False"
-    ],
-    kloglevel: Annotated[Optional[int], "Log level for Kubernetes client library. Default is None"],
     kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    loglevel: Annotated[Optional[str], "Log level for kubectl argo rollouts. Default is 'info'"],
-    request_timeout: Annotated[
-        Optional[str], "The length of time to wait before giving up on a server request. Default is '0'"
-    ],
-    server: Annotated[Optional[str], "The address and port of the Kubernetes API server. Default is None"],
-    tls_server_name: Annotated[Optional[str], "Server name to use for server certificate validation. Default is None"],
     token: Annotated[Optional[str], "Bearer token for authentication to the API server. Default is None"],
     user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
@@ -135,44 +119,14 @@ async def _promote_rollout(
     if cache_dir:
         cmd.extend(["--cache-dir", cache_dir])
 
-    if certificate_authority:
-        cmd.extend(["--certificate-authority", certificate_authority])
-
-    if client_certificate:
-        cmd.extend(["--client-certificate", client_certificate])
-
-    if client_key:
-        cmd.extend(["--client-key", client_key])
-
     if cluster:
         cmd.extend(["--cluster", cluster])
 
     if context:
         cmd.extend(["--context", context])
 
-    if disable_compression:
-        cmd.append("--disable-compression")
-
-    if insecure_skip_tls_verify:
-        cmd.append("--insecure-skip-tls-verify")
-
-    if kloglevel:
-        cmd.extend(["-v", str(kloglevel)])
-
     if kubeconfig:
         cmd.extend(["--kubeconfig", kubeconfig])
-
-    if loglevel:
-        cmd.extend(["--loglevel", loglevel])
-
-    if request_timeout:
-        cmd.extend(["--request-timeout", request_timeout])
-
-    if server:
-        cmd.extend(["-s", server])
-
-    if tls_server_name:
-        cmd.extend(["--tls-server-name", tls_server_name])
 
     if token:
         cmd.extend(["--token", token])
@@ -195,26 +149,13 @@ async def _get_rollout(
     ns: Annotated[Optional[str], "The namespace of the rollout. Default is None"],
     watch: Annotated[Optional[bool], "Watch live updates to the rollout. Default is False"],
     timeout_seconds: Annotated[Optional[int], "Timeout in seconds for the watch command. Default is None"],
-    no_color: Annotated[Optional[bool], "Do not colorize output. Default is False"],
     as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
     as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
     as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
     cache_dir: Annotated[Optional[str], "Path to the cache directory. Default is None"],
-    certificate_authority: Annotated[Optional[str], "Path to a certificate authority file. Default is None"],
-    client_certificate: Annotated[Optional[str], "Path to a client certificate file for TLS. Default is None"],
-    client_key: Annotated[Optional[str], "Path to a client key file for TLS. Default is None"],
     cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
     context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    disable_compression: Annotated[Optional[bool], "If true, opt-out of response compression. Default is False"],
-    insecure_skip_tls_verify: Annotated[
-        Optional[bool], "If true, skip server certificate validation. Default is False"
-    ],
-    kloglevel: Annotated[Optional[int], "Log level for Kubernetes client library. Default is None"],
     kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    loglevel: Annotated[Optional[str], "Log level for kubectl argo rollouts. Default is 'info'"],
-    request_timeout: Annotated[Optional[str], "Time to wait before giving up on a server request. Default is '0'"],
-    server: Annotated[Optional[str], "The address and port of the Kubernetes API server. Default is None"],
-    tls_server_name: Annotated[Optional[str], "Server name for server certificate validation. Default is None"],
     token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
     user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
@@ -236,9 +177,6 @@ async def _get_rollout(
     if timeout_seconds:
         cmd.extend(["--timeout-seconds", str(timeout_seconds)])
 
-    if no_color:
-        cmd.append("--no-color")
-
     if as_user:
         cmd.extend(["--as", as_user])
 
@@ -252,44 +190,14 @@ async def _get_rollout(
     if cache_dir:
         cmd.extend(["--cache-dir", cache_dir])
 
-    if certificate_authority:
-        cmd.extend(["--certificate-authority", certificate_authority])
-
-    if client_certificate:
-        cmd.extend(["--client-certificate", client_certificate])
-
-    if client_key:
-        cmd.extend(["--client-key", client_key])
-
     if cluster:
         cmd.extend(["--cluster", cluster])
 
     if context:
         cmd.extend(["--context", context])
 
-    if disable_compression:
-        cmd.append("--disable-compression")
-
-    if insecure_skip_tls_verify:
-        cmd.append("--insecure-skip-tls-verify")
-
-    if kloglevel:
-        cmd.extend(["-v", str(kloglevel)])
-
     if kubeconfig:
         cmd.extend(["--kubeconfig", kubeconfig])
-
-    if loglevel:
-        cmd.extend(["--loglevel", loglevel])
-
-    if request_timeout:
-        cmd.extend(["--request-timeout", request_timeout])
-
-    if server:
-        cmd.extend(["-s", server])
-
-    if tls_server_name:
-        cmd.extend(["--tls-server-name", tls_server_name])
 
     if token:
         cmd.extend(["--token", token])
@@ -313,22 +221,9 @@ async def _pause_rollout(
     as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
     as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
     as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cache_dir: Annotated[Optional[str], "Path to the cache directory. Default is None"],
-    certificate_authority: Annotated[Optional[str], "Path to a certificate authority file. Default is None"],
-    client_certificate: Annotated[Optional[str], "Path to a client certificate file for TLS. Default is None"],
-    client_key: Annotated[Optional[str], "Path to a client key file for TLS. Default is None"],
     cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
     context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    disable_compression: Annotated[Optional[bool], "If true, opt-out of response compression. Default is False"],
-    insecure_skip_tls_verify: Annotated[
-        Optional[bool], "If true, skip server certificate validation. Default is False"
-    ],
-    kloglevel: Annotated[Optional[int], "Log level for Kubernetes client library. Default is None"],
     kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    loglevel: Annotated[Optional[str], "Log level for kubectl argo rollouts. Default is 'info'"],
-    request_timeout: Annotated[Optional[str], "Time to wait before giving up on a server request. Default is '0'"],
-    server: Annotated[Optional[str], "The address and port of the Kubernetes API server. Default is None"],
-    tls_server_name: Annotated[Optional[str], "Server name for server certificate validation. Default is None"],
     token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
     user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
@@ -354,47 +249,14 @@ async def _pause_rollout(
     if as_uid:
         cmd.extend(["--as-uid", as_uid])
 
-    if cache_dir:
-        cmd.extend(["--cache-dir", cache_dir])
-
-    if certificate_authority:
-        cmd.extend(["--certificate-authority", certificate_authority])
-
-    if client_certificate:
-        cmd.extend(["--client-certificate", client_certificate])
-
-    if client_key:
-        cmd.extend(["--client-key", client_key])
-
     if cluster:
         cmd.extend(["--cluster", cluster])
 
     if context:
         cmd.extend(["--context", context])
 
-    if disable_compression:
-        cmd.append("--disable-compression")
-
-    if insecure_skip_tls_verify:
-        cmd.append("--insecure-skip-tls-verify")
-
-    if kloglevel:
-        cmd.extend(["-v", str(kloglevel)])
-
     if kubeconfig:
         cmd.extend(["--kubeconfig", kubeconfig])
-
-    if loglevel:
-        cmd.extend(["--loglevel", loglevel])
-
-    if request_timeout:
-        cmd.extend(["--request-timeout", request_timeout])
-
-    if server:
-        cmd.extend(["-s", server])
-
-    if tls_server_name:
-        cmd.extend(["--tls-server-name", tls_server_name])
 
     if token:
         cmd.extend(["--token", token])
@@ -420,22 +282,9 @@ async def _status_rollout(
     as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
     as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
     as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cache_dir: Annotated[Optional[str], "Path to the cache directory. Default is None"],
-    certificate_authority: Annotated[Optional[str], "Path to a certificate authority file. Default is None"],
-    client_certificate: Annotated[Optional[str], "Path to a client certificate file for TLS. Default is None"],
-    client_key: Annotated[Optional[str], "Path to a client key file for TLS. Default is None"],
     cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
     context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    disable_compression: Annotated[Optional[bool], "If true, opt-out of response compression. Default is False"],
-    insecure_skip_tls_verify: Annotated[
-        Optional[bool], "If true, skip server certificate validation. Default is False"
-    ],
-    kloglevel: Annotated[Optional[int], "Log level for Kubernetes client library. Default is None"],
     kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    loglevel: Annotated[Optional[str], "Log level for kubectl argo rollouts. Default is 'info'"],
-    request_timeout: Annotated[Optional[str], "Time to wait before giving up on a server request. Default is '0'"],
-    server: Annotated[Optional[str], "The address and port of the Kubernetes API server. Default is None"],
-    tls_server_name: Annotated[Optional[str], "Server name for server certificate validation. Default is None"],
     token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
     user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
@@ -467,47 +316,14 @@ async def _status_rollout(
     if as_uid:
         cmd.extend(["--as-uid", as_uid])
 
-    if cache_dir:
-        cmd.extend(["--cache-dir", cache_dir])
-
-    if certificate_authority:
-        cmd.extend(["--certificate-authority", certificate_authority])
-
-    if client_certificate:
-        cmd.extend(["--client-certificate", client_certificate])
-
-    if client_key:
-        cmd.extend(["--client-key", client_key])
-
     if cluster:
         cmd.extend(["--cluster", cluster])
 
     if context:
         cmd.extend(["--context", context])
 
-    if disable_compression:
-        cmd.append("--disable-compression")
-
-    if insecure_skip_tls_verify:
-        cmd.append("--insecure-skip-tls-verify")
-
-    if kloglevel:
-        cmd.extend(["-v", str(kloglevel)])
-
     if kubeconfig:
         cmd.extend(["--kubeconfig", kubeconfig])
-
-    if loglevel:
-        cmd.extend(["--loglevel", loglevel])
-
-    if request_timeout:
-        cmd.extend(["--request-timeout", request_timeout])
-
-    if server:
-        cmd.extend(["-s", server])
-
-    if tls_server_name:
-        cmd.extend(["--tls-server-name", tls_server_name])
 
     if token:
         cmd.extend(["--token", token])
@@ -532,22 +348,9 @@ async def _create_rollout_resource(
     as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
     as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
     as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cache_dir: Annotated[Optional[str], "Path to the cache directory. Default is None"],
-    certificate_authority: Annotated[Optional[str], "Path to a certificate authority file. Default is None"],
-    client_certificate: Annotated[Optional[str], "Path to a client certificate file for TLS. Default is None"],
-    client_key: Annotated[Optional[str], "Path to a client key file for TLS. Default is None"],
     cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
     context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    disable_compression: Annotated[Optional[bool], "If true, opt-out of response compression. Default is False"],
-    insecure_skip_tls_verify: Annotated[
-        Optional[bool], "If true, skip server certificate validation. Default is False"
-    ],
-    kloglevel: Annotated[Optional[int], "Log level for Kubernetes client library. Default is None"],
     kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    loglevel: Annotated[Optional[str], "Log level for kubectl argo rollouts. Default is 'info'"],
-    request_timeout: Annotated[Optional[str], "Time to wait before giving up on a server request. Default is '0'"],
-    server: Annotated[Optional[str], "The address and port of the Kubernetes API server. Default is None"],
-    tls_server_name: Annotated[Optional[str], "Server name for server certificate validation. Default is None"],
     token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
     user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
@@ -578,47 +381,14 @@ async def _create_rollout_resource(
     if as_uid:
         cmd.extend(["--as-uid", as_uid])
 
-    if cache_dir:
-        cmd.extend(["--cache-dir", cache_dir])
-
-    if certificate_authority:
-        cmd.extend(["--certificate-authority", certificate_authority])
-
-    if client_certificate:
-        cmd.extend(["--client-certificate", client_certificate])
-
-    if client_key:
-        cmd.extend(["--client-key", client_key])
-
     if cluster:
         cmd.extend(["--cluster", cluster])
 
     if context:
         cmd.extend(["--context", context])
 
-    if disable_compression:
-        cmd.append("--disable-compression")
-
-    if insecure_skip_tls_verify:
-        cmd.append("--insecure-skip-tls-verify")
-
-    if kloglevel:
-        cmd.extend(["-v", str(kloglevel)])
-
     if kubeconfig:
         cmd.extend(["--kubeconfig", kubeconfig])
-
-    if loglevel:
-        cmd.extend(["--loglevel", loglevel])
-
-    if request_timeout:
-        cmd.extend(["--request-timeout", request_timeout])
-
-    if server:
-        cmd.extend(["-s", server])
-
-    if tls_server_name:
-        cmd.extend(["--tls-server-name", tls_server_name])
 
     if token:
         cmd.extend(["--token", token])
@@ -657,22 +427,9 @@ async def _set_rollout_image(
     as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
     as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
     as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cache_dir: Annotated[Optional[str], "Path to the cache directory. Default is None"],
-    certificate_authority: Annotated[Optional[str], "Path to a certificate authority file. Default is None"],
-    client_certificate: Annotated[Optional[str], "Path to a client certificate file for TLS. Default is None"],
-    client_key: Annotated[Optional[str], "Path to a client key file for TLS. Default is None"],
     cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
     context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    disable_compression: Annotated[Optional[bool], "If true, opt-out of response compression. Default is False"],
-    insecure_skip_tls_verify: Annotated[
-        Optional[bool], "If true, skip server certificate validation. Default is False"
-    ],
-    kloglevel: Annotated[Optional[int], "Log level for Kubernetes client library. Default is None"],
     kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    loglevel: Annotated[Optional[str], "Log level for kubectl argo rollouts. Default is 'info'"],
-    request_timeout: Annotated[Optional[str], "Time to wait before giving up on a server request. Default is '0'"],
-    server: Annotated[Optional[str], "The address and port of the Kubernetes API server. Default is None"],
-    tls_server_name: Annotated[Optional[str], "Server name for server certificate validation. Default is None"],
     token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
     user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
@@ -696,47 +453,14 @@ async def _set_rollout_image(
     if as_uid:
         cmd.extend(["--as-uid", as_uid])
 
-    if cache_dir:
-        cmd.extend(["--cache-dir", cache_dir])
-
-    if certificate_authority:
-        cmd.extend(["--certificate-authority", certificate_authority])
-
-    if client_certificate:
-        cmd.extend(["--client-certificate", client_certificate])
-
-    if client_key:
-        cmd.extend(["--client-key", client_key])
-
     if cluster:
         cmd.extend(["--cluster", cluster])
 
     if context:
         cmd.extend(["--context", context])
 
-    if disable_compression:
-        cmd.append("--disable-compression")
-
-    if insecure_skip_tls_verify:
-        cmd.append("--insecure-skip-tls-verify")
-
-    if kloglevel:
-        cmd.extend(["-v", str(kloglevel)])
-
     if kubeconfig:
         cmd.extend(["--kubeconfig", kubeconfig])
-
-    if loglevel:
-        cmd.extend(["--loglevel", loglevel])
-
-    if request_timeout:
-        cmd.extend(["--request-timeout", request_timeout])
-
-    if server:
-        cmd.extend(["-s", server])
-
-    if tls_server_name:
-        cmd.extend(["--tls-server-name", tls_server_name])
 
     if token:
         cmd.extend(["--token", token])
