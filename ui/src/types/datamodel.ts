@@ -76,9 +76,8 @@ export interface FunctionToolConfig {
   global_imports: any[]; // Sequence[Import] equivalent
   has_cancellation_support: boolean;
 }
-
-export interface BuiltInToolConfig {
-  fn_name: string;
+export interface KAgentToolConfig {
+  // Nothing for now, but this is where the config would go
 }
 
 // Provider-based Configs
@@ -197,7 +196,7 @@ export type AgentConfig = MultimodalWebSurferConfig | AssistantAgentConfig | Use
 
 export type ModelConfig = OpenAIClientConfig | AzureOpenAIClientConfig;
 
-export type ToolConfig = FunctionToolConfig | BuiltInToolConfig;
+export type ToolConfig = FunctionToolConfig | KAgentToolConfig;
 
 export type ChatCompletionContextConfig = UnboundedChatCompletionContextConfig;
 
@@ -219,6 +218,12 @@ export interface Message extends DBModel {
   session_id: number;
   run_id: string;
   message_meta: MessageMeta;
+}
+
+export interface InitialMessage {
+  type: "start";
+  task: string;
+  team_config?: Component<TeamConfig>
 }
 
 export interface MessageMeta {
@@ -246,7 +251,7 @@ export interface SessionRuns {
 }
 
 export interface WebSocketMessage {
-  type: "message" | "result" | "completion" | "input_request" | "error" | "llm_call_event";
+  type: "message" | "result" | "completion" | "input_request" | "error" | "llm_call_event" | "system";
   data?: AgentMessageConfig | TaskResult;
   status?: RunStatus;
   error?: string;

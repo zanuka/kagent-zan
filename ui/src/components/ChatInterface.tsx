@@ -1,16 +1,15 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, ArrowRightFromLine, ArrowBigUp, AlertTriangle, CheckCircle, Loader2, MessageSquare, StopCircle, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ArrowLeft, ArrowRightFromLine, ArrowBigUp, AlertTriangle, CheckCircle, Loader2, MessageSquare, StopCircle, X, Bot, MessageSquarePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { getWebSocketUrl } from "@/lib/utils";
-import type { Run, Session, Team, RunStatus, AgentMessageConfig, Message, WebSocketMessage, TeamResult } from "@/types/datamodel";
-import { createMessage, createRunWithSession } from "@/lib/ws";
+import type { Team, Message, RunStatus, Session, Run } from "@/types/datamodel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ChatMessage from "./ChatMessage";
 import { useUserStore } from "@/lib/userStore";
+import useChatStore from "@/lib/useChatStore";
 
 interface TokenStats {
   total: number;
@@ -31,300 +30,80 @@ function calculateTokenStats(messages: Message[]): TokenStats {
       }
       return stats;
     },
-    {
-      total: 0,
-      input: 0,
-      output: 0,
-    }
+    { total: 0, input: 0, output: 0 }
   );
 }
 
 interface ChatInterfaceProps {
   selectedAgentTeam?: Team | null;
-  selectedSession?: Session;
-  selectedRun?: Run;
-  onNewSession: (session: Session, run: Run) => void;
-  isReadOnly?: boolean
+  selectedSession?: Session | null;
+  selectedRun?: Run | null;
+  isReadOnly?: boolean;
+  onNewSession?: () => Promise<void>;
 }
 
-export default function ChatInterface({ selectedAgentTeam, selectedSession, selectedRun, onNewSession, isReadOnly }: ChatInterfaceProps) {
-  const [currentSession, setCurrentSession] = useState<Session | null>(null);
-  const [currentRun, setCurrentRun] = useState<Run | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+export default function ChatInterface({ selectedAgentTeam, selectedSession, selectedRun, isReadOnly, onNewSession }: ChatInterfaceProps) {
+  const { userId } = useUserStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [message, setMessage] = useState("");
   const [tokenStats, setTokenStats] = useState<TokenStats>({
     total: 0,
     input: 0,
     output: 0,
   });
 
-  const inputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [activeSocket, setActiveSocket] = useState<WebSocket | null>(null);
-  const activeSocketRef = useRef<WebSocket | null>(null);
-
-  const { userId } = useUserStore();
+  const { status, messages, run, sendMessage, cleanup } = useChatStore();
 
   useEffect(() => {
     return () => {
-      const timeoutId = inputTimeoutRef.current;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      activeSocket?.close();
+      cleanup();
     };
-  }, [activeSocket]);
+  }, [cleanup]);
 
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
-  }, [containerRef]);
+  }, [messages]);
 
   useEffect(() => {
-    if (selectedSession) {
-      setCurrentSession(selectedSession);
-    }
-  }, [selectedSession]);
-
-  useEffect(() => {
-    if (currentRun?.messages) {
-      const newStats = calculateTokenStats(currentRun.messages);
+    if (messages.length > 0) {
+      const newStats = calculateTokenStats(messages);
       setTokenStats(newStats);
     }
-  }, [currentRun?.messages]);
-
-  useEffect(() => {
-    if (selectedRun) {
-      setCurrentRun(selectedRun);
-        setMessage("");
-        setLoading(false);
-      
-      // Close any active WebSocket connection if it's not a newly created run
-      if (activeSocket && selectedRun.id !== currentRun?.id) {
-        activeSocket.close();
-        setActiveSocket(null);
-        activeSocketRef.current = null;
-      }
-    }
-  }, [selectedRun, activeSocket, currentRun?.id]);
+  }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isReadOnly) {
-      return;
-    }
-
-    setLoading(true);
-
-    if (activeSocket) {
-      activeSocket.close();
-      setActiveSocket(null);
-      activeSocketRef.current = null;
-    }
-
-    if (!selectedAgentTeam || selectedAgentTeam.id === undefined) {
-      console.error("No team selected");
-      setLoading(false);
+    if (isReadOnly || !message.trim() || !selectedAgentTeam?.id) {
       return;
     }
 
     try {
-      const { run, session: newSession } = await createRunWithSession(selectedAgentTeam.id, userId);
-      if (!currentSession) {
-        setCurrentSession(newSession);
-      }
-
-      const initialMessage = createMessage({ content: message, source: "user" }, run.run_id, currentSession?.id || newSession.id || 0, userId);
-
-      const newRun = {
-        id: run.run_id,
-        created_at: new Date().toISOString(),
-        status: "active" as RunStatus,
-        task: initialMessage.config,
-        team_result: null,
-        messages: [initialMessage],
-        error_message: undefined,
-      };
-
-      // signal back so we can update the sidebar
-      onNewSession(newSession, newRun);
-      setCurrentRun(newRun);
-
-      // Setup the websocket
-      const wsUrl = `${getWebSocketUrl()}/ws/runs/${run.run_id}`;
-      const socket = new WebSocket(wsUrl);
-
-      socket.onopen = () => {
-        setActiveSocket(socket);
-        activeSocketRef.current = socket;
-
-        socket.send(
-          JSON.stringify({
-            type: "start",
-            task: message,
-            team_config: selectedAgentTeam?.component,
-          })
-        );
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          handleWebSocketMessage(message, currentSession?.id || newSession.id);
-        } catch (error) {
-          console.error("WebSocket message parsing error:", error);
-        }
-      };
-
-      socket.onclose = () => {
-        console.log("WebSocket closed");
-      };
-
-      socket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        // TODO: Show the error message in the chat
-      };
+      await sendMessage(message, selectedAgentTeam.id, userId);
+      setMessage("");
     } catch (error) {
-      console.error("Error setting up websocket:", error);
-      // TODO: show the error message in the chat
-    } finally {
-      setLoading(false);
+      console.error("Error sending message:", error);
     }
-  };
-
-  const handleWebSocketMessage = (message: WebSocketMessage, sessionId?: number) => {
-    setCurrentRun((current) => {
-      // Never return null if we have a current run
-      if (!current) {
-        console.warn("Received WebSocket message but no current run exists");
-        return current;
-      }
-
-      const effectiveSessionId = sessionId || currentSession?.id;
-
-      if (!effectiveSessionId) {
-        console.warn("No session ID available");
-        return current;
-      }
-
-      switch (message.type) {
-        case "message":
-          if (!message.data) {
-            console.warn("Received message without data");
-            return current;
-          }
-
-          const newMessage = createMessage(message.data as AgentMessageConfig, current.id, effectiveSessionId, userId);
-
-          // Check for duplicates
-          const isDuplicate = current.messages.some((existingMsg) => existingMsg.config.content === newMessage.config.content && existingMsg.config.source === newMessage.config.source);
-
-          if (isDuplicate) {
-            return current;
-          }
-
-          // Always return a new object with preserved messages
-          return {
-            ...current,
-            messages: [...current.messages, newMessage],
-            status: current.status === "stopped" ? "stopped" : current.status,
-          };
-
-        case "result":
-        case "completion":
-          const newStatus: RunStatus = current.status === "stopped" ? "stopped" : message.status === "complete" ? "complete" : message.status === "error" ? "error" : "stopped";
-
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const isTeamResult = (data: any): data is TeamResult => {
-            return data && "task_result" in data && "usage" in data && "duration" in data;
-          };
-
-          const teamResult = message.data && isTeamResult(message.data) ? message.data : current.team_result;
-
-          // Only close socket on completion, not on stop
-          if (newStatus === "complete" && activeSocket) {
-            activeSocket.close();
-            setActiveSocket(null);
-            activeSocketRef.current = null;
-          }
-
-          // Always preserve messages
-          return {
-            ...current,
-            status: newStatus,
-            team_result: teamResult,
-            messages: current.messages,
-          };
-
-        case "input_request":
-          return {
-            ...current,
-            status: current.status === "stopped" ? "stopped" : "awaiting_input",
-            messages: current.messages,
-          };
-
-        default:
-          console.warn("Unhandled message type:", message.type);
-          return current;
-      }
-    });
   };
 
   const handleCancel = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeSocketRef.current || !currentRun) return;
-
-    try {
-      activeSocketRef.current.send(
-        JSON.stringify({
-          type: "stop",
-          reason: "Cancelled by user",
-        })
-      );
-
-      setCurrentRun((current) => {
-        if (!current) {
-          console.warn("No current run to cancel");
-          return current;
-        }
-
-        return {
-          ...current,
-          status: "stopped",
-          messages: [...current.messages],
-          team_result: current.team_result,
-          task: current.task,
-          error_message: current.error_message,
-          id: current.id,
-          created_at: current.created_at,
-        };
-      });
-
-      if (activeSocketRef.current) {
-        activeSocketRef.current.close();
-      }
-      setActiveSocket(null);
-      activeSocketRef.current = null;
-
-      // Only clear the input message
-      setMessage("");
-
-      if (inputTimeoutRef.current) {
-        clearTimeout(inputTimeoutRef.current);
-        inputTimeoutRef.current = null;
-      }
-
-      // Don't set loading to false since we're preserving state
-      setLoading(false);
-    } catch (error) {
-      console.error("Error cancelling task:", error);
-    }
+    cleanup();
+    setMessage("");
   };
 
-  const getStatusIcon = (status: Run["status"] | undefined) => {
+  const getStatusIcon = (status: RunStatus | "ready") => {
     switch (status) {
+      case "ready":
+        return (
+          <div className="text-white/50 text-xs justify-center items-center flex">
+            <Bot size={16} className="mr-2 text-violet-500" />
+            <span>Ready</span>
+          </div>
+        );
+
       case "active":
       case "created":
         return (
@@ -352,7 +131,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
         return (
           <div className="text-white/50 text-xs justify-center items-center flex">
             <AlertTriangle size={16} className="mr-2 text-red-500" />
-            {currentRun?.error_message || "An error occurred"}
+            {run?.error_message || "An error occurred"}
           </div>
         );
       case "stopped":
@@ -368,36 +147,55 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Check for CMD + Return (Mac) or Ctrl + Return (Windows/Linux)
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-      e.preventDefault(); // Prevent default newline behavior
-      if (!loading && message.trim() && selectedAgentTeam) {
+      e.preventDefault();
+      if (message.trim() && selectedAgentTeam) {
         handleSendMessage(e);
       }
     }
   };
 
+  // show messages from selected run if available
+  const displayMessages = selectedRun ? selectedRun.messages : messages;
+  const actualRun = selectedRun || run || null;
+
   return (
     <div className="w-full h-screen flex flex-col justify-center transition-all duration-300 ease-in-out pt-[1.5rem]">
-      <div ref={containerRef} className={`flex-1 overflow-y-auto my-8 transition-all duration-300 p-4 -translate-y-[1.5rem]`}>
-        <div className="overflow-visible">
-          <div className="p-4">
-            <ScrollArea>
-              <div className="flex flex-col space-y-5">
-                {currentRun?.messages.map((msg, index) => (
-                  <ChatMessage key={index} message={msg} currentRun={currentRun} />
-                ))}
-              </div>
-            </ScrollArea>
+      {isReadOnly && selectedSession && (
+        <div className="px-4 py-2 bg-black/10 text-violet-500 rounded-lg mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span className="text-white/80 text-xs">Viewing chat history</span>
           </div>
+          <Button variant="ghost" size="sm" onClick={onNewSession} className="hover:text-violet-600 hover:bg-transparent">
+            Start New Chat
+          </Button>
         </div>
+      )}
+      <div ref={containerRef} className="flex-1 overflow-y-auto my-8 transition-all duration-300 p-4 -translate-y-[1.5rem]">
+        <ScrollArea>
+          <div className="flex flex-col space-y-5">
+            {displayMessages.length === 0 && (
+              <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
+                <MessageSquarePlus className="mb-4 h-8 w-8 text-violet-500" />
+                <h3 className="mb-2 text-xl font-medium text-white/90">Ready to start chatting?</h3>
+                <p className="text-base text-white/60">
+                  Begin a new conversation with <span className="font-medium text-white/90">{selectedAgentTeam?.component.label}</span>
+                </p>
+              </div>
+            )}
+            {displayMessages.map((msg, index) => (
+              <ChatMessage key={index} message={msg} run={actualRun} />
+            ))}
+          </div>
+        </ScrollArea>
       </div>
 
       {!isReadOnly && (
         <div className={`rounded-lg bg-[#2A2A2A] border border-[#3A3A3A] overflow-hidden transition-all duration-300 ease-in-out -translate-y-[1.5rem]`}>
           <form className="p-4">
             <div className="flex items-center justify-between mb-4">
-              {getStatusIcon(currentRun?.status)}
+              {getStatusIcon(status)}
               <div className="flex items-center gap-2 text-xs text-white/50">
                 <span>Usage: </span>
                 <span>{tokenStats.total}</span>
@@ -418,18 +216,18 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Message AI Agent..."
-              disabled={loading || currentRun?.status === "active"}
+              disabled={status === "active" || status === "complete"}
               onKeyDown={handleKeyDown}
               className="min-h-[100px] bg-transparent border-0 p-0 focus-visible:ring-0 resize-none text-white placeholder:text-white/40"
             />
 
             <div className="flex items-center justify-end mt-4">
               <Button
-                onClick={loading || currentRun?.status === "active" ? handleCancel : handleSendMessage}
-                className={`${loading ? "bg-red-500 hover:bg-red-600" : "bg-white hover:bg-white/60"} text-black`}
-                disabled={!selectedAgentTeam || currentRun?.status === "awaiting_input"}
+                onClick={status === "active" ? handleCancel : handleSendMessage}
+                className={`${status === "active" ? "bg-white/60 hover:bg-white/90" : "bg-white hover:bg-white/60"} text-black`}
+                disabled={!selectedAgentTeam || run?.status === "awaiting_input" || status === "complete"}
               >
-                {loading || currentRun?.status === "active" ? (
+                {status === "active" ? (
                   <>
                     Cancel
                     <X className="h-10 w-10 ml-2" />

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft, ChevronRight, User, Settings, Zap } from "lucide-react";
 import { isToday, isYesterday } from "date-fns";
-import { SessionWithRuns } from "@/types/datamodel";
+import { SessionWithRuns, Team } from "@/types/datamodel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useUserStore } from "@/lib/userStore";
 import { ActionButtons, EmptyState } from "@/components/sidebar/EmptyState";
@@ -13,12 +13,12 @@ interface SessionsSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
   sessions?: SessionWithRuns[];
-  onDeleteRun: (sessionId: number, runId: string) => Promise<void>;
+  onDeleteSession: (sessionId: number) => Promise<void>;
   onViewRun: (sessionId: number, runId: string) => Promise<void>;
-  setShowTeamSelector: (show: boolean) => void;
+  selectedTeam: Team | null;
 }
 
-export default function SessionsSidebar({ isOpen, onToggle, sessions = [], onDeleteRun, onViewRun, setShowTeamSelector }: SessionsSidebarProps) {
+export default function SessionsSidebar({ isOpen, onToggle, sessions = [], selectedTeam, onDeleteSession, onViewRun }: SessionsSidebarProps) {
   const { userId } = useUserStore();
   const [showSettings, setShowSettings] = useState(false);
 
@@ -66,45 +66,51 @@ export default function SessionsSidebar({ isOpen, onToggle, sessions = [], onDel
   }, [sessions]);
 
   const hasNoSessions = !groupedSessions.today.length && !groupedSessions.yesterday.length && !groupedSessions.older.length;
+  const totalSessions = sessions.length;
 
   return (
     <div
       className={`fixed top-0 left-0 h-screen transition-all duration-300 ease-in-out 
-            bg-[#2A2A2A] border-r border-t border-b border-[#3A3A3A] 
-            ${isOpen ? "w-96" : "w-12"}`}
+        bg-[#2A2A2A] border-r border-t border-b border-[#3A3A3A] 
+        ${isOpen ? "w-96" : "w-12"}`}
     >
       <div className="h-full flex flex-col text-white">
-        <div className="p-4 flex items-center gap-2 border-b border-[#3A3A3A]">
-          {isOpen && <h1 className="text-sm font-semibold flex-1">Chat History</h1>}
+        {/* Header */}
+        <div className="p-4 flex items-center gap-2 border-b border-[#3A3A3A] shrink-0">
+          {isOpen && (
+            <>
+              <h1 className="text-sm font-semibold flex-1">Chat History</h1>
+              <span className="text-xs text-white/50">{totalSessions} chats</span>
+            </>
+          )}
           <Button variant="ghost" size="icon" onClick={onToggle} className="h-8 w-8 hover:bg-[#3A3A3A] text-white hover:text-white transition-colors">
             {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
 
-        <div className={`h-full flex flex-col ${isOpen ? "opacity-100" : "opacity-0"} transition-opacity duration-200`}>
-          <div className="flex-1 flex flex-col">
-            {!hasNoSessions && (
-              <div className="p-4">
-                <ActionButtons setShowTeamSelector={setShowTeamSelector} />
+        <div className={`flex-1 flex flex-col min-h-0 ${isOpen ? "opacity-100" : "opacity-0"} transition-opacity duration-200`}>
+          {!hasNoSessions && (
+            <div className="px-4 pt-4 pb-6 shrink-0 border-b border-[#3A3A3A]">
+              <ActionButtons hasSessions={!hasNoSessions} currentAgentId={selectedTeam?.id} />
+            </div>
+          )}
+
+          <ScrollArea className="flex-1 my-4">
+            {hasNoSessions ? (
+              <EmptyState />
+            ) : (
+              <div className="space-y-8 p-2">
+                {groupedSessions.today.length > 0 && <SessionGroup title="Today" sessions={groupedSessions.today} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
+                {groupedSessions.yesterday.length > 0 && <SessionGroup title="Yesterday" sessions={groupedSessions.yesterday} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
+                {groupedSessions.older.length > 0 && <SessionGroup title="Older" sessions={groupedSessions.older} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
               </div>
             )}
+          </ScrollArea>
 
-            <ScrollArea className="flex-1 overflow-y-auto">
-              {hasNoSessions ? (
-                <EmptyState setShowTeamSelector={setShowTeamSelector} />
-              ) : (
-                <div className="space-y-8 p-2">
-                  {groupedSessions.today.length > 0 && <SessionGroup title="Today" sessions={groupedSessions.today} onViewRun={onViewRun} onDeleteRun={onDeleteRun} />}
-                  {groupedSessions.yesterday.length > 0 && <SessionGroup title="Yesterday" sessions={groupedSessions.yesterday} onViewRun={onViewRun} onDeleteRun={onDeleteRun} />}
-                  {groupedSessions.older.length > 0 && <SessionGroup title="Older" sessions={groupedSessions.older} onViewRun={onViewRun} onDeleteRun={onDeleteRun} />}
-                </div>
-              )}
-            </ScrollArea>
-          </div>
-
+          {/* Footer */}
           {isOpen && (
             <>
-              <div className="border-t border-[#3A3A3A] p-4 space-y-2">
+              <div className="border-t border-[#3A3A3A] p-4 space-y-2 shrink-0">
                 <Button variant="ghost" className="w-full justify-start text-white/70 hover:text-white hover:bg-[#3A3A3A] gap-2" onClick={() => setShowSettings(true)}>
                   <Settings className="h-4 w-4" />
                   Settings
@@ -115,7 +121,7 @@ export default function SessionsSidebar({ isOpen, onToggle, sessions = [], onDel
                 </div>
               </div>
 
-              <div className="p-4 border-t border-[#3A3A3A]">
+              <div className="p-4 border-t border-[#3A3A3A] shrink-0">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Zap className="h-5 w-5 text-violet-500" />
                   <span className="font-semibold text-white">kagent</span>

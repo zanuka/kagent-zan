@@ -7,8 +7,10 @@ from pydantic import BaseModel
 
 def create_typed_fn_tool(fn_tool: FunctionTool, override_provider: str, class_name: str):
     """Creates a concrete typed fn tool class from a function tool."""
+
     class ToolConfig(BaseModel):
-      pass
+        pass
+
     class Tool(BaseTool, Component[ToolConfig]):
         component_provider_override = override_provider
         component_type = "tool"

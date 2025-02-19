@@ -1,11 +1,11 @@
-import urllib
+import urllib.parse
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional, Type, Union
+from typing import Any, List, Optional, Type, TypeVar, Union
 
 import httpx
 from autogen_core import CancellationToken, Component
-from autogen_core.tools import BaseTool
+from autogen_core.tools import BaseTool as BaseCoreTool
 from pydantic import BaseModel, Field
 
 
@@ -18,18 +18,26 @@ class Config(BaseModel):
     password: str = Field(default="", description="Password for basic auth")
 
 
+def _format_time(time: Union[datetime, float]) -> str:
+    """Format time as a string"""
+    if isinstance(time, datetime):
+        return time.isoformat()
+    else:
+        return str(time)
+
+
 def get_http_client(config: Config, cancellation_token: CancellationToken) -> httpx.AsyncClient:
     """Create an HTTP client for the API"""
-    if cancellation_token.is_canceled:
-        raise Exception("Request canceled")
-
     if config.username and config.password:
         auth = httpx.BasicAuth(config.username, config.password)
         return httpx.AsyncClient(base_url=config.base_url, auth=auth)
     else:
         return httpx.AsyncClient(base_url=config.base_url)
 
-class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
+
+ArgsT = TypeVar("ArgsT", bound=BaseModel, contravariant=True)
+
+class BaseTool(BaseCoreTool[ArgsT, BaseModel], Component[Config]):
     """Base class for all Prometheus tools"""
 
     component_type = "tool"
@@ -43,15 +51,15 @@ class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
     def __init__(
         self,
         config: Config,
-        input_model: Type[BaseModel],
+        input_model: Type[ArgsT],
         description: str,
     ) -> None:
-        super().__init__(input_model, Any, self.__class__.__name__, description)
+        super().__init__(input_model, BaseModel, self.__class__.__name__, description)
         self.config = config
 
     def _to_config(self) -> Config:
         """Convert to config object"""
-        return self.config.copy()
+        return self.config.model_copy()
 
     @classmethod
     def _from_config(cls, config: Config) -> "BaseTool":
@@ -61,22 +69,27 @@ class BaseTool(BaseTool[BaseModel, Any], Component[Config]):
 
 class QueryInput(BaseModel):
     query: str = Field(description="Prometheus expression query string")
+    time: Optional[Union[datetime, float]] = Field(
+        default=None, description="Evaluation timestamp in RFC3339 or unix timestamp format"
+    )
+    timeout: Optional[str] = Field(default=None, description="Evaluation timeout")
 
 
 class QueryTool(BaseTool):
     """Tool for executing instant Prometheus queries"""
 
-    description = """Executes instant queries against Prometheus to retrieve current metric values. 
+    _description = """Executes instant queries against Prometheus to retrieve current metric values. 
         Use this tool when you need to get the latest values of metrics or perform calculations on current data. 
         The query must be a valid PromQL expression."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=QueryInput, description=self.description)
+        super().__init__(config=config, input_model=QueryInput, description=self._description)
 
     async def run(self, args: QueryInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {"query": args.query}
-            return await client.get("/query", params=params)
+            response = await client.get("/query", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryTool":
@@ -94,23 +107,24 @@ class QueryRangeInput(BaseModel):
 class QueryRangeTool(BaseTool):
     """Tool for executing range queries in Prometheus"""
 
-    description = """Executes time series queries over a specified time range in Prometheus. 
+    _description = """Executes time series queries over a specified time range in Prometheus. 
         Use this tool for analyzing metric patterns, trends, and historical data. 
         You can specify the time range, resolution (step), and timeout for the query."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=QueryRangeInput, description=self.description)
+        super().__init__(config=config, input_model=QueryRangeInput, description=self._description)
 
     async def run(self, args: QueryRangeInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "query": args.query,
-                "start": client._format_time(args.start),
-                "end": client._format_time(args.end),
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
                 "step": str(args.step),
                 "timeout": args.timeout,
             }
-            return await client.get("/query_range", params=params)
+            response = await client.get("/query_range", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "QueryRangeTool":
@@ -127,23 +141,23 @@ class SeriesInput(BaseModel):
 class SeriesQueryTool(BaseTool):
     """Tool for querying Prometheus series"""
 
-    description = """Finds time series that match certain label selectors in Prometheus. 
+    _description = """Finds time series that match certain label selectors in Prometheus. 
         Use this tool to discover which metrics exist and their label combinations. 
         You can specify time ranges to limit the search scope and set a maximum number of results."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=SeriesInput, description=self.description)
+        super().__init__(config=config, input_model=SeriesInput, description=self._description)
 
     async def run(self, args: SeriesInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "match[]": args.match,
-                "start": client._format_time(args.start) if args.start else None,
-                "end": client._format_time(args.end) if args.end else None,
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
                 "limit": args.limit,
             }
             result = await client.get("/series", params=params)
-            return result.get("data", [])
+            return result.json().get("data", [])
 
     @classmethod
     def _from_config(cls, config: Config) -> "SeriesQueryTool":
@@ -160,23 +174,23 @@ class LabelNamesInput(BaseModel):
 class LabelNamesTool(BaseTool):
     """Tool for getting Prometheus label names"""
 
-    description = """Retrieves all label names that are available in the Prometheus server. 
+    _description = """Retrieves all label names that are available in the Prometheus server. 
         Use this tool to discover what dimensions are available for querying and filtering metrics. 
         You can optionally filter by time range and series selectors."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=LabelNamesInput, description=self.description)
+        super().__init__(config=config, input_model=LabelNamesInput, description=self._description)
 
     async def run(self, args: LabelNamesInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {
-                "start": client._format_time(args.start) if args.start else None,
-                "end": client._format_time(args.end) if args.end else None,
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
                 "match[]": args.match,
                 "limit": args.limit,
             }
             result = await client.get("/labels", params=params)
-            return result.get("data", [])
+            return result.json().get("data", [])
 
     @classmethod
     def _from_config(cls, config: Config) -> "LabelNamesTool":
@@ -194,24 +208,24 @@ class LabelValuesInput(BaseModel):
 class LabelValuesTool(BaseTool):
     """Tool for getting Prometheus label values"""
 
-    description = """Retrieves all possible values for a specific label name in Prometheus. 
+    _description = """Retrieves all possible values for a specific label name in Prometheus. 
         Use this tool to understand the range of values a particular label can have. 
         You can filter by time range and series selectors to narrow down the results."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=LabelValuesInput, description=self.description)
+        super().__init__(config=config, input_model=LabelValuesInput, description=self._description)
 
     async def run(self, args: LabelValuesInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             encoded_label = urllib.parse.quote(args.label_name)
             params = {
-                "start": client._format_time(args.start) if args.start else None,
-                "end": client._format_time(args.end) if args.end else None,
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
                 "match[]": args.match,
                 "limit": args.limit,
             }
             result = await client.get(f"/label/{encoded_label}/values", params=params)
-            return result.get("data", [])
+            return result.json().get("data", [])
 
     @classmethod
     def _from_config(cls, config: Config) -> "LabelValuesTool":
@@ -232,12 +246,12 @@ class TargetsInput(BaseModel):
 class TargetsTool(BaseTool):
     """Tool for getting Prometheus target discovery state"""
 
-    description = """Provides information about all Prometheus scrape targets and their current state. 
+    _description = """Provides information about all Prometheus scrape targets and their current state. 
         Use this tool to monitor which targets are being scraped successfully and which are failing. 
         You can filter targets by state (active/dropped) and scrape pool."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=TargetsInput, description=self.description)
+        super().__init__(config=config, input_model=TargetsInput, description=self._description)
 
     async def run(self, args: TargetsInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
@@ -245,7 +259,8 @@ class TargetsTool(BaseTool):
                 "state": args.state.value if args.state else None,
                 "scrape_pool": args.scrape_pool,
             }
-            return await client.get("/targets", params=params)
+            response = await client.get("/targets", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "TargetsTool":
@@ -266,12 +281,12 @@ class RulesInput(BaseModel):
 class RulesTool(BaseTool):
     """Tool for getting Prometheus alerting and recording rules"""
 
-    description = """Retrieves information about configured alerting and recording rules in Prometheus. 
+    _description = """Retrieves information about configured alerting and recording rules in Prometheus. 
         Use this tool to understand what alerts are defined and what metrics are being pre-computed. 
         You can filter rules by type, name, group, and other criteria."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=RulesInput, description=self.description)
+        super().__init__(config=config, input_model=RulesInput, description=self._description)
 
     async def run(self, args: RulesInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
@@ -285,7 +300,8 @@ class RulesTool(BaseTool):
                 "group_limit": args.group_limit,
                 "group_next_token": args.group_next_token,
             }
-            return await client.get("/rules", params=params)
+            response = await client.get("/rules", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "RulesTool":
@@ -301,16 +317,17 @@ class AlertsInput(BaseModel):
 class AlertsTool(BaseTool):
     """Tool for getting active Prometheus alerts"""
 
-    description = """Retrieves all currently firing alerts in the Prometheus server. 
+    _description = """Retrieves all currently firing alerts in the Prometheus server. 
         Use this tool to monitor the current alert state and identify ongoing issues. 
         Returns details about alert names, labels, and when they started firing."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=AlertsInput, description=self.description)
+        super().__init__(config=config, input_model=AlertsInput, description=self._description)
 
     async def run(self, args: AlertsInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/alerts")
+            response = await client.get("/alerts")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "AlertsTool":
@@ -326,12 +343,12 @@ class TargetMetadataInput(BaseModel):
 class TargetMetadataTool(BaseTool):
     """Tool for getting Prometheus target metadata"""
 
-    description = """Retrieves metadata about metrics exposed by specific Prometheus targets. 
+    _description = """Retrieves metadata about metrics exposed by specific Prometheus targets. 
         Use this tool to understand metric types, help texts, and units. 
         You can filter by target labels and specific metric names."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=TargetMetadataInput, description=self.description)
+        super().__init__(config=config, input_model=TargetMetadataInput, description=self._description)
 
     async def run(self, args: TargetMetadataInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
@@ -341,7 +358,7 @@ class TargetMetadataTool(BaseTool):
                 "limit": args.limit,
             }
             result = await client.get("/targets/metadata", params=params)
-            return result.get("data", [])
+            return result.json().get("data", [])
 
     @classmethod
     def _from_config(cls, config: Config) -> "TargetMetadataTool":
@@ -355,16 +372,17 @@ class AlertmanagersInput(BaseModel):
 class AlertmanagersTool(BaseTool):
     """Tool for getting Prometheus alertmanager discovery state"""
 
-    description = """Provides information about the Alertmanager instances known to Prometheus. 
+    _description = """Provides information about the Alertmanager instances known to Prometheus. 
         Use this tool to verify the connection status between Prometheus and its Alertmanagers. 
         Shows both active and dropped Alertmanager instances."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=AlertmanagersInput, description=self.description)
+        super().__init__(config=config, input_model=AlertmanagersInput, description=self._description)
 
     async def run(self, args: AlertmanagersInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/alertmanagers")
+            response = await client.get("/alertmanagers")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "AlertmanagersTool":
@@ -380,12 +398,12 @@ class MetadataInput(BaseModel):
 class MetadataTool(BaseTool):
     """Tool for getting Prometheus metric metadata"""
 
-    description = """Retrieves metadata for Prometheus metrics including help text and type information. 
+    _description = """Retrieves metadata for Prometheus metrics including help text and type information. 
         Use this tool to understand what metrics mean and how they should be interpreted. 
         You can filter by specific metric names and set limits on the number of results."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=MetadataInput, description=self.description)
+        super().__init__(config=config, input_model=MetadataInput, description=self._description)
 
     async def run(self, args: MetadataInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
@@ -395,7 +413,7 @@ class MetadataTool(BaseTool):
                 "limit_per_metric": args.limit_per_metric,
             }
             result = await client.get("/metadata", params=params)
-            return result.get("data", {})
+            return result.json().get("data", {})
 
     @classmethod
     def _from_config(cls, config: Config) -> "MetadataTool":
@@ -409,16 +427,17 @@ class StatusConfigInput(BaseModel):
 class StatusConfigTool(BaseTool):
     """Tool for getting Prometheus configuration"""
 
-    description = """Retrieves the current configuration of the Prometheus server. 
+    _description = """Retrieves the current configuration of the Prometheus server. 
         Use this tool to view the complete runtime configuration including scrape configs, alert rules, and other settings. 
         Helps verify the current server configuration state."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=StatusConfigInput, description=self.description)
+        super().__init__(config=config, input_model=StatusConfigInput, description=self._description)
 
     async def run(self, args: StatusConfigInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/config")
+            response = await client.get("/status/config")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "StatusConfigTool":
@@ -432,16 +451,17 @@ class StatusFlagsInput(BaseModel):
 class StatusFlagsTool(BaseTool):
     """Tool for getting Prometheus flag values"""
 
-    description = """Retrieves the current command-line flag values used by Prometheus. 
+    _description = """Retrieves the current command-line flag values used by Prometheus. 
         Use this tool to understand how the Prometheus server was started and what runtime options are enabled. 
         Shows all configuration flags and their current values."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=StatusFlagsInput, description=self.description)
+        super().__init__(config=config, input_model=StatusFlagsInput, description=self._description)
 
     async def run(self, args: StatusFlagsInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/flags")
+            response = await client.get("/status/flags")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "StatusFlagsTool":
@@ -455,16 +475,17 @@ class RuntimeInfoInput(BaseModel):
 class RuntimeInfoTool(BaseTool):
     """Tool for getting Prometheus runtime information"""
 
-    description = """Provides detailed information about the Prometheus server's runtime state. 
+    _description = """Provides detailed information about the Prometheus server's runtime state. 
         Use this tool to monitor server health and performance through details about garbage collection, 
         memory usage, and other runtime metrics."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=RuntimeInfoInput, description=self.description)
+        super().__init__(config=config, input_model=RuntimeInfoInput, description=self._description)
 
     async def run(self, args: RuntimeInfoInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/runtimeinfo")
+            response = await client.get("/status/runtimeinfo")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "RuntimeInfoTool":
@@ -478,16 +499,17 @@ class BuildInfoInput(BaseModel):
 class BuildInfoTool(BaseTool):
     """Tool for getting Prometheus build information"""
 
-    description = """Retrieves information about how the Prometheus server was built. 
+    _description = """Retrieves information about how the Prometheus server was built. 
         Use this tool to verify version information, build timestamps, and other compilation details. 
         Helps confirm the version and build configuration of the running server."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=BuildInfoInput, description=self.description)
+        super().__init__(config=config, input_model=BuildInfoInput, description=self._description)
 
     async def run(self, args: BuildInfoInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/buildinfo")
+            response = await client.get("/status/buildinfo")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "BuildInfoTool":
@@ -501,17 +523,18 @@ class TSDBStatusInput(BaseModel):
 class TSDBStatusTool(BaseTool):
     """Tool for getting Prometheus TSDB status"""
 
-    description = """Provides information about the time series database (TSDB) status in Prometheus. 
+    _description = """Provides information about the time series database (TSDB) status in Prometheus. 
         Use this tool to monitor database health through details about data storage, head blocks, 
         WAL status, and other TSDB metrics."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=TSDBStatusInput, description=self.description)
+        super().__init__(config=config, input_model=TSDBStatusInput, description=self._description)
 
     async def run(self, args: TSDBStatusInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {"limit": args.limit} if args.limit is not None else None
-            return await client.get("/status/tsdb", params=params)
+            response = await client.get("/status/tsdb", params=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "TSDBStatusTool":
@@ -525,17 +548,18 @@ class CreateSnapshotInput(BaseModel):
 class CreateSnapshotTool(BaseTool):
     """Tool for creating Prometheus snapshots"""
 
-    description = """Creates a snapshot of the current Prometheus TSDB data. 
+    _description = """Creates a snapshot of the current Prometheus TSDB data. 
         Use this tool for backup purposes or creating point-in-time copies of the data. 
         You can optionally skip snapshotting the head block (latest, incomplete data)."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=CreateSnapshotInput, description=self.description)
+        super().__init__(config=config, input_model=CreateSnapshotInput, description=self._description)
 
     async def run(self, args: CreateSnapshotInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {"skip_head": "true" if args.skip_head else None}
-            return await client.post("/admin/tsdb/snapshot", content=params)
+            response = await client.post("/admin/tsdb/snapshot", content=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "CreateSnapshotTool":
@@ -551,21 +575,22 @@ class DeleteSeriesInput(BaseModel):
 class DeleteSeriesTool(BaseTool):
     """Tool for deleting Prometheus series data"""
 
-    description = """Deletes time series data matching specific criteria in Prometheus. 
+    _description = """Deletes time series data matching specific criteria in Prometheus. 
         Use this tool carefully to remove obsolete data or free up storage space. 
         Deleted data cannot be recovered. You can specify time ranges and series selectors."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=DeleteSeriesInput, description=self.description)
+        super().__init__(config=config, input_model=DeleteSeriesInput, description=self._description)
 
-    async def run(self, args: DeleteSeriesInput, cancellation_token: CancellationToken) -> None:
+    async def run(self, args: DeleteSeriesInput, cancellation_token: CancellationToken) -> BaseModel:
         async with get_http_client(self.config, cancellation_token) as client:
             params = {
                 "match[]": args.match,
-                "start": client._format_time(args.start) if args.start else None,
-                "end": client._format_time(args.end) if args.end else None,
+                "start": _format_time(args.start) if args.start else None,
+                "end": _format_time(args.end) if args.end else None,
             }
-            await client.post("/admin/tsdb/delete_series", content=params)
+            response = await client.post("/admin/tsdb/delete_series", content=params)
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "DeleteSeriesTool":
@@ -579,16 +604,17 @@ class CleanTombstonesInput(BaseModel):
 class CleanTombstonesTool(BaseTool):
     """Tool for cleaning Prometheus tombstones"""
 
-    description = """Removes tombstone files created during Prometheus data deletion operations. 
+    _description = """Removes tombstone files created during Prometheus data deletion operations. 
         Use this tool to maintain database cleanliness and recover storage space. 
         Tombstones are markers for deleted data and can be safely removed after their retention period."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=CleanTombstonesInput, description=self.description)
+        super().__init__(config=config, input_model=CleanTombstonesInput, description=self._description)
 
     async def run(self, args: CleanTombstonesInput, cancellation_token: CancellationToken) -> None:
         async with get_http_client(self.config, cancellation_token) as client:
-            await client.post("/admin/tsdb/clean_tombstones")
+            response = await client.post("/admin/tsdb/clean_tombstones")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "CleanTombstonesTool":
@@ -602,40 +628,18 @@ class WALReplayInput(BaseModel):
 class WALReplayTool(BaseTool):
     """Tool for getting Prometheus WAL replay status"""
 
-    description = """Retrieves the status of Write-Ahead Log (WAL) replay operations in Prometheus. 
+    _description = """Retrieves the status of Write-Ahead Log (WAL) replay operations in Prometheus. 
         Use this tool to monitor the progress of WAL replay during server startup or recovery. 
         Helps track data durability and recovery progress."""
 
     def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=WALReplayInput, description=self.description)
+        super().__init__(config=config, input_model=WALReplayInput, description=self._description)
 
     async def run(self, args: WALReplayInput, cancellation_token: CancellationToken) -> Any:
         async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/status/walreplay")
+            response = await client.get("/status/walreplay")
+            return response.json()
 
     @classmethod
     def _from_config(cls, config: Config) -> "WALReplayTool":
-        return cls(config)
-
-
-class NotificationsInput(BaseModel):
-    pass
-
-
-class NotificationsTool(BaseTool):
-    """Tool for getting active Prometheus notifications"""
-
-    description = """Retrieves information about active notifications in Prometheus. 
-        Use this tool to monitor current notification status and delivery state. 
-        Shows details about pending and in-progress alert notifications."""
-
-    def __init__(self, config: Config) -> None:
-        super().__init__(config=config, input_model=NotificationsInput, description=self.description)
-
-    async def run(self, args: NotificationsInput, cancellation_token: CancellationToken) -> Any:
-        async with get_http_client(self.config, cancellation_token) as client:
-            return await client.get("/notifications")
-
-    @classmethod
-    def _from_config(cls, config: Config) -> "NotificationsTool":
         return cls(config)
