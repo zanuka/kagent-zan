@@ -1,7 +1,7 @@
 import random
 import tempfile
 from enum import Enum
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Optional
 
 from autogen_core.tools import FunctionTool
 
@@ -9,39 +9,12 @@ from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
-class KubernetesResource(Enum):
-    CLUSTER_ROLE = "clusterrole"
-    CLUSTER_ROLE_BINDING = "clusterrolebinding"
-    CONFIGMAP = "configmap"
-    DAEMONSET = "daemonset"
-    DEPLOYMENT = "deployment"
-    INGRESS = "ingress"
-    NAMESPACE = "namespace"
-    NODE = "node"
-    POD = "pod"
-    POD_DISRUPTION_BUDGET = "poddisruptionbudget"
-    REPLICASET = "replicaset"
-    ROLE = "role"
-    ROLE_BINDING = "rolebinding"
-    SECRET = "secret"
-    SERVICE = "service"
-    SERVICE_ACCOUNT = "serviceaccount"
-    STATEFULSET = "statefulset"
-
-RolloutCapableResources = Literal[
-    KubernetesResource.DAEMONSET, KubernetesResource.DEPLOYMENT, KubernetesResource.STATEFULSET
-]
-
-class RolloutAction(Enum):
-    HISTORY = "history"
-    PAUSE = "pause"
-    RESTART = "restart"
-    RESUME = "resume"
-    STATUS = "status"
-    UNDO = "undo"
-
 def _check_service_connectivity(
-    service_name: Annotated[Optional[str], "Fully qualified service name with port number (e.g. my-service.my-namespace.svc.cluster.local:80)"]) -> str:
+    service_name: Annotated[
+        Optional[str],
+        "Fully qualified service name with port number (e.g. my-service.my-namespace.svc.cluster.local:80)",
+    ],
+) -> str:
     pod_name = f"curlpod-{random.randint(0, 1000)}"
     _run_kubectl_command(f"run {pod_name} --image=curlimages/curl --restart=Never --command -- sleep 3600")
     _run_kubectl_command(f"wait --for=condition=ready pod/{pod_name} --timeout=60s")
@@ -49,8 +22,9 @@ def _check_service_connectivity(
     _run_kubectl_command(f"delete pod {pod_name}")
     return curl_result
 
+
 def _patch_resource(
-    resource_type: Annotated[KubernetesResource, "The type of resource to patch"],
+    resource_type: Annotated[str, "The type of resource to patch (deployment, configmap, pod, service, ...)"],
     resource_name: Annotated[str, "The name of the resource to patch"],
     patch: Annotated[str, "The patch to apply to the resource"],
     ns: Annotated[Optional[str], "The namespace of the resource to patch"],
@@ -62,28 +36,29 @@ def _patch_resource(
 
     return run_command("kubectl", cmd_parts)
 
+
 def _scale(
-    resource_type: Annotated[RolloutCapableResources, "The type of resource to scale"],
+    resource_type: Annotated[str, "The type of resource to scale (deployment, statefulset, ...)"],
     name: Annotated[str, "The name of the resource to scale"],
     replicas: Annotated[int, "The number of replicas to scale to"],
     ns: Annotated[Optional[str], "The namespace of the resource to scale"],
 ) -> str:
-    return _run_kubectl_command(
-        f"scale {resource_type.value}/{name} --replicas={replicas} {f'-n {ns} ' if ns else ''}"
-    )
+    return _run_kubectl_command(f"scale {resource_type.value}/{name} --replicas={replicas} {f'-n {ns} ' if ns else ''}")
+
 
 def _remove_annotation(
-    resource_type: Annotated[KubernetesResource, "The type of resource to remove the annotation from"],
+    resource_type: Annotated[
+        str, "The type of resource to remove the annotation from (deployment, service pod, node, ...)"
+    ],
     name: Annotated[str, "The name of the resource to remove the annotation from"],
     annotation_key: Annotated[str, "The key of the annotation to remove"],
     ns: Annotated[Optional[str], "The namespace of the resource to remove the annotation from"],
 ) -> str:
-    return _run_kubectl_command(
-        f"annotate {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {annotation_key}-"
-    )
+    return _run_kubectl_command(f"annotate {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {annotation_key}-")
+
 
 def _annotate_resource(
-    resource_type: Annotated[KubernetesResource, "The type of resource to annotate"],
+    resource_type: Annotated[str, "The type of resource to annotate (deployment, service, pod, node, ...)"],
     name: Annotated[str, "The name of the resource to annotate"],
     annotations: Annotated[dict[str, str], "The annotations to apply to the resource"],
     ns: Annotated[Optional[str], "The namespace of the resource to annotate"],
@@ -93,26 +68,27 @@ def _annotate_resource(
         f"annotate {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {annotation_string}"
     )
 
+
 def _remove_label(
-    resource_type: Annotated[KubernetesResource, "The type of resource to remove the label from"],
+    resource_type: Annotated[
+        str, "The type of resource to remove the label from (deployment, service, pod, node, ...)"
+    ],
     name: Annotated[str, "The name of the resource to remove the label from"],
     label_key: Annotated[str, "The key of the label to remove"],
     ns: Annotated[Optional[str], "The namespace of the resource to remove the label from"],
 ) -> str:
-    return _run_kubectl_command(
-        f"label {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {label_key}-"
-    )
+    return _run_kubectl_command(f"label {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {label_key}-")
+
 
 def _label_resource(
-    resource_type: Annotated[KubernetesResource, "The type of resource to label"],
+    resource_type: Annotated[str, "The type of resource to label (deployment, service, pod, node, ...)"],
     name: Annotated[str, "The name of the resource to label"],
     labels: Annotated[dict[str, str], "The labels to apply to the resource"],
     ns: Annotated[Optional[str], "The namespace of the resource to label"],
 ) -> str:
     label_string = " ".join([f"{key}={value}" for key, value in labels.items()])
-    return _run_kubectl_command(
-        f"label {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {label_string}"
-    )
+    return _run_kubectl_command(f"label {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {label_string}")
+
 
 def _create_resource(
     resource_yaml: Annotated[str, "The YAML definition of the resource to create"],
@@ -122,18 +98,21 @@ def _create_resource(
         tmp_file.flush()  # Ensure the content is written to disk
         return _run_kubectl_command(f"create -f {tmp_file.name}")
 
+
 def _get_events() -> str:
     return _run_kubectl_command("get events")
 
+
 def _rollout(
-    action: Annotated[RolloutAction, "The rollout action to perform on the resource"],
-    resource_type: Annotated[RolloutCapableResources, "The type of resource to rollout"],
+    action: Annotated[
+        str, "The rollout action to perform on the resource (history, pause, restart, resume, status, undo)"
+    ],
+    resource_type: Annotated[str, "The type of resource to rollout (deployment, daemonset, ...)"],
     name: Annotated[str, "The name of the resource to rollout"],
     ns: Annotated[Optional[str], "The namespace of the resource to rollout"],
 ) -> str:
-    return _run_kubectl_command(
-        f"rollout {action} {resource_type.value}/{name} {f'-n {ns} ' if ns else ''}"
-    )
+    return _run_kubectl_command(f"rollout {action} {resource_type.value}/{name} {f'-n {ns} ' if ns else ''}")
+
 
 def _get_available_api_resources() -> str:
     return _run_kubectl_command("api-resources")
@@ -144,7 +123,7 @@ def _get_cluster_configuration() -> str:
 
 
 def _describe_resource(
-    resource_type: Annotated[KubernetesResource, "The type of resource to describe"],
+    resource_type: Annotated[str, "The type of resource to describe (deployment, service, pod, node, ...)"],
     name: Annotated[str, "The name of the resource to describe"],
     ns: Annotated[Optional[str], "The namespace of the resource to describe"],
 ) -> str:
@@ -152,7 +131,7 @@ def _describe_resource(
 
 
 def _delete_resource(
-    resource_type: Annotated[KubernetesResource, "The type of resource to delete"],
+    resource_type: Annotated[str, "The type of resource to delete (deployment, service, pod, node, ...)"],
     name: Annotated[str, "The name of the resource to delete"],
     ns: Annotated[Optional[str], "The namespace of the resource to delete"],
 ) -> str:
@@ -160,8 +139,10 @@ def _delete_resource(
 
 
 def _get_resource_yaml(
-    resource_type: Annotated[KubernetesResource, "The type of resource to get the definition for"],
-    name: Annotated[str, "The name of the resource to get the definition for"],
+    resource_type: Annotated[
+        str, "The type of resource to get the YAML definition for (deployment, service, pod, node, ...)"
+    ],
+    name: Annotated[str, "The name of the resource to get the YAML definition for"],
     ns: Annotated[Optional[str], "The namespace of the resource to get the definition for"],
 ) -> str:
     return _run_kubectl_command(f"get {resource_type.value} {name} {f'-n {ns} ' if ns else ''} -o yaml")
@@ -175,35 +156,11 @@ def _execute_command(
     return _run_kubectl_command(f"exec {pod_name} {f'-n {ns} ' if ns else ''} -- {command}")
 
 
-def _get_pods(
-    ns: Annotated[Optional[str], "The namespace of the pod to get information about"],
-    all_namespaces: Annotated[Optional[bool], "Whether to get pods from all namespaces"],
-    output: Annotated[Optional[str], "The output format of the pod information"],
-) -> str:
-    if ns and all_namespaces:
-        raise ValueError("Cannot specify both ns and all_namespaces=True")
-    return _run_kubectl_command(
-        f"get pods {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
-    )
-
-
-def _get_services(
-    service_name: Annotated[Optional[str], "The name of the service to get information about"],
-    all_namespaces: Annotated[Optional[bool], "Whether to get services from all namespaces"],
-    ns: Annotated[Optional[str], "The namespace of the service to get information about"],
-    output: Annotated[Optional[str], "The output format of the service information"],
-) -> str:
-    if service_name and all_namespaces:
-        all_namespaces = False
-
-    return _run_kubectl_command(
-        f"get services {service_name + ' ' if service_name else ''}{'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
-    )
-
-
 def _get_resources(
     name: Annotated[str, "The name of the resource to get information about"],
-    resource_type: Annotated[KubernetesResource, "The type of resource to get information about"],
+    resource_type: Annotated[
+        str, "The type of resource to get information about (deployment, service, pod, node, ...)"
+    ],
     all_namespaces: Annotated[Optional[bool], "Whether to get resources from all namespaces"],
     ns: Annotated[Optional[str], "The namespace of the resource to get information about"],
     output: Annotated[Optional[str], "The output format of the resource information"],
@@ -233,6 +190,7 @@ def _get_pod_logs(
 ):
     return _run_kubectl_command(f"logs {pod_name} {f'-n {ns}' if ns else ''} --tail {num_lines}")
 
+
 check_service_connectivity = FunctionTool(
     _check_service_connectivity,
     description="Check connectivity to a service in Kubernetes.",
@@ -249,7 +207,9 @@ patch_resource = FunctionTool(
     name="patch_resource",
 )
 
-PatchResource, PatchResourceConfig = create_typed_fn_tool(patch_resource, "kagent.tools.k8s.PatchResource", "PatchResource")
+PatchResource, PatchResourceConfig = create_typed_fn_tool(
+    patch_resource, "kagent.tools.k8s.PatchResource", "PatchResource"
+)
 
 scale = FunctionTool(
     _scale,
@@ -265,7 +225,9 @@ remove_annotation = FunctionTool(
     name="remove_annotation",
 )
 
-RemoveAnnotation, RemoveAnnotationConfig = create_typed_fn_tool(remove_annotation, "kagent.tools.k8s.RemoveAnnotation", "RemoveAnnotation")
+RemoveAnnotation, RemoveAnnotationConfig = create_typed_fn_tool(
+    remove_annotation, "kagent.tools.k8s.RemoveAnnotation", "RemoveAnnotation"
+)
 
 annotate_resource = FunctionTool(
     _annotate_resource,
@@ -273,7 +235,9 @@ annotate_resource = FunctionTool(
     name="annotate_resource",
 )
 
-AnnotateResource, AnnotateResourceConfig = create_typed_fn_tool(annotate_resource, "kagent.tools.k8s.AnnotateResource", "AnnotateResource")
+AnnotateResource, AnnotateResourceConfig = create_typed_fn_tool(
+    annotate_resource, "kagent.tools.k8s.AnnotateResource", "AnnotateResource"
+)
 
 remove_label = FunctionTool(
     _remove_label,
@@ -289,7 +253,9 @@ label_resource = FunctionTool(
     name="label_resource",
 )
 
-LabelResource, LabelResourceConfig = create_typed_fn_tool(label_resource, "kagent.tools.k8s.LabelResource", "LabelResource")
+LabelResource, LabelResourceConfig = create_typed_fn_tool(
+    label_resource, "kagent.tools.k8s.LabelResource", "LabelResource"
+)
 
 create_resource = FunctionTool(
     _create_resource,
@@ -297,7 +263,9 @@ create_resource = FunctionTool(
     name="create_resource",
 )
 
-CreateResource, CreateResourceConfig = create_typed_fn_tool(create_resource, "kagent.tools.k8s.CreateResource", "CreateResource")
+CreateResource, CreateResourceConfig = create_typed_fn_tool(
+    create_resource, "kagent.tools.k8s.CreateResource", "CreateResource"
+)
 
 get_events = FunctionTool(
     _get_events,
@@ -375,22 +343,6 @@ execute_command = FunctionTool(
 ExecuteCommand, ExecuteCommandConfig = create_typed_fn_tool(
     execute_command, "kagent.tools.k8s.ExecuteCommand", "ExecuteCommand"
 )
-
-get_pods = FunctionTool(
-    _get_pods,
-    description="Gets pods in Kubernetes from a namespace or all of them. Always prefer output type `wide` unless otherwise specified.",
-    name="get_pods",
-)
-
-GetPods, GetPodsConfig = create_typed_fn_tool(get_pods, "kagent.tools.k8s.GetPods", "GetPods")
-
-get_services = FunctionTool(
-    _get_services,
-    description="Get information about services in Kubernetes. Always prefer output type `wide` unless otherwise specified.",
-    name="get_services",
-)
-
-GetServices, GetServicesConfig = create_typed_fn_tool(get_services, "kagent.tools.k8s.GetServices", "GetServices")
 
 apply_manifest = FunctionTool(
     _apply_manifest,
