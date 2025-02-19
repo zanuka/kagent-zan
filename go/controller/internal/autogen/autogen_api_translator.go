@@ -60,7 +60,7 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 		}
 		teamConfig.FinalAnswerPrompt = magenticOneTeamConfig.FinalAnswerPrompt
 	} else if swarmTeamConfig != nil {
-		groupChatType = "SwarmGroupChat"
+		groupChatType = "Swarm"
 		modelConfigName = swarmTeamConfig.ModelConfig
 	} else {
 		return nil, fmt.Errorf("no model config specified")
@@ -171,6 +171,19 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 			},
 		}
 		participants = append(participants, participant)
+	}
+
+	if swarmTeamConfig != nil {
+		planningAgent := MakeBuiltinPlanningAgent(
+			"planning_agent",
+			participants,
+			teamConfig.ModelClient,
+		)
+		// prepend builtin planning agent when using swarm mode
+		participants = append(
+			[]api.TeamParticipant{planningAgent},
+			participants...,
+		)
 	}
 	teamConfig.Participants = participants
 

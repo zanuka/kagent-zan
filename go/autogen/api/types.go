@@ -96,6 +96,13 @@ type TeamParticipant struct {
 	Label         *string     `json:"label,omitempty"`
 }
 
+type SwarmHandoff struct {
+	Target      string `json:"target"`
+	Description string `json:"description"`
+	Name        string `json:"name"`
+	Message     string `json:"message"`
+}
+
 type ModelComponent struct {
 	Provider      string      `json:"provider"`
 	ComponentType string      `json:"component_type"`
@@ -137,6 +144,9 @@ type AgentConfig struct {
 	SystemMessage         *string                         `json:"system_message,omitempty"`
 	ReflectOnToolUse      bool                            `json:"reflect_on_tool_use"`
 	ToolCallSummaryFormat string                          `json:"tool_call_summary_format,omitempty"`
+
+	// Swarm specific fields
+	Handoffs []SwarmHandoff `json:"handoffs,omitempty"`
 }
 
 // Model Configurations
