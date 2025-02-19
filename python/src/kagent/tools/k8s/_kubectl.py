@@ -9,37 +9,11 @@ from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
-def _get_pods(
-    ns: Annotated[Optional[str], "The namespace of the pod to get information about"],
-    all_namespaces: Annotated[Optional[bool], "Whether to get pods from all namespaces"],
-    output: Annotated[Optional[str], "The output format of the pod information"],
-) -> str:
-    if ns and all_namespaces:
-        raise ValueError("Cannot specify both ns and all_namespaces=True")
-    return _run_kubectl_command(
-        f"get pods {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
-    )
-
-
-def _get_services(
-    service_name: Annotated[Optional[str], "The name of the service to get information about"],
-    all_namespaces: Annotated[Optional[bool], "Whether to get services from all namespaces"],
-    ns: Annotated[Optional[str], "The namespace of the service to get information about"],
-    output: Annotated[Optional[str], "The output format of the service information"],
-) -> str:
-    if service_name and all_namespaces:
-        all_namespaces = False
-
-    return _run_kubectl_command(
-        f"get services {service_name + ' ' if service_name else ''}{'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
-    )
-
-
 def _get_resources(
-    name: Annotated[str, "The name of the resource to get information about"],
+    name: Annotated[Optional[str], "The name of the resource to get information about. If not provided, all resources will be returned."],
     resource_type: Annotated[str, "The type of resource to get information about"],
     all_namespaces: Annotated[Optional[bool], "Whether to get resources from all namespaces"],
-    ns: Annotated[Optional[str], "The namespace of the resource to get information about"],
+    ns: Annotated[Optional[str], "The namespace of the resource to get information about, if unset will default to the current namespace"],
     output: Annotated[Optional[str], "The output format of the resource information"],
 ) -> str:
     if name and all_namespaces:
@@ -65,23 +39,6 @@ def _get_pod_logs(
     ns: Annotated[str, "The namespace of the pod to get logs from"],
 ):
     return _run_kubectl_command(f"logs {pod_name + ' ' if pod_name else ''}{'-n' + ns if ns else ''}")
-
-
-get_pods = FunctionTool(
-    _get_pods,
-    description="Gets pods in Kubernetes from a namespace or all of them. Always prefer output type `wide` unless otherwise specified.",
-    name="get_pods",
-)
-
-GetPods, GetPodsConfig = create_typed_fn_tool(get_pods, "kagent.tools.k8s.GetPods", "GetPods")
-
-get_services = FunctionTool(
-    _get_services,
-    description="Get information about services in Kubernetes. Always prefer output type `wide` unless otherwise specified.",
-    name="get_services",
-)
-
-GetServices, GetServicesConfig = create_typed_fn_tool(get_services, "kagent.tools.k8s.GetServices", "GetServices")
 
 apply_manifest = FunctionTool(
     _apply_manifest,

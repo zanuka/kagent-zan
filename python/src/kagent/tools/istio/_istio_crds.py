@@ -18,8 +18,8 @@ from .prompts.base import IstioResources
 
 class IstioCRDToolConfig(BaseModel):
     """Base configuration for the Istio CRD tools."""
-    model: str = Annotated[Optional[str], "The OpenAI model to use for generating the CRD. Defaults to gpt-4o-mini"]
-    openai_api_key: str = Annotated[Optional[str], "API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used."]
+    model: Annotated[str, "The OpenAI model to use for generating the CRD. Defaults to gpt-4o-mini"] = "gpt-4o-mini"
+    openai_api_key: Annotated[Optional[str], "API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used."]
 
 class IstioCRDToolInput(BaseModel):
     istio_resource: Annotated[IstioResources, "Type of resource to generate"]
@@ -34,7 +34,8 @@ class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
     """
 
     component_type = "tool"
-    component_type_schema = IstioCRDToolConfig
+    component_config_schema = IstioCRDToolConfig
+    component_input_schema = "kagent.tools.istio.IstioCRDTool"
 
     def __init__(self, config: IstioCRDToolConfig) -> None:
         self._model = config.model
@@ -47,7 +48,7 @@ class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
 
         super().__init__(IstioCRDToolInput, description="Generates an Istio resource YAML configuration from a detailed description.")
 
-    async def run(self, args: IstioCRDToolInput, cancellation_token: CancellationToken) -> BaseModel:
+    async def run(self, args: IstioCRDToolInput, cancellation_token: CancellationToken) -> str:
         """
         Run the Istio CRD tool with the provided arguments.
 
