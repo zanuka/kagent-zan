@@ -1,5 +1,6 @@
 import { AssistantAgentConfig, ChatCompletionContextConfig, Component, KAgentToolConfig, ModelConfig, OpenAIClientConfig, SelectorGroupChatConfig, Team, ToolConfig } from "@/types/datamodel";
 import { CreateAgentFormData, Tool } from "./types";
+import { isMcpTool } from "./data";
 
 export const createTeamConfig = (agentConfig: Component<AssistantAgentConfig>, userId: string): Team => {
   const planningAgentConfig: Component<AssistantAgentConfig> = {
@@ -97,17 +98,30 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
   };
 
   const transformTools = (tools: Tool[]): Component<ToolConfig>[] => {
-    return tools.map((tool) => ({
-      provider: tool.provider,
-      component_type: "tool",
-      version: tool.version,
-      component_version: tool.component_version,
-      description: tool.description,
-      label: tool.label,
-      config: {
-        // TODO: update the config based on the tool once we have that.
-      } as KAgentToolConfig,
-    }));
+    return tools.map((tool) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let toolConfig: any;
+      
+      if (isMcpTool(tool)) {
+        // For MCP tools, use the exact config object provided
+        toolConfig = { ...tool.config };
+      } else {
+        // For standard KAgent tools, use the KAgentToolConfig structure
+        toolConfig = {
+          ...tool.config
+        } as KAgentToolConfig;
+      }
+      
+      return {
+        provider: tool.provider,
+        component_type: "tool",
+        version: tool.version,
+        component_version: tool.component_version,
+        description: tool.description,
+        label: tool.label,
+        config: toolConfig,
+      };
+    });
   };
 
   const modelConfig = modelClientMap[formData.model.id];

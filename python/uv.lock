@@ -123,16 +123,16 @@ wheels = [
 
 [[package]]
 name = "autogen-agentchat"
-version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
+version = "0.4.7"
+source = { git = "https://github.com/kagent-dev/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=1130cd2e3d51114daed63b5852727f10ce8fe431#1130cd2e3d51114daed63b5852727f10ce8fe431" }
 dependencies = [
     { name = "autogen-core" },
 ]
 
 [[package]]
 name = "autogen-core"
-version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
+version = "0.4.7"
+source = { git = "https://github.com/kagent-dev/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=1130cd2e3d51114daed63b5852727f10ce8fe431#1130cd2e3d51114daed63b5852727f10ce8fe431" }
 dependencies = [
     { name = "jsonref" },
     { name = "opentelemetry-api" },
@@ -144,8 +144,8 @@ dependencies = [
 
 [[package]]
 name = "autogen-ext"
-version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
+version = "0.4.7"
+source = { git = "https://github.com/kagent-dev/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=1130cd2e3d51114daed63b5852727f10ce8fe431#1130cd2e3d51114daed63b5852727f10ce8fe431" }
 dependencies = [
     { name = "autogen-core" },
 ]
@@ -175,7 +175,7 @@ openai = [
 [[package]]
 name = "autogenstudio"
 version = "0.4.1"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
+source = { git = "https://github.com/kagent-dev/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=1130cd2e3d51114daed63b5852727f10ce8fe431#1130cd2e3d51114daed63b5852727f10ce8fe431" }
 dependencies = [
     { name = "aiofiles" },
     { name = "alembic" },
@@ -1028,9 +1028,9 @@ jupyter-executor = [
 [package.metadata]
 requires-dist = [
     { name = "autogen-agentchat", specifier = ">=0.4.3" },
-    { name = "autogen-core", git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
-    { name = "autogen-ext", extras = ["mcp"], git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
-    { name = "autogenstudio", git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
+    { name = "autogen-core", git = "https://github.com/kagent-dev/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=1130cd2e3d51114daed63b5852727f10ce8fe431" },
+    { name = "autogen-ext", extras = ["mcp"], git = "https://github.com/kagent-dev/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=1130cd2e3d51114daed63b5852727f10ce8fe431" },
+    { name = "autogenstudio", git = "https://github.com/kagent-dev/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=1130cd2e3d51114daed63b5852727f10ce8fe431" },
     { name = "ipykernel", marker = "extra == 'jupyter-executor'", specifier = ">=6.29.5" },
     { name = "mcp", specifier = ">=1.2.0" },
     { name = "nbclient", marker = "extra == 'jupyter-executor'", specifier = ">=0.10.2" },
