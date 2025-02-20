@@ -8,16 +8,16 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
+import { useResponsiveSidebar } from "@/components/sidebars/useResponsiveSidebar";
 
-interface AgentDetailsPanelProps {
+interface AgentDetailsSidebarProps {
   selectedTeam: Team | null;
-  isOpen: boolean;
-  onToggle: () => void;
 }
 
-export function AgentDetailsPanel({ selectedTeam, isOpen, onToggle }: AgentDetailsPanelProps) {
+export function AgentDetailsSidebar({ selectedTeam }: AgentDetailsSidebarProps) {
   const [isSystemPromptOpen, setIsSystemPromptOpen] = useState(false);
   const [currentSystemPrompt, setCurrentSystemPrompt] = useState("");
+  const { isOpen, toggle } = useResponsiveSidebar({ breakpoint: 1024, side: "right" });
 
   const renderAgentTools = (tools: Component<ToolConfig>[] = []) => {
     if (tools.length === 0) {
@@ -28,7 +28,7 @@ export function AgentDetailsPanel({ selectedTeam, isOpen, onToggle }: AgentDetai
       <ul className="mt-4 flex flex-col gap-2">
         {tools.map((tool) => {
           const toolIdentifier = getToolIdentifier(tool);
-          const displayName = getToolDisplayName(tool)
+          const displayName = getToolDisplayName(tool);
           const displayDescription = getToolDescription(tool);
 
           return (
@@ -65,7 +65,7 @@ export function AgentDetailsPanel({ selectedTeam, isOpen, onToggle }: AgentDetai
       >
         <div className="h-full flex flex-col text-white">
           <div className="p-4 flex items-center gap-2 border-b border-[#3A3A3A] shrink-0">
-            <Button variant="ghost" size="icon" onClick={onToggle} className="h-8 w-8 hover:bg-[#3A3A3A] text-white hover:text-white transition-colors">
+            <Button variant="ghost" size="icon" onClick={toggle} className="h-8 w-8 hover:bg-[#3A3A3A] text-white hover:text-white transition-colors">
               {isOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
             {isOpen && <h1 className="text-sm font-semibold flex-1">Agent</h1>}

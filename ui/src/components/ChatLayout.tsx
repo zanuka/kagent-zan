@@ -1,48 +1,36 @@
-import { ReactNode } from 'react';
-import { Team } from '@/types/datamodel';
-import SessionsSidebar from '@/components/sidebar/SessionsSidebar';
-import { AgentDetailsPanel } from '@/components/agent-details/AgentDetailsPanel';
+import { ReactNode } from "react";
+import { Team } from "@/types/datamodel";
+import SessionsSidebar from "@/components/sidebars/SessionsSidebar";
+import { AgentDetailsSidebar } from "@/components/sidebars/AgentDetailsSidebar";
+import { SidebarProvider, useSidebarContext } from "./sidebars/SidebarContext";
 
 interface ChatLayoutProps {
   children: ReactNode;
-  isLeftSidebarOpen: boolean;
-  isRightSidebarOpen: boolean;
-  onLeftSidebarToggle: () => void;
-  onRightSidebarToggle: () => void;
   selectedTeam: Team | null;
-  sidebarProps: Omit<React.ComponentProps<typeof SessionsSidebar>, 'isOpen' | 'onToggle'>;
+  sidebarProps: Omit<React.ComponentProps<typeof SessionsSidebar>, "selectedTeam">;
 }
 
-export function ChatLayout({
-  children,
-  isLeftSidebarOpen,
-  isRightSidebarOpen,
-  onLeftSidebarToggle,
-  onRightSidebarToggle,
-  selectedTeam,
-  sidebarProps,
-}: ChatLayoutProps) {
+function ChatLayoutContent({ children, selectedTeam, sidebarProps }: ChatLayoutProps) {
+  const { leftSidebarOpen, rightSidebarOpen } = useSidebarContext();
+
+  const leftMargin = leftSidebarOpen ? "ml-96" : "ml-12";
+  const rightMargin = rightSidebarOpen ? "mr-96" : "mr-12";
+
   return (
     <>
-      <SessionsSidebar
-        isOpen={isLeftSidebarOpen}
-        onToggle={onLeftSidebarToggle}
-        {...sidebarProps}
-      />
-      <div
-        className={`transition-all duration-300 ease-in-out
-        ${isLeftSidebarOpen ? "ml-64" : "ml-12"}
-        ${isRightSidebarOpen ? "mr-64" : "mr-12"}`}
-      >
-        <div className="mx-auto max-w-5xl">
-          {children}
-        </div>
+      <SessionsSidebar {...sidebarProps} selectedTeam={selectedTeam} />
+      <div className={`min-h-screen transition-all duration-300 ease-in-out ${leftMargin} ${rightMargin}`}>
+        <div className="mx-auto max-w-none px-4 md:px-8 py-8">{children}</div>
       </div>
-      <AgentDetailsPanel
-        selectedTeam={selectedTeam}
-        isOpen={isRightSidebarOpen}
-        onToggle={onRightSidebarToggle}
-      />
+      <AgentDetailsSidebar selectedTeam={selectedTeam} />
     </>
+  );
+}
+
+export function ChatLayout(props: ChatLayoutProps) {
+  return (
+    <SidebarProvider>
+      <ChatLayoutContent {...props} />
+    </SidebarProvider>
   );
 }

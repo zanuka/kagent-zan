@@ -43,7 +43,8 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
 
     if (!isValid) return;
 
-    setSelectedTools((prev) => prev.map((tool) => (tool.provider === toolProvider ? { ...tool, config: newConfig } : tool)));
+    const updatedTools = selectedTools.map((tool) => (tool.provider === toolProvider ? { ...tool, config: newConfig } : tool));
+    setSelectedTools(updatedTools);
     setShowConfig(false);
     setConfigTool(null);
     setFieldErrors({});
@@ -56,12 +57,15 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
   };
 
   const handleRemoveTool = (toolProvider: string) => {
-    setSelectedTools((prev) => prev.filter((t) => t.provider !== toolProvider));
+    const updatedTools = selectedTools.filter((tool) => tool.provider !== toolProvider);
+    setSelectedTools(updatedTools);
   };
 
   const validateFields = (tool: Tool, metadata: (typeof TOOL_CONFIGS)[keyof typeof TOOL_CONFIGS]) => {
     const errors: Record<string, string> = {};
     let isValid = true;
+
+    if (!metadata.fields) return true;
 
     metadata.fields.forEach((field: InterfaceField) => {
       if (field.required && (!tool.config[field.key] || tool.config[field.key].trim() === "")) {
@@ -104,7 +108,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
               <div className="text-white/70">No configuration options available for this tool.</div>
             ) : (
               <div className="space-y-4">
-                {metadata.fields.map((field: InterfaceField) => (
+                {metadata.fields?.map((field: InterfaceField) => (
                   <div key={field.key} className="space-y-2">
                     <Label htmlFor={field.key} className="flex items-center">
                       {field.key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}

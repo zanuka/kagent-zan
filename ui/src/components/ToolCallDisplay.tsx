@@ -50,7 +50,7 @@ const ToolCallDisplay = ({ currentMessage, currentRun }: ToolCallDisplayProps) =
     });
 
     setToolState(newToolState);
-  }, [currentRun?.messages, currentMessage]);
+  }, [currentRun, currentRun?.messages, currentMessage]);
 
   if (!toolState.size) return null;
 
