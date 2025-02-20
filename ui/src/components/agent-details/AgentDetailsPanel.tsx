@@ -6,14 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
 
 interface AgentDetailsPanelProps {
   selectedTeam: Team | null;
@@ -32,20 +26,27 @@ export function AgentDetailsPanel({ selectedTeam, isOpen, onToggle }: AgentDetai
 
     return (
       <ul className="mt-4 flex flex-col gap-2">
-        {tools.map((tool, index) => (
-          <li key={tool.label + "_" + index}>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="hover:text-white/60 transition-colors">{tool.label}</span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{tool.description}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </li>
-        ))}
+        {tools.map((tool) => {
+          const toolIdentifier = getToolIdentifier(tool);
+          const displayName = getToolDisplayName(tool)
+          const displayDescription = getToolDescription(tool);
+
+          return (
+            <li key={toolIdentifier}>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="hover:text-white/60 transition-colors">{displayName}</span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{displayDescription}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {isMcpTool(tool) && <span className="ml-2 text-xs bg-blue-400/20 text-blue-400 px-2 py-0.5 rounded">MCP</span>}
+            </li>
+          );
+        })}
       </ul>
     );
   };
@@ -104,13 +105,13 @@ export function AgentDetailsPanel({ selectedTeam, isOpen, onToggle }: AgentDetai
                               </div>
                               <p className="mt-4 text-base">{assistantAgent.description}</p>
                               <div className="mt-4 text-base">
-                                <Button 
-                                  variant="link" 
-                                  size="sm" 
+                                <Button
+                                  variant="link"
+                                  size="sm"
                                   onClick={() => handleOpenSystemPrompt(assistantAgent.system_message ?? "No system prompt available")}
                                   className="px-0 text-white/80 hover:text-white"
                                 >
-                                  View system prompt &rarr; 
+                                  View system prompt &rarr;
                                 </Button>
                               </div>
 
@@ -163,9 +164,7 @@ export function AgentDetailsPanel({ selectedTeam, isOpen, onToggle }: AgentDetai
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent text-white hover:text-white/80 hover:bg-transparent">
-              Close
-            </AlertDialogCancel>
+            <AlertDialogCancel className="bg-transparent text-white hover:text-white/80 hover:bg-transparent">Close</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

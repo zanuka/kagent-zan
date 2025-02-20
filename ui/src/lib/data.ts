@@ -273,3 +273,10 @@ export const TOOLS: Tool[] = [
     config: {},
   },
 ];
+
+export const isMcpTool = (tool: Tool) => tool.provider === 'autogen_ext.tools.mcp.StdioMcpToolAdapter';
+
+// All MCP tools have the same label & description, so the actual tool name is stored in the config
+export const getToolDisplayName = (tool: Tool) => isMcpTool(tool) && tool.config?.tool?.name ? tool.config.tool.name : tool.label;
+export const getToolDescription = (tool: Tool) => isMcpTool(tool) && tool.config?.tool?.description ? tool.config.tool.description : tool.description;
+export const getToolIdentifier = (tool: Tool): string => `${tool.provider}::${getToolDisplayName(tool)}`;
