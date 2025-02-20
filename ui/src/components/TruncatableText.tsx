@@ -32,16 +32,16 @@ export const TruncatableText = memo(
 
     const renderContent = () => {
       if (isJson) {
-        return <pre className="whitespace-pre-wrap">{displayContent}</pre>;
+        return <pre className="whitespace-pre-wrap">{displayContent.trim()}</pre>;
       }
-      return <ReactMarkdown className="prose-md prose prose-invert max-w-none">{displayContent}</ReactMarkdown>;
+      return <ReactMarkdown className="prose-md prose prose-invert max-w-none">{displayContent.trim()}</ReactMarkdown>;
     };
 
     return (
       <div className="relative">
         <div
           className={`
-          transition-[max-height,opacity] overflow-auto scroll duration-500 ease-in-out
+          overflow-auto scroll w-full
           ${shouldTruncate && !isExpanded ? "max-h-[300px]" : "max-h-[10000px]"}
           ${className}
         `}
