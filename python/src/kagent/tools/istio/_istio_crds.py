@@ -46,7 +46,7 @@ class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
         )
         self.config: IstioCRDToolConfig = config
 
-        super().__init__(IstioCRDToolInput, description="Generates an Istio resource YAML configuration from a detailed description.")
+        super().__init__(args_type=IstioCRDToolInput, return_type=str, name="istio_crd", description="Generates an Istio resource YAML configuration from a detailed description.")
 
     async def run(self, args: IstioCRDToolInput, cancellation_token: CancellationToken) -> str:
         """

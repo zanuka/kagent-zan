@@ -188,11 +188,11 @@ def istio():
     mcp.add_tool(proxy_status._func, proxy_status.name, proxy_status.description)
     mcp.add_tool(remote_clusters._func, remote_clusters.name, remote_clusters.description)
 
-    cfg = IstioCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)
-    def istio_crd_tool(input: IstioCRDToolInput):
-        return IstioCRDTool(cfg).run_json(input.model_dump(), CancellationToken())
+    # cfg = IstioCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)
+    # def istio_crd_tool(input: IstioCRDToolInput):
+    #     return IstioCRDTool(cfg).run_json(input.model_dump(), CancellationToken())
 
-    mcp.add_tool(istio_crd_tool, IstioCRDTool(cfg).name, IstioCRDTool(cfg).description)
+    # mcp.add_tool(istio_crd_tool, IstioCRDTool(cfg).name, IstioCRDTool(cfg).description)
 
     mcp.run()
 
