@@ -36,6 +36,7 @@ export default function AgentList() {
 
   useEffect(() => {
     fetchAgents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const handleDeleteClick = (e: React.MouseEvent, teamId: string) => {

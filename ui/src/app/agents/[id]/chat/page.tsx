@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useUserStore } from "@/lib/userStore";
 import ChatInterface from "@/components/ChatInterface";
@@ -14,9 +14,6 @@ export default function ChatPage() {
   const params = useParams();
   const { userId } = useUserStore();
   const agentId = params.id as string;
-
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
 
   // Get chat data and actions from custom hook
   const [{ agent, sessions, viewState, isLoading, error }, { handleNewSession, handleDeleteSession, handleViewRun }] = useChatData({
@@ -55,13 +52,8 @@ export default function ChatPage() {
       {isLoading && <LoadingState />}
 
       <ChatLayout
-        isLeftSidebarOpen={isLeftSidebarOpen}
-        isRightSidebarOpen={isRightSidebarOpen}
-        onLeftSidebarToggle={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-        onRightSidebarToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
         selectedTeam={agent}
         sidebarProps={{
-          selectedTeam: agent,
           sessions,
           onDeleteSession: handleDeleteSession,
           onViewRun: handleViewRun,
