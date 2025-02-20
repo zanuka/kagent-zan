@@ -1016,6 +1016,7 @@ dependencies = [
     { name = "ruff" },
     { name = "sqlite-vec" },
     { name = "tiktoken" },
+    { name = "typer" },
 ]
 
 [package.optional-dependencies]
@@ -1039,6 +1040,7 @@ requires-dist = [
     { name = "ruff", specifier = ">=0.9.2" },
     { name = "sqlite-vec", specifier = ">=0.1.0" },
     { name = "tiktoken", specifier = "==0.8.0" },
+    { name = "typer" },
 ]
 
 [[package]]

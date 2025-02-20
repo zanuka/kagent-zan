@@ -29,7 +29,7 @@ def _patch_resource(
     patch: Annotated[str, "The patch to apply to the resource"],
     ns: Annotated[Optional[str], "The namespace of the resource to patch"],
 ):
-    cmd_parts = ["patch", resource_type.value, resource_name]
+    cmd_parts = ["patch", resource_type, resource_name]
     if ns:
         cmd_parts.extend(["-n", ns])
     cmd_parts.extend(["--type=merge", f"--patch={patch}"])
@@ -43,7 +43,7 @@ def _scale(
     replicas: Annotated[int, "The number of replicas to scale to"],
     ns: Annotated[Optional[str], "The namespace of the resource to scale"],
 ) -> str:
-    return _run_kubectl_command(f"scale {resource_type.value}/{name} --replicas={replicas} {f'-n {ns} ' if ns else ''}")
+    return _run_kubectl_command(f"scale {resource_type}/{name} --replicas={replicas} {f'-n {ns} ' if ns else ''}")
 
 
 def _remove_annotation(
@@ -54,7 +54,7 @@ def _remove_annotation(
     annotation_key: Annotated[str, "The key of the annotation to remove"],
     ns: Annotated[Optional[str], "The namespace of the resource to remove the annotation from"],
 ) -> str:
-    return _run_kubectl_command(f"annotate {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {annotation_key}-")
+    return _run_kubectl_command(f"annotate {resource_type} {name} {f'-n {ns} ' if ns else ''} {annotation_key}-")
 
 
 def _annotate_resource(
@@ -65,7 +65,7 @@ def _annotate_resource(
 ) -> str:
     annotation_string = " ".join([f"{key}={value}" for key, value in annotations.items()])
     return _run_kubectl_command(
-        f"annotate {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {annotation_string}"
+        f"annotate {resource_type} {name} {f'-n {ns} ' if ns else ''} {annotation_string}"
     )
 
 
@@ -77,7 +77,7 @@ def _remove_label(
     label_key: Annotated[str, "The key of the label to remove"],
     ns: Annotated[Optional[str], "The namespace of the resource to remove the label from"],
 ) -> str:
-    return _run_kubectl_command(f"label {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {label_key}-")
+    return _run_kubectl_command(f"label {resource_type} {name} {f'-n {ns} ' if ns else ''} {label_key}-")
 
 
 def _label_resource(
@@ -87,7 +87,7 @@ def _label_resource(
     ns: Annotated[Optional[str], "The namespace of the resource to label"],
 ) -> str:
     label_string = " ".join([f"{key}={value}" for key, value in labels.items()])
-    return _run_kubectl_command(f"label {resource_type.value} {name} {f'-n {ns} ' if ns else ''} {label_string}")
+    return _run_kubectl_command(f"label {resource_type} {name} {f'-n {ns} ' if ns else ''} {label_string}")
 
 
 def _create_resource(
@@ -111,7 +111,7 @@ def _rollout(
     name: Annotated[str, "The name of the resource to rollout"],
     ns: Annotated[Optional[str], "The namespace of the resource to rollout"],
 ) -> str:
-    return _run_kubectl_command(f"rollout {action} {resource_type.value}/{name} {f'-n {ns} ' if ns else ''}")
+    return _run_kubectl_command(f"rollout {action} {resource_type}/{name} {f'-n {ns} ' if ns else ''}")
 
 
 def _get_available_api_resources() -> str:
@@ -127,7 +127,7 @@ def _describe_resource(
     name: Annotated[str, "The name of the resource to describe"],
     ns: Annotated[Optional[str], "The namespace of the resource to describe"],
 ) -> str:
-    return _run_kubectl_command(f"describe {resource_type.value} {name} {f'-n {ns}' if ns else ''}")
+    return _run_kubectl_command(f"describe {resource_type} {name} {f'-n {ns}' if ns else ''}")
 
 
 def _delete_resource(
@@ -135,7 +135,7 @@ def _delete_resource(
     name: Annotated[str, "The name of the resource to delete"],
     ns: Annotated[Optional[str], "The namespace of the resource to delete"],
 ) -> str:
-    return _run_kubectl_command(f"delete {resource_type.value} {name} {f'-n {ns}' if ns else ''}")
+    return _run_kubectl_command(f"delete {resource_type} {name} {f'-n {ns}' if ns else ''}")
 
 
 def _get_resource_yaml(
@@ -145,7 +145,7 @@ def _get_resource_yaml(
     name: Annotated[str, "The name of the resource to get the YAML definition for"],
     ns: Annotated[Optional[str], "The namespace of the resource to get the definition for"],
 ) -> str:
-    return _run_kubectl_command(f"get {resource_type.value} {name} {f'-n {ns} ' if ns else ''} -o yaml")
+    return _run_kubectl_command(f"get {resource_type} {name} {f'-n {ns} ' if ns else ''} -o yaml")
 
 
 def _execute_command(
@@ -162,7 +162,7 @@ def _get_resources(
         str, "The type of resource to get information about (deployment, service, pod, node, ...)"
     ],
     all_namespaces: Annotated[Optional[bool], "Whether to get resources from all namespaces"],
-    ns: Annotated[Optional[str], "The namespace of the resource to get information about"],
+    ns: Annotated[Optional[str], "The namespace of the resource to get information about, if unset will default to the current namespace"],
     output: Annotated[Optional[str], "The output format of the resource information"],
 ) -> str:
     if name and all_namespaces:
@@ -170,7 +170,7 @@ def _get_resources(
         all_namespaces = False
 
     return _run_kubectl_command(
-        f"get {resource_type.value} {name if name else ''} {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
+        f"get {resource_type} {name if name else ''} {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
     )
 
 

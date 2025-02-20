@@ -20,6 +20,7 @@ dependencies = [
   "pyyaml>=6.0.2",
   "mcp>=1.2.0",
   "sqlite-vec>=0.1.0",
+  "typer"
 ]
 
 [project.optional-dependencies]
@@ -27,6 +28,9 @@ jupyter-executor = [
     "ipykernel>=6.29.5",
     "nbclient>=0.10.2",
 ]
+
+[project.scripts]
+kagent = "kagent.cli:run"
 
 [tool.uv.sources]
 autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
@@ -38,7 +42,7 @@ kagent = { workspace = true }
 line-length = 120
 fix = true
 
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.format]
 docstring-code-format = true

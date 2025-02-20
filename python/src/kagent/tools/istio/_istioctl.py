@@ -7,40 +7,10 @@ from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
-class ConfigurationProfile(str, Enum):
-    ambient = "ambient"
-    default = "default"
-    demo = "demo"
-    minimal = "minimal"
-    empty = "empty"
-
-class ProxyConfigType(str, Enum):
-    all = "all"
-    bootstrap = "bootstrap"
-    cluster = "cluster"
-    ecds = "ecds"
-    listener = "listener"
-    log = "log"
-    route = "route"
-    secret = "secret"
-
-class ZTunnelConfigType(str, Enum):
-    all = "all"
-    certificate = "certificate"
-    log = "log"
-    policy = "policy"
-    service = "service"
-    workload = "workload"
-
-class WaypointTrafficType(str, Enum):
-    none = "none"
-    all = "all"
-    service = "service"
-    workload = "workload"
 
 async def _ztunnel_config(
     ns: Annotated[Optional[str], "The namespace of the pod to get proxy configuration for"],
-    config_type: Annotated[Optional[ZTunnelConfigType], "The type of configuration to get"] = "all",
+    config_type: Annotated[Optional[str], "The type of configuration to get, the allowed values are: all, bootstrap, cluster, ecds, listener, log, route, secret"] = "all",
 ) -> str:
     return _run_istioctl_command(f"ztunnel-config {config_type} {'-n ' + ns if ns else ''}")
 
@@ -90,18 +60,18 @@ async def _proxy_status(
     return _run_istioctl_command(f"proxy-status {'-n ' + ns if ns else ''} {pod_name if pod_name else ''}")
 
 async def _install_istio(
-    profile: Annotated[ConfigurationProfile, "Istio configuration profile to install"]) -> str:
+    profile: Annotated[str, "Istio configuration profile to install, the allowed values are: ambient, default, demo, minimal, empty"]) -> str:
     return _run_istioctl_command(f"install {profile} -y")
 
 async def _proxy_config(
     pod_name: Annotated[str, "The name of the pod to get proxy configuration for"],
     ns: Annotated[Optional[str], "The namespace of the pod to get proxy configuration for"],
-    config_type: Annotated[Optional[ProxyConfigType], "The type of configuration to get"] = "all",
+    config_type: Annotated[Optional[str], "The type of configuration to get, the allowed values are: all, bootstrap, cluster, ecds, listener, log, route, secret"] = "all",
 ) -> str:
     return _run_istioctl_command(f"proxy-config {config_type} {'-n ' + ns if ns else ''} {pod_name}")
 
 async def _generate_manifest(
-    profile: Annotated[ConfigurationProfile, "Istio configuration profile to generate manifest for"],
+    profile: Annotated[str, "Istio configuration profile to generate manifest for, the allowed values are: ambient, default, demo, minimal, empty"],
 ) -> str:
     return _run_istioctl_command(f"manifest generate --set profile={profile}")
 

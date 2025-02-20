@@ -231,15 +231,8 @@ class LabelValuesTool(BaseTool):
     def _from_config(cls, config: Config) -> "LabelValuesTool":
         return cls(config)
 
-
-class TargetState(str, Enum):
-    ACTIVE = "active"
-    DROPPED = "dropped"
-    ANY = "any"
-
-
 class TargetsInput(BaseModel):
-    state: Optional[TargetState] = Field(default=None, description="Target state filter")
+    state: Optional[str] = Field(default=None, description="Target state filter, must be one of: active, dropped, any")
     scrape_pool: Optional[str] = Field(default=None, description="Scrape pool name")
 
 
