@@ -22,9 +22,25 @@ from kagent.tools.istio._istioctl import (
     ztunnel_config,
 )
 from kagent.tools.k8s._kubectl import (
+    annotate_resource,
     apply_manifest,
+    check_service_connectivity,
+    create_resource,
+    delete_resource,
+    describe_resource,
+    get_cluster_configuration,
+    get_events,
     get_pod_logs,
+    get_resource_yaml,
     get_resources,
+    label_resource,
+    patch_resource,
+    remove_annotation,
+    remove_label,
+    rollout,
+    scale,
+    get_available_api_resources,
+    
 )
 from kagent.tools.prometheus._prometheus import (
     AlertmanagersInput,
@@ -202,6 +218,22 @@ def k8s():
     mcp.add_tool(apply_manifest._func, apply_manifest.name, apply_manifest.description)
     mcp.add_tool(get_pod_logs._func, get_pod_logs.name, get_pod_logs.description)
     mcp.add_tool(get_resources._func, get_resources.name, get_resources.description)
+    mcp.add_tool(get_resource_yaml._func, get_resource_yaml.name, get_resource_yaml.description)
+    mcp.add_tool(get_cluster_configuration._func, get_cluster_configuration.name, get_cluster_configuration.description)
+    mcp.add_tool(describe_resource._func, describe_resource.name, describe_resource.description)
+    mcp.add_tool(delete_resource._func, delete_resource.name, delete_resource.description)
+    mcp.add_tool(label_resource._func, label_resource.name, label_resource.description)
+    mcp.add_tool(annotate_resource._func, annotate_resource.name, annotate_resource.description)
+    mcp.add_tool(remove_label._func, remove_label.name, remove_label.description)
+    mcp.add_tool(remove_annotation._func, remove_annotation.name, remove_annotation.description)
+    mcp.add_tool(rollout._func, rollout.name, rollout.description)
+    mcp.add_tool(scale._func, scale.name, scale.description)
+    mcp.add_tool(patch_resource._func, patch_resource.name, patch_resource.description)
+    mcp.add_tool(check_service_connectivity._func, check_service_connectivity.name, check_service_connectivity.description)
+    mcp.add_tool(create_resource._func, create_resource.name, create_resource.description)
+    mcp.add_tool(get_events._func, get_events.name, get_events.description)
+    mcp.add_tool(get_available_api_resources._func, get_available_api_resources.name, get_available_api_resources.description)  
+
     mcp.run()
 
 
