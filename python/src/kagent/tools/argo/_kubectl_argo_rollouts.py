@@ -80,17 +80,6 @@ async def _promote_rollout(
     rollout_name: Annotated[str, "The name of the rollout to promote"],
     ns: Annotated[Optional[str], "The namespace of the rollout. Defaults to the default namespace."],
     full: Annotated[Optional[bool], "Perform a full promotion, skipping analysis, pauses, and steps. Default is False"],
-    as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
-    as_group: Annotated[
-        Optional[List[str]], "Group(s) to impersonate for the operation. Can be repeated. Default is None"
-    ],
-    as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cache_dir: Annotated[Optional[str], "Path to the cache directory. Default is None"],
-    cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
-    context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    token: Annotated[Optional[str], "Bearer token for authentication to the API server. Default is None"],
-    user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
     """
     Promote an Argo Rollout with various options for customization.
@@ -106,34 +95,6 @@ async def _promote_rollout(
     if full:
         cmd.append("--full")
 
-    if as_user:
-        cmd.extend(["--as", as_user])
-
-    if as_group:
-        for group in as_group:
-            cmd.extend(["--as-group", group])
-
-    if as_uid:
-        cmd.extend(["--as-uid", as_uid])
-
-    if cache_dir:
-        cmd.extend(["--cache-dir", cache_dir])
-
-    if cluster:
-        cmd.extend(["--cluster", cluster])
-
-    if context:
-        cmd.extend(["--context", context])
-
-    if kubeconfig:
-        cmd.extend(["--kubeconfig", kubeconfig])
-
-    if token:
-        cmd.extend(["--token", token])
-
-    if user:
-        cmd.extend(["--user", user])
-
     return await _run_command(cmd)
 
 
@@ -144,73 +105,79 @@ promote_rollout = FunctionTool(
 )
 
 
-async def _get_rollout(
-    rollout_name: Annotated[str, "The name of the rollout to get"],
-    ns: Annotated[Optional[str], "The namespace of the rollout. Default is None"],
-    watch: Annotated[Optional[bool], "Watch live updates to the rollout. Default is False"],
-    timeout_seconds: Annotated[Optional[int], "Timeout in seconds for the watch command. Default is None"],
-    as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
-    as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
-    as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cache_dir: Annotated[Optional[str], "Path to the cache directory. Default is None"],
-    cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
-    context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
-    user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
+async def _list_rollouts(
+    ns: Annotated[Optional[str], "The namespace of the rollout. If None, searches across all namespaces"] = None,
+    watch: Annotated[bool, "Watch live updates to the rollout"] = False,
 ) -> str:
     """
-    Get information about a rollout in Argo Rollouts, including options to watch and manage output.
-
-    Parameters are described using Annotated with detailed descriptions for each.
+    List all Argo Rollouts in the cluster.
     """
-    cmd = ["kubectl", "argo", "rollouts", "get", "rollout"]
+    cmd = ["kubectl", "argo", "rollouts", "list", "rollouts"]
 
     if ns:
         cmd.extend(["-n", ns])
-
-    cmd.append(rollout_name)
+    else:
+        cmd.append("--all-namespaces")
 
     if watch:
         cmd.append("-w")
 
-    if timeout_seconds:
-        cmd.extend(["--timeout-seconds", str(timeout_seconds)])
+    return await _run_command(cmd)
 
-    if as_user:
-        cmd.extend(["--as", as_user])
 
-    if as_group:
-        for group in as_group:
-            cmd.extend(["--as-group", group])
+list_rollouts = FunctionTool(
+    _list_rollouts,
+    description="""
+    Lists all Argo Rollouts in the cluster.
+    """,
+    name="list_rollouts",
+)
 
-    if as_uid:
-        cmd.extend(["--as-uid", as_uid])
 
-    if cache_dir:
-        cmd.extend(["--cache-dir", cache_dir])
+async def _get_rollout(
+    rollout_name: Annotated[str, "The name of the rollout to get. Required."],
+    ns: Annotated[Optional[str], "The namespace of the rollout. If None, searches the default namespace"] = None,
+    watch: Annotated[bool, "Watch live updates to the rollout"] = False,
+) -> str:
+    """
+    Get information about a specific Argo Rollout. The rollout name must be provided.
 
-    if cluster:
-        cmd.extend(["--cluster", cluster])
+    Features:
+    - Get specific rollout details when rollout_name is provided
+    - List all rollouts when rollout_name is None
+    - Search in specific namespace when ns is provided
 
-    if context:
-        cmd.extend(["--context", context])
+    Args:
+        rollout_name: Name of specific rollout to get.
+        ns: Namespace to search in. If None, searches the default namespace.
+        watch: Enable live updates watching.
 
-    if kubeconfig:
-        cmd.extend(["--kubeconfig", kubeconfig])
+    Returns:
+        str: Command output containing rollout information.
 
-    if token:
-        cmd.extend(["--token", token])
+    Examples:
+        # Get specific rollout in the foo namespace
+        get_rollout("my-rollout", ns="foo")
+    """
+    cmd = ["kubectl", "argo", "rollouts"]
 
-    if user:
-        cmd.extend(["--user", user])
+    cmd.extend(["get", "rollout", rollout_name])
+
+    # Add optional flags
+    if ns:
+        cmd.extend(["-n", ns])
+
+    if watch:
+        cmd.append("-w")
 
     return await _run_command(cmd)
 
 
 get_rollout = FunctionTool(
     _get_rollout,
-    description="Get information about a rollout, with options to watch live updates.",
+    description="""
+    Get information about a specific Argo Rollouts:
+    """,
     name="get_rollout",
 )
 
@@ -218,14 +185,6 @@ get_rollout = FunctionTool(
 async def _pause_rollout(
     rollout_name: Annotated[str, "The name of the rollout to pause"],
     ns: Annotated[Optional[str], "The namespace of the rollout. Default is None"],
-    as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
-    as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
-    as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
-    context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
-    user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
     """
     Pause a rollout in Argo Rollouts, with various configurable options for Kubernetes context, authentication, etc.
@@ -238,31 +197,6 @@ async def _pause_rollout(
         cmd.extend(["-n", ns])
 
     cmd.append(rollout_name)
-
-    if as_user:
-        cmd.extend(["--as", as_user])
-
-    if as_group:
-        for group in as_group:
-            cmd.extend(["--as-group", group])
-
-    if as_uid:
-        cmd.extend(["--as-uid", as_uid])
-
-    if cluster:
-        cmd.extend(["--cluster", cluster])
-
-    if context:
-        cmd.extend(["--context", context])
-
-    if kubeconfig:
-        cmd.extend(["--kubeconfig", kubeconfig])
-
-    if token:
-        cmd.extend(["--token", token])
-
-    if user:
-        cmd.extend(["--user", user])
 
     return await _run_command(cmd)
 
@@ -277,16 +211,7 @@ pause_rollout = FunctionTool(
 async def _status_rollout(
     rollout_name: Annotated[str, "The name of the rollout to check status for"],
     ns: Annotated[Optional[str], "The namespace of the rollout. Default is None"],
-    timeout: Annotated[Optional[str], "Timeout duration before giving up. Default is None"],
     watch: Annotated[Optional[bool], "Whether to watch the status until it's done (default true)"],
-    as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
-    as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
-    as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
-    context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
-    user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
     """
     Get the status of a rollout in Argo Rollouts, with options to watch progress, set timeouts, and configure Kubernetes context.
@@ -301,35 +226,7 @@ async def _status_rollout(
     if watch is not None:
         cmd.extend(["--watch", str(watch).lower()])
 
-    if timeout:
-        cmd.extend(["--timeout", timeout])
-
     cmd.append(rollout_name)
-
-    if as_user:
-        cmd.extend(["--as", as_user])
-
-    if as_group:
-        for group in as_group:
-            cmd.extend(["--as-group", group])
-
-    if as_uid:
-        cmd.extend(["--as-uid", as_uid])
-
-    if cluster:
-        cmd.extend(["--cluster", cluster])
-
-    if context:
-        cmd.extend(["--context", context])
-
-    if kubeconfig:
-        cmd.extend(["--kubeconfig", kubeconfig])
-
-    if token:
-        cmd.extend(["--token", token])
-
-    if user:
-        cmd.extend(["--user", user])
 
     return await _run_command(cmd)
 
@@ -345,14 +242,6 @@ async def _create_rollout_resource(
     filename: Annotated[List[str], "Files to use to create the resource"],
     ns: Annotated[Optional[str], "The namespace for the resource. Default is None"],
     watch: Annotated[Optional[bool], "Whether to watch live updates after creating. Default is False"],
-    as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
-    as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
-    as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
-    context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
-    user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
     """
     Create a resource in Argo Rollouts from the provided file(s), with options to watch and configure Kubernetes context.
@@ -370,31 +259,6 @@ async def _create_rollout_resource(
 
     if watch is not None:
         cmd.extend(["--watch", str(watch).lower()])
-
-    if as_user:
-        cmd.extend(["--as", as_user])
-
-    if as_group:
-        for group in as_group:
-            cmd.extend(["--as-group", group])
-
-    if as_uid:
-        cmd.extend(["--as-uid", as_uid])
-
-    if cluster:
-        cmd.extend(["--cluster", cluster])
-
-    if context:
-        cmd.extend(["--context", context])
-
-    if kubeconfig:
-        cmd.extend(["--kubeconfig", kubeconfig])
-
-    if token:
-        cmd.extend(["--token", token])
-
-    if user:
-        cmd.extend(["--user", user])
 
     return await _run_command(cmd)
 
@@ -424,14 +288,6 @@ async def _set_rollout_image(
     rollout_name: Annotated[str, "The name of the rollout to update"],
     container_image: Annotated[str, "Container name and image in the format 'container=image'"],
     ns: Annotated[Optional[str], "The namespace for the resource. Default is None"],
-    as_user: Annotated[Optional[str], "Username to impersonate for the operation. Default is None"],
-    as_group: Annotated[Optional[List[str]], "Group(s) to impersonate for the operation. Default is None"],
-    as_uid: Annotated[Optional[str], "UID to impersonate for the operation. Default is None"],
-    cluster: Annotated[Optional[str], "The name of the kubeconfig cluster to use. Default is None"],
-    context: Annotated[Optional[str], "The name of the kubeconfig context to use. Default is None"],
-    kubeconfig: Annotated[Optional[str], "Path to the kubeconfig file to use for CLI requests. Default is None"],
-    token: Annotated[Optional[str], "Bearer token for API authentication. Default is None"],
-    user: Annotated[Optional[str], "The name of the kubeconfig user to use. Default is None"],
 ) -> str:
     """
     Set the image for a container in an Argo Rollouts deployment.
@@ -442,31 +298,6 @@ async def _set_rollout_image(
 
     if ns:
         cmd.extend(["-n", ns])
-
-    if as_user:
-        cmd.extend(["--as", as_user])
-
-    if as_group:
-        for group in as_group:
-            cmd.extend(["--as-group", group])
-
-    if as_uid:
-        cmd.extend(["--as-uid", as_uid])
-
-    if cluster:
-        cmd.extend(["--cluster", cluster])
-
-    if context:
-        cmd.extend(["--context", context])
-
-    if kubeconfig:
-        cmd.extend(["--kubeconfig", kubeconfig])
-
-    if token:
-        cmd.extend(["--token", token])
-
-    if user:
-        cmd.extend(["--user", user])
 
     return await _run_command(cmd)
 
@@ -491,6 +322,7 @@ PromoteRollout, PromoteRolloutConfig = create_typed_fn_tool(
     promote_rollout, "kagent.tools.argo.PromoteRollout", "PromoteRollout"
 )
 GetRollout, GetRolloutConfig = create_typed_fn_tool(get_rollout, "kagent.tools.argo.GetRollout", "GetRollout")
+ListRollouts, ListRolloutsConfig = create_typed_fn_tool(list_rollouts, "kagent.tools.argo.ListRollouts", "ListRollouts")
 VerifyKubectlPluginInstall, VerifyKubectlPluginInstallConfig = create_typed_fn_tool(
     verify_kubectl_plugin_install, "kagent.tools.argo.VerifyKubectlPluginInstall", "VerifyKubectlPluginInstall"
 )

@@ -37,6 +37,7 @@ def get_http_client(config: Config, cancellation_token: CancellationToken) -> ht
 
 ArgsT = TypeVar("ArgsT", bound=BaseModel, contravariant=True)
 
+
 class BaseTool(BaseCoreTool[ArgsT, BaseModel], Component[Config]):
     """Base class for all Prometheus tools"""
 

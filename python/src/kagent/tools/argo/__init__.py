@@ -1,6 +1,7 @@
 from ._kubectl_argo_rollouts import (
     CreateRolloutResource,
     GetRollout,
+    ListRollouts,
     PauseRollout,
     PromoteRollout,
     SetRolloutImage,
@@ -11,9 +12,15 @@ from ._kubectl_argo_rollouts import (
 
 from ._argo_crds import GenerateResource
 
+from ._argo_rollouts_k8sgw_installation import (
+    CheckPluginLogsTool,
+    VerifyGatewayPluginTool,
+)
+
 __all__ = [
     "CreateRolloutResource",
     "GetRollout",
+    "ListRollouts",
     "PauseRollout",
     "PromoteRollout",
     "SetRolloutImage",
@@ -21,4 +28,6 @@ __all__ = [
     "VerifyKubectlPluginInstall",
     "VerifyArgoRolloutsControllerInstall",
     "GenerateResource",
+    "CheckPluginLogsTool",
+    "VerifyGatewayPluginTool",
 ]

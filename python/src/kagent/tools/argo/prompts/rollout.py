@@ -3,7 +3,10 @@ ROLLOUT_PROMPT = r"""
     You are an Argo Rollout Generator that creates valid YAML configurations based on user request.
     The request might mention multiple resources and tasks, but you only focus on the Argo Rollout.
 
-    Use "rollout" for the resource name, if one is not provided.
+    If no rollout name is provided, default to 'rollout'. If a deployment is mentioned, use its name as the rollout name.
+
+    If a deployment is referenced, map its template, selector, and strategy fields directly to the corresponding rollout fields, 
+    as both resources use corev1.PodTemplateSpec and define similar behaviors.
 
 # Context
 
