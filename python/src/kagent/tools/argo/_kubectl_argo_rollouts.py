@@ -238,38 +238,6 @@ status_rollout = FunctionTool(
 )
 
 
-async def _create_rollout_resource(
-    filename: Annotated[List[str], "Files to use to create the resource"],
-    ns: Annotated[Optional[str], "The namespace for the resource. Default is None"],
-    watch: Annotated[Optional[bool], "Whether to watch live updates after creating. Default is False"],
-) -> str:
-    """
-    Create a resource in Argo Rollouts from the provided file(s), with options to watch and configure Kubernetes context.
-
-    Parameters are described using Annotated with detailed descriptions for each.
-    """
-    cmd = ["kubectl", "argo", "rollouts", "create"]
-
-    if filename:
-        for file in filename:
-            cmd.extend(["-f", file])
-
-    if ns:
-        cmd.extend(["-n", ns])
-
-    if watch is not None:
-        cmd.extend(["--watch", str(watch).lower()])
-
-    return await _run_command(cmd)
-
-
-create_rollout_resource = FunctionTool(
-    _create_rollout_resource,
-    description="Create a resource in Argo Rollouts from the specified file(s), with options to watch and configure context.",
-    name="create_rollout_resource",
-)
-
-
 async def _run_command(cmd: List[str]) -> str:
     """Helper function to run commands asynchronously"""
     try:
@@ -310,9 +278,6 @@ set_rollout_image = FunctionTool(
 
 SetRolloutImage, SetRolloutImageConfig = create_typed_fn_tool(
     set_rollout_image, "kagent.tools.argo.SetRolloutImage", "SetRolloutImage"
-)
-CreateRolloutResource, CreateRolloutResourceConfig = create_typed_fn_tool(
-    create_rollout_resource, "kagent.tools.argo.CreateRolloutResource", "CreateRolloutResource"
 )
 StatusRollout, StatusRolloutConfig = create_typed_fn_tool(
     status_rollout, "kagent.tools.argo.StatusRollout", "StatusRollout"

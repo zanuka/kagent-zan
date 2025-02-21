@@ -1,5 +1,4 @@
 from ._kubectl_argo_rollouts import (
-    CreateRolloutResource,
     GetRollout,
     ListRollouts,
     PauseRollout,
@@ -18,7 +17,6 @@ from ._argo_rollouts_k8sgw_installation import (
 )
 
 __all__ = [
-    "CreateRolloutResource",
     "GetRollout",
     "ListRollouts",
     "PauseRollout",
