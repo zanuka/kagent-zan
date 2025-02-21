@@ -6,21 +6,21 @@ import { isToday, isYesterday } from "date-fns";
 import { SessionWithRuns, Team } from "@/types/datamodel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { useUserStore } from "@/lib/userStore";
-import { ActionButtons, EmptyState } from "@/components/sidebar/EmptyState";
-import SessionGroup from "@/components/sidebar/SessionGroup";
+import { ActionButtons, EmptyState } from "@/components/sidebars/EmptyState";
+import SessionGroup from "@/components/sidebars/SessionGroup";
+import { useResponsiveSidebar } from "@/components/sidebars/useResponsiveSidebar";
 
 interface SessionsSidebarProps {
-  isOpen: boolean;
-  onToggle: () => void;
   sessions?: SessionWithRuns[];
   onDeleteSession: (sessionId: number) => Promise<void>;
   onViewRun: (sessionId: number, runId: string) => Promise<void>;
   selectedTeam: Team | null;
 }
 
-export default function SessionsSidebar({ isOpen, onToggle, sessions = [], selectedTeam, onDeleteSession, onViewRun }: SessionsSidebarProps) {
+export default function SessionsSidebar({ sessions = [], selectedTeam, onDeleteSession, onViewRun }: SessionsSidebarProps) {
   const { userId } = useUserStore();
   const [showSettings, setShowSettings] = useState(false);
+  const { isOpen, toggle } = useResponsiveSidebar({ breakpoint: 1024, side: "left" });
 
   const groupedSessions = useMemo(() => {
     const groups: {
@@ -70,9 +70,8 @@ export default function SessionsSidebar({ isOpen, onToggle, sessions = [], selec
 
   return (
     <div
-      className={`fixed top-0 left-0 h-screen transition-all duration-300 ease-in-out 
-        bg-[#2A2A2A] border-r border-t border-b border-[#3A3A3A] 
-        ${isOpen ? "w-96" : "w-12"}`}
+      className={`fixed top-0 z-50 left-0 h-screen transition-all duration-300 ease-in-out 
+        bg-[#2A2A2A] border-r border-t border-b border-[#3A3A3A] ${isOpen ? "w-96" : "w-12"}`}
     >
       <div className="h-full flex flex-col text-white">
         {/* Header */}
@@ -83,7 +82,7 @@ export default function SessionsSidebar({ isOpen, onToggle, sessions = [], selec
               <span className="text-xs text-white/50">{totalSessions} chats</span>
             </>
           )}
-          <Button variant="ghost" size="icon" onClick={onToggle} className="h-8 w-8 hover:bg-[#3A3A3A] text-white hover:text-white transition-colors">
+          <Button variant="ghost" size="icon" onClick={toggle} className="h-8 w-8 hover:bg-[#3A3A3A] text-white hover:text-white transition-colors">
             {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>

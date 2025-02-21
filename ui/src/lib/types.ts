@@ -6,12 +6,14 @@ export interface CreateAgentFormData {
   tools: Tool[];
 }
 
+// TODO: This should be removed and replaced with Component<ToolConfig>.
+// it will require creating a type that represents the MCPToolConfig
 export interface Tool {
   provider: string;
-  version: number;
-  component_version: number;
-  label: string;
-  description: string;
+  version?: number;
+  component_version?: number;
+  label?: string;
+  description?: string | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   config: Record<string, any>;
 }

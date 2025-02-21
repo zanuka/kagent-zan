@@ -30,6 +30,14 @@ uv sync --all-extras
 uv run autogenstudio ui
 ```
 
+If you get an error that looks like this:
+
+```
+Smudge error: Error downloading...
+```
+
+Set the `GIT_LFS_SKIP_SMUDGE=1` variable and then run sync command.
+
 2. Run the frontend from the `ui` folder:
 
 ```bashG
