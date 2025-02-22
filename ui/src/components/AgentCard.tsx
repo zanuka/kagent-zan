@@ -1,0 +1,38 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Bot } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import type { Team } from "@/types/datamodel";
+import { DeleteButton } from "./DeleteAgentButton";
+import { getUsersAgentFromTeam } from "@/lib/utils";
+
+interface AgentCardProps {
+  team: Team;
+}
+
+export function AgentCard({ team }: AgentCardProps) {
+  const router = useRouter();
+  const agent = getUsersAgentFromTeam(team);
+
+  return (
+    <Card 
+      className="bg-[#2A2A2A] border-[#3A3A3A] hover:border-violet-500 transition-colors cursor-pointer" 
+      onClick={() => router.push(`/agents/${team.id}/chat`)}
+    >
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+        <CardTitle className="flex items-center gap-2 text-white">
+          <Bot className="h-5 w-5 text-violet-500" />
+          {agent.label}
+        </CardTitle>
+        <DeleteButton teamId={String(team.id)} />
+      </CardHeader>
+      <CardContent>
+        <p className="text-white/70 text-sm">{agent.description}</p>
+        <div className="mt-4 flex items-center text-xs text-white/50">
+          <span>Model: {agent.config.model_client.config.model}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

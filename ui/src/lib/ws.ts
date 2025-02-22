@@ -1,13 +1,13 @@
-import { getBackendUrl } from "@/lib/utils";
-import { AgentMessageConfig, Message, Run, Session } from "@/types/datamodel";
+import { Run, Session } from "@/types/datamodel";
+import type { InitialMessage, TextMessageConfig, WebSocketMessage } from "@/types/datamodel";
+import { createSession } from "@/app/actions/sessions";
+import { createRun } from "@/app/actions/runs";
+import { getWsUrl } from "./utils";
 
 interface RunWithSession {
   run: Run;
   session: Session;
 }
-
-import { getWebSocketUrl } from "@/lib/utils";
-import type { InitialMessage, TextMessageConfig, WebSocketMessage } from "@/types/datamodel";
 
 interface WebSocketHandlers {
   onMessage: (message: WebSocketMessage) => void;
@@ -45,7 +45,7 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
 
   function connect() {
     try {
-      const wsUrl = `${getWebSocketUrl()}/ws/runs/${runId}`;
+      const wsUrl = `${getWsUrl()}/runs/${runId}`;
       const socket = new WebSocket(wsUrl);
       manager.socket = socket;
 
@@ -73,7 +73,6 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
       socket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as WebSocketMessage;
-          console.log("WebSocket message:", message);
           switch (message.type) {
             case "message":
             case "result":
@@ -177,31 +176,22 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
 }
 
 export const createRunWithSession = async (teamId: number, userId: string): Promise<RunWithSession> => {
-  // Create a session
-  const sessionResponse = await fetch(`${getBackendUrl()}/sessions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId, team_id: teamId }),
-  }).then((res) => res.json());
+  const sessionResponse = await createSession({ userId, teamId });
+  if (!sessionResponse.success || !sessionResponse.data) {
+    throw new Error("Failed to create session");
+  }
 
-  const session = sessionResponse.data as Session;
-
+  const session = sessionResponse.data;
   const payload = { session_id: session.id, user_id: userId };
-  const response = await fetch(`${getBackendUrl()}/runs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
 
-  if (!response.ok) {
+  const runResponse = await createRun(payload);
+  if (!runResponse.success || !runResponse.data) {
     throw new Error("Failed to create run");
   }
 
-  const runResponse = await response.json();
-
   // Ensure we're getting the correct ID from the response
   const run: Run = {
-    id: runResponse.data.run_id || runResponse.data.id,
+    id: runResponse.data.run_id,
     created_at: new Date().toISOString(),
     status: "created",
     task: { content: "", source: "user" },
@@ -219,13 +209,3 @@ export const createRunWithSession = async (teamId: number, userId: string): Prom
     session,
   };
 };
-
-export const createMessage = (config: AgentMessageConfig, runId: string, sessionId: number, userId: string): Message => ({
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  config,
-  session_id: sessionId,
-  run_id: runId,
-  user_id: userId,
-  message_meta: {},
-});

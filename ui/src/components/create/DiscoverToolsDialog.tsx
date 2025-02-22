@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { getBackendUrl } from "@/lib/utils";
-import { Tool } from "@/lib/types";
+import { DiscoverToolsRequest, SseServerParams, StdioServerParameters, Tool } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -8,42 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Terminal, Globe } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { discoverMCPTools } from "@/app/actions/tools";
 
 interface DiscoverToolsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onShowSelectTools: (tools: Tool[]) => void;
-}
-
-interface StdioServerParameters {
-  /**
-   * The executable to run to start the server.
-   */
-  command: string;
-  /**
-   * Command line arguments to pass to the executable.
-   */
-  args?: string[];
-  /**
-   * The environment to use when spawning the process.
-   */
-  env?: Record<string, string>;
-  /**
-   * How to handle stderr of the child process.
-   */
-  stderr?: string | number;
-  /**
-   * The working directory to use when spawning the process.
-   */
-  cwd?: string;
-}
-
-interface SseServerParams {
-  url: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  headers?: Record<string, any>;
-  timeout?: number;
-  sse_read_timeout?: number;
 }
 
 export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: DiscoverToolsDialogProps) => {
@@ -126,7 +95,7 @@ export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: D
       setIsDiscovering(true);
       setError("");
 
-      let payload;
+      let payload: DiscoverToolsRequest;
       if (activeTab === "command") {
         if (!command.trim()) {
           setError("Command is required");
@@ -183,21 +152,13 @@ export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: D
         };
       }
 
-      const response = await fetch(`${getBackendUrl()}/tools/discover`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await discoverMCPTools(payload);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to discover tools");
+      if (!response.success) {
+        throw new Error(response.error || "Failed to discover tools");
       }
 
-      const discoveredToolsData: Tool[] = await response.json();
-
+      const discoveredToolsData: Tool[] = response.data || [];
       if (discoveredToolsData.length > 0) {
         // Close this dialog and open the select tools dialog
         handleClose();

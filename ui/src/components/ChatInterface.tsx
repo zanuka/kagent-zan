@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Team, Message, RunStatus, Session, Run } from "@/types/datamodel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ChatMessage from "./ChatMessage";
-import { useUserStore } from "@/lib/userStore";
 import useChatStore from "@/lib/useChatStore";
 
 interface TokenStats {
@@ -20,7 +19,7 @@ interface TokenStats {
 function calculateTokenStats(messages: Message[]): TokenStats {
   return messages.reduce(
     (stats, message) => {
-      const usage = message.config.models_usage;
+      const usage = message.config?.models_usage;
       if (usage) {
         return {
           total: stats.total + (usage.prompt_tokens + usage.completion_tokens),
@@ -39,11 +38,10 @@ interface ChatInterfaceProps {
   selectedSession?: Session | null;
   selectedRun?: Run | null;
   isReadOnly?: boolean;
-  onNewSession?: () => Promise<void>;
+  onNewSession?: () => void;
 }
 
 export default function ChatInterface({ selectedAgentTeam, selectedSession, selectedRun, isReadOnly, onNewSession }: ChatInterfaceProps) {
-  const { userId } = useUserStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState("");
   const [tokenStats, setTokenStats] = useState<TokenStats>({
@@ -52,7 +50,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
     output: 0,
   });
 
-  const { status, messages, run, sendMessage, cleanup } = useChatStore();
+  const { status, messages, run, sendUserMessage, cleanup } = useChatStore();
 
   useEffect(() => {
     return () => {
@@ -81,7 +79,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
     }
 
     try {
-      await sendMessage(message, selectedAgentTeam.id, userId);
+      await sendUserMessage(message, selectedAgentTeam.id);
       setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -103,7 +101,6 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
             <span>Ready</span>
           </div>
         );
-
       case "active":
       case "created":
         return (
@@ -192,7 +189,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedSession, sele
       </div>
 
       {!isReadOnly && (
-        <div className={`rounded-lg bg-[#2A2A2A] border border-[#3A3A3A] overflow-hidden transition-all duration-300 ease-in-out -translate-y-[1.5rem]`}>
+        <div className="rounded-lg bg-[#2A2A2A] border border-[#3A3A3A] overflow-hidden transition-all duration-300 ease-in-out -translate-y-[1.5rem]">
           <form className="p-4">
             <div className="flex items-center justify-between mb-4">
               {getStatusIcon(status)}

@@ -20,10 +20,11 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"github.com/go-logr/logr"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/go-logr/logr"
 
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
@@ -93,8 +94,8 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 
-	flag.StringVar(&autogenStudioBaseURL, "autogen-base-url", "http://127.0.0.1:8081/api", "The base url of the Autogen Studio server.")
-	flag.StringVar(&autogenStudioWsURL, "autogen-ws-url", "ws://127.0.0.1:8081/api/ws", "The base url of the Autogen Studio websocket server.")
+	flag.StringVar(&autogenStudioBaseURL, "autogen-base-url", "http://127.0.0.1:80/api", "The base url of the Autogen Studio server.")
+	flag.StringVar(&autogenStudioWsURL, "autogen-ws-url", "ws://127.0.0.1:80/api/ws", "The base url of the Autogen Studio websocket server.")
 	opts := zap.Options{
 		Development: true,
 	}

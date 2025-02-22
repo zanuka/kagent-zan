@@ -1,12 +1,11 @@
 "use client";
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getBackendUrl, isIdentifier } from "@/lib/utils";
+import { isIdentifier } from "@/lib/utils";
 import { useUserStore } from "@/lib/userStore";
 import { Bot, ArrowLeft, Loader2, FunctionSquare } from "lucide-react";
 import { Model, Tool } from "@/lib/types";
@@ -15,6 +14,8 @@ import { SystemPromptSection } from "@/components/create/SystemPromptSection";
 import { ModelSelectionSection } from "@/components/create/ModelSelectionSection";
 import { AVAILABLE_MODELS, TOOLS } from "@/lib/data";
 import { ToolsSection } from "@/components/create/ToolsSection";
+import { createTeam } from "@/app/actions/teams";
+import { useRouter } from "next/navigation";
 
 interface ValidationErrors {
   name?: string;
@@ -27,6 +28,7 @@ interface ValidationErrors {
 
 export default function NewAgentPage() {
   const { userId } = useUserStore();
+  const router = useRouter();
 
   // Basic form state
   const [name, setName] = useState("");
@@ -92,20 +94,17 @@ export default function NewAgentPage() {
       const agentConfig = transformToAgentConfig(agentData);
       const teamConfig = createTeamConfig(agentConfig, userId);
 
-      const response = await fetch(getBackendUrl() + "/teams", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(teamConfig),
-      });
+      const result = await createTeam(teamConfig);
 
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error("Failed to create team");
       }
 
-      // TODO: redirect to the new agent page once we have it
-      window.location.href = "/";
+      if (!result.data || !result.data.id) {
+        router.push(`/`);
+      }
+
+      router.push(`/agents/${result.data?.id}/chat`);
     } catch (error) {
       console.error("Error creating agent:", error);
       setGeneralError("Failed to create agent. Please try again.");

@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "autogenstudio.fullname" . }}
+  name: {{ include "autogenstudio.fullname" . }}-app
   labels:
     {{- include "autogenstudio.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.appService.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
+    - port: {{ .Values.appService.port }}
+      targetPort: {{ .Values.appService.targetPort }}
       protocol: TCP
       name: http
   selector:
