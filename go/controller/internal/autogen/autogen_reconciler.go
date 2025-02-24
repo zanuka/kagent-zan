@@ -103,7 +103,7 @@ func (a *autogenReconciler) findTeamsUsingAgent(ctx context.Context, req ctrl.Re
 func (a *autogenReconciler) reconcileTeams(ctx context.Context, teams ...*v1alpha1.AutogenTeam) error {
 	errs := map[types.NamespacedName]error{}
 	for _, team := range teams {
-		autogenTeam, err := a.translator.TranslateSelectorGroupChat(ctx, team)
+		autogenTeam, err := a.translator.TranslateGroupChat(ctx, team)
 		if err != nil {
 			errs[types.NamespacedName{Name: team.Name, Namespace: team.Namespace}] = fmt.Errorf("failed to translate team %s: %v", team.Name, err)
 			continue
@@ -149,7 +149,12 @@ func (a *autogenReconciler) findTeamsUsingModel(ctx context.Context, req ctrl.Re
 
 	var teams []*v1alpha1.AutogenTeam
 	appendTeamIfUsesModel := func(team *v1alpha1.AutogenTeam) {
-		if team.Spec.SelectorTeamConfig.ModelConfig == req.Name {
+		selectorTeamConfig := team.Spec.SelectorTeamConfig
+		if selectorTeamConfig != nil && selectorTeamConfig.ModelConfig == req.Name {
+			teams = append(teams, team)
+		}
+		magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
+		if magenticOneTeamConfig != nil && magenticOneTeamConfig.ModelConfig == req.Name {
 			teams = append(teams, team)
 		}
 	}

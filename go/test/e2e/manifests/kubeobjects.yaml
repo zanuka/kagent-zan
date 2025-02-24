@@ -294,12 +294,6 @@ spec:
     5. Output "TERMINATE" on a new line
 
     Your primary goal is to efficiently coordinate AI agents to complete Kubernetes-related tasks while maintaining clarity, reliability, and proper task completion verification. You must always signal task completion by outputting "TERMINATE" on its own line when all success criteria are met.
-  tools:
-  - kagent.tools.k8s.GetPods
-  - kagent.tools.k8s.GetServices
-  - kagent.tools.k8s.ApplyManifest
-  - kagent.tools.k8s.GetResources
-  - kagent.tools.k8s.GetPodLogs
 status: {}
 ---
 apiVersion: agent.ai.solo.io/v1alpha1
@@ -708,14 +702,26 @@ metadata:
   namespace: team-ns
 spec:
   description: A team that debugs kubernetes issues.
+  magenticOneTeamConfig:
+    finalAnswerPrompt: |-
+      We are working on the following task:
+      {task}
+
+      We have completed the task.
+
+      The above messages contain the conversation that took place to complete the task.
+
+      Based on the information gathered, provide the final answer to the original request.
+      The answer should be phrased as if you were speaking to the user.
+    maxStalls: 3
+    modelConfig: test-model
   maxTurns: 10
   participants:
   - planning-agent
   - kubectl-user
   - kube-expert
-  selectorTeamConfig:
-    modelConfig: test-model
-    selectorPrompt: Please select a team member to help you with your Kubernetes issue.
+  selectorTeamConfig: null
+  swarmTeamConfig: null
   terminationCondition:
     maxMessageTermination:
       maxMessages: 10

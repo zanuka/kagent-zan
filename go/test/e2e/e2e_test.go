@@ -127,9 +127,22 @@ var _ = Describe("E2e", func() {
 					kubeExpert.Name,
 				},
 				Description: "A team that debugs kubernetes issues.",
-				SelectorTeamConfig: v1alpha1.SelectorTeamConfig{
-					ModelConfig:    modelConfig.Name,
-					SelectorPrompt: "Please select a team member to help you with your Kubernetes issue.",
+				//SelectorTeamConfig: &v1alpha1.SelectorTeamConfig{
+				//	ModelConfig:    modelConfig.Name,
+				//	SelectorPrompt: "Please select a team member to help you with your Kubernetes issue.",
+				//},
+				MagenticOneTeamConfig: &v1alpha1.MagenticOneTeamConfig{
+					ModelConfig: modelConfig.Name,
+					MaxStalls:   3,
+					FinalAnswerPrompt: `We are working on the following task:
+{task}
+
+We have completed the task.
+
+The above messages contain the conversation that took place to complete the task.
+
+Based on the information gathered, provide the final answer to the original request.
+The answer should be phrased as if you were speaking to the user.`,
 				},
 				TerminationCondition: v1alpha1.TerminationCondition{
 					MaxMessageTermination:  &v1alpha1.MaxMessageTermination{MaxMessages: 10},

@@ -15,7 +15,7 @@ import (
 const GlobalUserID = "guestuser@gmail.com"
 
 type AutogenApiTranslator interface {
-	TranslateSelectorGroupChat(
+	TranslateGroupChat(
 		ctx context.Context,
 		team *v1alpha1.AutogenTeam,
 	) (*api.Team, error)
@@ -33,18 +33,45 @@ func NewAutogenApiTranslator(
 	}
 }
 
-func (a *autogenApiTranslator) TranslateSelectorGroupChat(
+func (a *autogenApiTranslator) TranslateGroupChat(
 	ctx context.Context,
 	team *v1alpha1.AutogenTeam,
 ) (*api.Team, error) {
 
 	// get model config
+	selectorTeamConfig := team.Spec.SelectorTeamConfig
+	magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
+	swarmTeamConfig := team.Spec.SwarmTeamConfig
+
+	var modelConfigName string
+	var groupChatType string
+	var teamConfig api.TeamConfig
+	if selectorTeamConfig != nil {
+		modelConfigName = selectorTeamConfig.ModelConfig
+		teamConfig.SelectorPrompt = selectorTeamConfig.SelectorPrompt
+		groupChatType = "SelectorGroupChat"
+	} else if magenticOneTeamConfig != nil {
+		modelConfigName = magenticOneTeamConfig.ModelConfig
+		groupChatType = "MagenticOneGroupChat"
+		teamConfig.MaxStalls = magenticOneTeamConfig.MaxStalls
+		if teamConfig.MaxStalls == 0 {
+			// default to 3
+			teamConfig.MaxStalls = 3
+		}
+		teamConfig.FinalAnswerPrompt = magenticOneTeamConfig.FinalAnswerPrompt
+	} else if swarmTeamConfig != nil {
+		groupChatType = "Swarm"
+		modelConfigName = swarmTeamConfig.ModelConfig
+	} else {
+		return nil, fmt.Errorf("no model config specified")
+	}
+
 	modelConfig := &v1alpha1.AutogenModelConfig{}
 	err := fetchObjKube(
 		ctx,
 		a.kube,
 		modelConfig,
-		team.Spec.SelectorTeamConfig.ModelConfig,
+		modelConfigName,
 		team.Namespace,
 	)
 	if err != nil {
@@ -73,7 +100,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		return nil, fmt.Errorf("model api key not found")
 	}
 
-	modelClient := &api.ModelComponent{
+	teamConfig.ModelClient = &api.ModelComponent{
 		Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
 		ComponentType: "model",
 		Version:       makePtr(1),
@@ -128,7 +155,7 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 			//ComponentVersion: 1,
 			Config: api.AgentConfig{
 				Name:        agent.Spec.Name,
-				ModelClient: modelClient,
+				ModelClient: teamConfig.ModelClient,
 				Tools:       tools,
 				ModelContext: &api.ChatCompletionContextComponent{
 					Provider:      "autogen_core.model_context.UnboundedChatCompletionContext",
@@ -146,28 +173,37 @@ func (a *autogenApiTranslator) TranslateSelectorGroupChat(
 		participants = append(participants, participant)
 	}
 
+	if swarmTeamConfig != nil {
+		planningAgent := MakeBuiltinPlanningAgent(
+			"planning_agent",
+			participants,
+			teamConfig.ModelClient,
+		)
+		// prepend builtin planning agent when using swarm mode
+		participants = append(
+			[]api.TeamParticipant{planningAgent},
+			participants...,
+		)
+	}
+	teamConfig.Participants = participants
+
 	terminationCondition, err := translateTerminationCondition(team.Spec.TerminationCondition)
 	if err != nil {
 		return nil, err
 	}
+	teamConfig.TerminationCondition = terminationCondition
 
 	return &api.Team{
 		ID:     generateIdFromString(team.Name + "-" + team.Namespace),
 		UserID: GlobalUserID, // always use global id
 		Component: api.TeamComponent{
-			Provider:         "autogen_agentchat.teams.SelectorGroupChat",
+			Provider:         "autogen_agentchat.teams." + groupChatType,
 			ComponentType:    "team",
 			Version:          1,
 			ComponentVersion: 1,
 			Description:      makePtr(team.Spec.Description),
 			Label:            team.Name,
-			Config: api.TeamConfig{
-				Participants:         participants,
-				ModelClient:          modelClient,
-				TerminationCondition: terminationCondition,
-				SelectorPrompt:       team.Spec.SelectorTeamConfig.SelectorPrompt,
-				AllowRepeatedSpeaker: false,
-			},
+			Config:           teamConfig,
 		},
 	}, nil
 }

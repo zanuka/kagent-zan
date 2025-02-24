@@ -106,7 +106,7 @@ var _ = Describe("AutogenClient", func() {
 					participant2.Name,
 				},
 				Description: "a team that tests things",
-				SelectorTeamConfig: v1alpha1.SelectorTeamConfig{
+				SelectorTeamConfig: &v1alpha1.SelectorTeamConfig{
 					ModelConfig: modelConfig.Name,
 				},
 				TerminationCondition: v1alpha1.TerminationCondition{
@@ -131,7 +131,7 @@ var _ = Describe("AutogenClient", func() {
 		err = kubeClient.Create(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 
-		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient).TranslateSelectorGroupChat(ctx, apiTeam)
+		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient).TranslateGroupChat(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(autogenTeam).NotTo(BeNil())
 
