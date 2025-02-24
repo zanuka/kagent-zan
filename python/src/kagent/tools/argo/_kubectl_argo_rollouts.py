@@ -111,83 +111,6 @@ promote_rollout = FunctionTool(
 )
 
 
-def _list_rollouts(
-    ns: Annotated[Optional[str], "The namespace of the rollout. If None, searches across all namespaces"] = None,
-    watch: Annotated[bool, "Watch live updates to the rollout"] = False,
-) -> str:
-    """
-    List all Argo Rollouts in the cluster.
-    """
-    cmd = ["argo", "rollouts", "list", "rollouts"]
-
-    if ns:
-        cmd.extend(["-n", ns])
-    else:
-        cmd.append("--all-namespaces")
-
-    if watch:
-        cmd.append("-w")
-
-    return run_command(command="kubectl", args=cmd)
-
-
-list_rollouts = FunctionTool(
-    _list_rollouts,
-    description="""
-    Lists all Argo Rollouts in the cluster.
-    """,
-    name="list_rollouts",
-)
-
-
-def _get_rollout(
-    rollout_name: Annotated[str, "The name of the rollout to get. Required."],
-    ns: Annotated[Optional[str], "The namespace of the rollout. If None, searches the default namespace"] = None,
-    watch: Annotated[bool, "Watch live updates to the rollout"] = False,
-) -> str:
-    """
-    Get information about a specific Argo Rollout. The rollout name must be provided.
-
-    Features:
-    - Get specific rollout details when rollout_name is provided
-    - List all rollouts when rollout_name is None
-    - Search in specific namespace when ns is provided
-
-    Args:
-        rollout_name: Name of specific rollout to get.
-        ns: Namespace to search in. If None, searches the default namespace.
-        watch: Enable live updates watching.
-
-    Returns:
-        str: Command output containing rollout information.
-
-    Examples:
-        # Get specific rollout in the foo namespace
-        get_rollout("my-rollout", ns="foo")
-    """
-    cmd = ["kubectl", "argo", "rollouts"]
-
-    cmd.extend(["get", "rollout", rollout_name])
-
-    # Add optional flags
-    if ns:
-        cmd.extend(["-n", ns])
-
-    if watch:
-        cmd.append("-w")
-
-    return run_command(command="kubectl", args=cmd)
-
-
-get_rollout = FunctionTool(
-    _get_rollout,
-    description="""
-    Get information about a specific Argo Rollouts:
-    """,
-    name="get_rollout",
-)
-
-
 def _pause_rollout(
     rollout_name: Annotated[str, "The name of the rollout to pause"],
     ns: Annotated[Optional[str], "The namespace of the rollout. Default is None"],
@@ -211,36 +134,6 @@ pause_rollout = FunctionTool(
     _pause_rollout,
     description="Pause a rollout in Argo Rollouts, with options to configure Kubernetes context and authentication.",
     name="pause_rollout",
-)
-
-
-def _status_rollout(
-    rollout_name: Annotated[str, "The name of the rollout to check status for"],
-    ns: Annotated[Optional[str], "The namespace of the rollout. Default is None"],
-    watch: Annotated[Optional[bool], "Whether to watch the status until it's done (default true)"],
-) -> str:
-    """
-    Get the status of a rollout in Argo Rollouts, with options to watch progress, set timeouts, and configure Kubernetes context.
-
-    Parameters are described using Annotated with detailed descriptions for each.
-    """
-    cmd = ["kubectl", "argo", "rollouts", "status"]
-
-    if ns:
-        cmd.extend(["-n", ns])
-
-    if watch is not None:
-        cmd.extend(["--watch", str(watch).lower()])
-
-    cmd.append(rollout_name)
-
-    return run_command(command="kubectl", args=cmd)
-
-
-status_rollout = FunctionTool(
-    _status_rollout,
-    description="Get the status of a rollout in Argo Rollouts, with options to watch, set timeouts, and configure context.",
-    name="status_rollout",
 )
 
 
@@ -271,15 +164,10 @@ set_rollout_image = FunctionTool(
 SetRolloutImage, SetRolloutImageConfig = create_typed_fn_tool(
     set_rollout_image, "kagent.tools.argo.SetRolloutImage", "SetRolloutImage"
 )
-StatusRollout, StatusRolloutConfig = create_typed_fn_tool(
-    status_rollout, "kagent.tools.argo.StatusRollout", "StatusRollout"
-)
 PauseRollout, PauseRolloutConfig = create_typed_fn_tool(pause_rollout, "kagent.tools.argo.PauseRollout", "PauseRollout")
 PromoteRollout, PromoteRolloutConfig = create_typed_fn_tool(
     promote_rollout, "kagent.tools.argo.PromoteRollout", "PromoteRollout"
 )
-GetRollout, GetRolloutConfig = create_typed_fn_tool(get_rollout, "kagent.tools.argo.GetRollout", "GetRollout")
-ListRollouts, ListRolloutsConfig = create_typed_fn_tool(list_rollouts, "kagent.tools.argo.ListRollouts", "ListRollouts")
 VerifyKubectlPluginInstall, VerifyKubectlPluginInstallConfig = create_typed_fn_tool(
     verify_kubectl_plugin_install, "kagent.tools.argo.VerifyKubectlPluginInstall", "VerifyKubectlPluginInstall"
 )
