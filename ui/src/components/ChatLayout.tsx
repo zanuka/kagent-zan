@@ -20,7 +20,9 @@ function ChatLayoutContent({ children, selectedTeam, sidebarProps }: ChatLayoutP
     <>
       <SessionsSidebar {...sidebarProps} selectedTeam={selectedTeam} />
       <div className={`min-h-screen transition-all duration-300 ease-in-out ${leftMargin} ${rightMargin}`}>
-        <div className="mx-auto max-w-none px-4 md:px-8 py-8">{children}</div>
+        <div className="mx-auto max-w-none px-4 md:px-8 h-screen overflow-hidden">
+          <div className="h-full overflow-y-auto">{children}</div>
+        </div>
       </div>
       <AgentDetailsSidebar selectedTeam={selectedTeam} />
     </>

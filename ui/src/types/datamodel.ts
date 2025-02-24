@@ -280,11 +280,6 @@ export interface Run {
   error_message?: string;
 }
 
-export interface CreateRunResponse {
-  run_id: string;
-  status: RunStatus;
-}
-
 export interface GetSessionRunsResponse {
   runs: Run[];
 }

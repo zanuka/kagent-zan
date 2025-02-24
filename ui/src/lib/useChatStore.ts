@@ -1,55 +1,71 @@
-import { AgentMessageConfig, InitialMessage, Message, Run, RunStatus, Session, Team, WebSocketMessage } from "@/types/datamodel";
 import { create } from "zustand";
-import { createMessage, createRunWithSession, setupWebSocket, WebSocketManager } from "./ws";
-import { fetchApi } from "./utils";
+import { setupWebSocket, WebSocketManager } from "./ws";
+import { AgentMessageConfig, InitialMessage, Message, Run, RunStatus, Session, Team, WebSocketMessage, SessionWithRuns } from "@/types/datamodel";
+import { loadExistingChat, sendMessage, startNewChat } from "@/app/actions/chat";
 
 interface ChatState {
   session: Session | null;
+  sessions: SessionWithRuns[];
   run: Run | null;
   messages: Message[];
   status: RunStatus | "ready";
   error: string | null;
   websocketManager: WebSocketManager | null;
   team: Team | null;
-  userId: string;
 
   // Actions
-  startNewChat: (agentId: number, userId: string) => Promise<void>;
-  sendMessage: (content: string, agentId: number, userId: string) => Promise<void>;
-  loadExistingChat: (chatId: string, userId: string) => Promise<void>;
+  initializeNewChat: (agentId: number) => Promise<void>;
+  sendUserMessage: (content: string, agentId: number) => Promise<void>;
+  loadChat: (chatId: string) => Promise<void>;
   cleanup: () => void;
   handleWebSocketMessage: (message: WebSocketMessage) => void;
+  setSessions: (sessions: SessionWithRuns[]) => void;
+  addSession: (session: Session, runs: Run[]) => void;
+  removeSession: (sessionId: number) => void;
 }
 
 const useChatStore = create<ChatState>((set, get) => ({
   session: null,
+  sessions: [],
   run: null,
   messages: [],
   status: "ready",
   error: null,
   websocketManager: null,
   team: null,
-  userId: "",
 
-  startNewChat: async (agentId, userId) => {
+  setSessions: (sessions) => {
+    set({ sessions });
+  },
+
+  addSession: (session, runs) => {
+    set((state) => ({
+      sessions: [
+        { session, runs },
+        ...state.sessions,
+      ],
+    }));
+  },
+
+  removeSession: (sessionId) => {
+    set((state) => ({
+      sessions: state.sessions.filter((s) => s.session.id !== sessionId),
+    }));
+  },
+
+  initializeNewChat: async (agentId) => {
     set({ status: "created" });
     try {
       // Clean up any existing websocket
-      const currentManager = get().websocketManager;
-      if (currentManager) {
-        currentManager.cleanup();
-      }
+      get().cleanup();
 
-      set({ userId });
+      const { team, session, run } = await startNewChat(agentId);
 
-      // Fetch agent details if not already present
-      if (!get().team) {
-        const team = await fetchApi<Team>(`/teams/${agentId}`, userId);
-        set({ team });
-      }
+      // Add the new session to sessions list
+      get().addSession(session, [run]);
 
-      const { session, run } = await createRunWithSession(agentId, userId);
       set({
+        team,
         session,
         run,
         messages: [],
@@ -73,59 +89,79 @@ const useChatStore = create<ChatState>((set, get) => ({
     const state = get();
     const { run, session } = state;
 
-    if (!run) {
-      console.warn("Received WebSocket message but no current run exists");
+    if (!run || !session?.id) return;
+
+    if (!message.data) {
+      console.warn("Received message without data", message);
       return;
     }
 
-    if (!session?.id) {
-      console.warn("No session ID available");
-      return;
+    const messageConfig = (message.data as AgentMessageConfig);
+    const newMessage = {
+      config: messageConfig,
+      session_id: session.id,
+      run_id: run.id,
+      message_meta: {},
     }
-
-    const newMessage = createMessage(
-      message.data as AgentMessageConfig,
-      run.id,
-      session.id,
-      get().userId
+    const isDuplicate = state.messages.some(
+      (msg) => 
+        msg.config.content === messageConfig.content && 
+        msg.config.source === messageConfig.source
     );
-
-    // Check for duplicates
-    const isDuplicate = state.messages.some((existingMsg) => existingMsg.config.content === newMessage.config.content && existingMsg.config.source === newMessage.config.source);
-
     if (isDuplicate) return;
 
     const newStatus = message.status || run.status;
 
-    set({
-      messages: [...state.messages, newMessage],
-      run: {
-        ...run,
-        messages: [...run.messages, newMessage],
-        status: newStatus,
-      },
+    // Update the run in both the current session and sessions list
+    const updatedRun = {
+      ...run,
+      messages: [...run.messages, newMessage],
       status: newStatus,
+    };
+
+    set((state) => {
+      // Update the sessions list with the new run
+      const updatedSessions = state.sessions.map(s => {
+        if (s.session.id === session.id) {
+          return {
+            ...s,
+            runs: s.runs.map(r => r.id === run.id ? updatedRun : r),
+          };
+        }
+        return s;
+      });
+
+      return {
+        messages: [...state.messages, newMessage],
+        run: updatedRun,
+        status: newStatus,
+        sessions: updatedSessions,
+      };
     });
   },
 
-  sendMessage: async (content, agentId, userId) => {
+  sendUserMessage: async (content, agentId) => {
     const state = get();
-
     try {
       // If no session exists, create one
       if (!state.session || !state.run) {
-        await get().startNewChat(agentId, userId);
+        await get().initializeNewChat(agentId);
       }
 
       const currentState = get();
-      const session = currentState.session;
-      const run = currentState.run;
-      const team = currentState.team;
-
-      if (!session || !run) {
+      const { session, run, team } = currentState;
+      if (!session?.id || !run) {
         throw new Error("Failed to create session");
       }
 
+      if (!team) {
+        throw new Error("Failed to get team details");
+      }
+
+      // Create and store message on server
+      const userMessage = await sendMessage(content, run.id, session.id);
+
+      // Setup WebSocket if not exists
       let manager = currentState.websocketManager;
       if (!manager) {
         const startMessage: InitialMessage = {
@@ -144,23 +180,36 @@ const useChatStore = create<ChatState>((set, get) => ({
               set({ status: status === "connected" ? "active" : "created" });
             },
           },
-          // Initial config for new chats
           startMessage
         );
 
         set({ websocketManager: manager });
       }
 
-      const userMessage = createMessage({ content, source: "user" }, run.id, session.id || -1, userId);
-      set({
-        messages: [...currentState.messages, userMessage],
-        run: {
+      // Update both local state and sessions list
+      set((state) => {
+        const updatedRun = {
           ...run,
           messages: [...run.messages, userMessage],
-        },
+        };
+
+        const updatedSessions = state.sessions.map(s => {
+          if (s.session.id === session.id) {
+            return {
+              ...s,
+              runs: s.runs.map(r => r.id === run.id ? updatedRun : r),
+            };
+          }
+          return s;
+        });
+
+        return {
+          messages: [...state.messages, userMessage],
+          run: updatedRun,
+          sessions: updatedSessions,
+        };
       });
 
-      // Send message
       manager.send(
         JSON.stringify({
           type: "message",
@@ -174,33 +223,25 @@ const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  loadExistingChat: async (chatId, userId) => {
+  loadChat: async (chatId) => {
     set({ status: "complete" });
     try {
-      // Clean up any existing websocket
-      const currentManager = get().websocketManager;
-      if (currentManager) {
-        currentManager.cleanup();
-      }
+      // Clean up existing websocket
+      get().cleanup();
 
-      const session = await fetchApi<Session>(`/sessions/${chatId}`, userId);
-      const { runs } = await fetchApi<{ runs: Run[] }>(`/sessions/${chatId}/runs`, userId);
+      const { session, run, team, messages } = await loadExistingChat(chatId);
 
-      if (!runs || runs.length === 0) {
-        throw new Error("No runs found for this chat");
-      }
-
-      // Fetch agent details if not present
-      if (!get().team && session.team_id) {
-        const team = await fetchApi<Team>(`/teams/${session.team_id}`, userId);
-        set({ team });
+      // Update sessions list
+      if (session && run) {
+        get().addSession(session, [run]);
       }
 
       set({
         session,
-        run: runs[0],
-        messages: runs[0].messages || [],
-        status: runs[0].status,
+        run,
+        team,
+        messages,
+        status: run.status,
         error: null,
         websocketManager: null,
       });

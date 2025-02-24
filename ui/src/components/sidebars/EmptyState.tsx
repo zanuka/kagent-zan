@@ -22,7 +22,7 @@ const ActionButtons = ({ hasSessions, currentAgentId }: ActionButtonsProps) => {
   return (
     <div className="px-2 space-y-4">
       {hasSessions && currentAgentId && (
-        <button onClick={() => router.push(`/agents/${currentAgentId}`)} className="w-full flex justify-start items-center text-sm font-normal text-white/80 hover:text-white">
+        <button onClick={() => router.push(`/agents/${currentAgentId}/chat`)} className="w-full flex justify-start items-center text-sm font-normal text-white/80 hover:text-white">
           <Bot className="mr-3 h-4 w-4 text-violet-500" />
           Start a new chat
         </button>

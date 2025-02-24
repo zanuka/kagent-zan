@@ -16,7 +16,7 @@ export type InterfaceField = {
 };
 
 type InterfaceMetadata = {
-  fields: Array<InterfaceField>;
+  fields: Array<InterfaceField> | undefined;
 };
 
 // Helper function to create metadata for a config object
@@ -31,6 +31,7 @@ function createConfigMetadata<T>(config: {
 
   return { fields };
 }
+
 
 interface PrometheusToolConfig {
   base_url: string;
@@ -57,16 +58,26 @@ const defaultDocumentationConfig: DocumentationConfig = {
   openai_api_key: undefined,
 }
 
+
+interface ToolConfig {
+  [key: string]: InterfaceMetadata;
+}
+
 // Used to render the UI
-export const TOOL_CONFIGS = {
+export const TOOL_CONFIGS: ToolConfig = {
   'kagent.tools.prometheus': createConfigMetadata<PrometheusToolConfig>(defaultPrometheusConfig),
   'kagent.tools.docs': createConfigMetadata<DocumentationConfig>(defaultDocumentationConfig),
+  'kagent.tools.k8s': createConfigMetadata({}),
+  'kagent.tools.istio': createConfigMetadata({}),
 } as const;
 
-export const getToolType = (provider: string): keyof typeof TOOL_CONFIGS | "unknown" => {
+export const getToolType = (provider: string): keyof typeof TOOL_CONFIGS => {
   if (provider.startsWith("kagent.tools.prometheus")) return "kagent.tools.prometheus";
   if (provider.startsWith("kagent.tools.docs")) return "kagent.tools.docs";
-  return "unknown";
+  if (provider.startsWith("kagent.tools.k8s")) return "kagent.tools.k8s";
+  if (provider.startsWith("kagent.tools.istio")) return "kagent.tools.istio";
+  
+  throw new Error(`Unknown tool provider: ${provider}`);
 };
 
 
