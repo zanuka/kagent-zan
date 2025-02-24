@@ -4,9 +4,10 @@ from typing import Annotated, List, Optional
 from autogen_core.tools import FunctionTool
 
 from .._utils import create_typed_fn_tool
+from ..common.shell import run_command
 
 
-async def _verify_argo_rollouts_controller_install(
+def _verify_argo_rollouts_controller_install(
     ns: Annotated[
         Optional[str], "The namespace to check for the argo rollouts controller. Defaults to argo-rollouts"
     ] = "argo-rollouts",
@@ -16,32 +17,36 @@ async def _verify_argo_rollouts_controller_install(
     ] = "app.kubernetes.io/component=rollouts-controller",
 ) -> str:
     """
-    Check the argo rollouts controller is running in the kubernetes cluster.
+    Check if the Argo Rollouts controller is running in the Kubernetes cluster.
     Optionally specify a namespace and label.
     """
     try:
-        process = await asyncio.create_subprocess_exec(
-            "kubectl",
-            "get",
-            "pods",
-            "-n",
-            ns,
-            "-l",
-            label,
-            "-o",
-            "jsonpath={.items[*].status.phase}",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await process.communicate()
-        if process.returncode != 0:
-            return f"Error: {stderr}"
+        cmd = ["get", "pods", "-n", ns, "-l", label, "-o", "jsonpath={.items[*].status.phase}"]
+        output = run_command(command="kubectl", args=cmd)
 
-        # Check if all pods are in the "Running" state
-        if all(status == "Running" for status in stdout.split()):
+        # Ensure output is a properly decoded string
+        if isinstance(output, bytes):
+            output = output.decode("utf-8").strip()
+
+        # Check if kubectl returned an error
+        if output.startswith("Error"):
+            return output
+
+        # Ensure we got valid output
+        if not output:
+            return "Error: No pods found"
+
+        # Split the statuses and verify
+        pod_statuses = output.split()
+        if not pod_statuses:
+            return "Error: No pod statuses returned"
+
+        # Ensure all pod statuses are exactly "Running"
+        if all(status == "Running" for status in pod_statuses):
             return "All pods are running"
         else:
-            return "Error: Not all pods are running " + str(stdout)
+            return f"Error: Not all pods are running ({' '.join(pod_statuses)})"
+
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -53,20 +58,21 @@ verify_argo_rollouts_controller_install = FunctionTool(
 )
 
 
-async def _verify_kubectl_plugin_install() -> str:
+def _verify_kubectl_plugin_install() -> str:
     """
     Run the kubectl argo rollouts version command to check the kubectl argo rollouts plugin is installed.
     """
     try:
-        process = await asyncio.create_subprocess_exec(
-            "argo", "version", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, text=True
-        )
-        stdout, stderr = await process.communicate()
-        if process.returncode != 0:
-            return f"Error: {stderr}"
-        return stdout
+        output = run_command(command="kubectl", args=["argo", "rollouts", "version"])
+
+        # Check if the command returned an error
+        if output.startswith("Error"):
+            return f"Kubectl Argo Rollouts plugin is not installed: {output}"
+
+        return output
+
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Kubectl Argo Rollouts plugin is not installed: {str(e)}"
 
 
 verify_kubectl_plugin_install = FunctionTool(
@@ -76,7 +82,7 @@ verify_kubectl_plugin_install = FunctionTool(
 )
 
 
-async def _promote_rollout(
+def _promote_rollout(
     rollout_name: Annotated[str, "The name of the rollout to promote"],
     ns: Annotated[Optional[str], "The namespace of the rollout. Defaults to the default namespace."],
     full: Annotated[Optional[bool], "Perform a full promotion, skipping analysis, pauses, and steps. Default is False"],
@@ -86,7 +92,7 @@ async def _promote_rollout(
 
     Parameters are described using Annotated with detailed descriptions for each.
     """
-    cmd = ["kubectl", "argo", "rollouts", "promote"]
+    cmd = ["argo", "rollouts", "promote"]
 
     if ns:
         cmd.extend(["-n", ns])
@@ -95,7 +101,7 @@ async def _promote_rollout(
     if full:
         cmd.append("--full")
 
-    return await _run_command(cmd)
+    return run_command(command="kubectl", args=cmd)
 
 
 promote_rollout = FunctionTool(
@@ -105,14 +111,14 @@ promote_rollout = FunctionTool(
 )
 
 
-async def _list_rollouts(
+def _list_rollouts(
     ns: Annotated[Optional[str], "The namespace of the rollout. If None, searches across all namespaces"] = None,
     watch: Annotated[bool, "Watch live updates to the rollout"] = False,
 ) -> str:
     """
     List all Argo Rollouts in the cluster.
     """
-    cmd = ["kubectl", "argo", "rollouts", "list", "rollouts"]
+    cmd = ["argo", "rollouts", "list", "rollouts"]
 
     if ns:
         cmd.extend(["-n", ns])
@@ -122,7 +128,7 @@ async def _list_rollouts(
     if watch:
         cmd.append("-w")
 
-    return await _run_command(cmd)
+    return run_command(command="kubectl", args=cmd)
 
 
 list_rollouts = FunctionTool(
@@ -134,7 +140,7 @@ list_rollouts = FunctionTool(
 )
 
 
-async def _get_rollout(
+def _get_rollout(
     rollout_name: Annotated[str, "The name of the rollout to get. Required."],
     ns: Annotated[Optional[str], "The namespace of the rollout. If None, searches the default namespace"] = None,
     watch: Annotated[bool, "Watch live updates to the rollout"] = False,
@@ -170,7 +176,7 @@ async def _get_rollout(
     if watch:
         cmd.append("-w")
 
-    return await _run_command(cmd)
+    return run_command(command="kubectl", args=cmd)
 
 
 get_rollout = FunctionTool(
@@ -182,7 +188,7 @@ get_rollout = FunctionTool(
 )
 
 
-async def _pause_rollout(
+def _pause_rollout(
     rollout_name: Annotated[str, "The name of the rollout to pause"],
     ns: Annotated[Optional[str], "The namespace of the rollout. Default is None"],
 ) -> str:
@@ -198,7 +204,7 @@ async def _pause_rollout(
 
     cmd.append(rollout_name)
 
-    return await _run_command(cmd)
+    return run_command(command="kubectl", args=cmd)
 
 
 pause_rollout = FunctionTool(
@@ -208,7 +214,7 @@ pause_rollout = FunctionTool(
 )
 
 
-async def _status_rollout(
+def _status_rollout(
     rollout_name: Annotated[str, "The name of the rollout to check status for"],
     ns: Annotated[Optional[str], "The namespace of the rollout. Default is None"],
     watch: Annotated[Optional[bool], "Whether to watch the status until it's done (default true)"],
@@ -228,7 +234,7 @@ async def _status_rollout(
 
     cmd.append(rollout_name)
 
-    return await _run_command(cmd)
+    return run_command(command="kubectl", args=cmd)
 
 
 status_rollout = FunctionTool(
@@ -238,21 +244,7 @@ status_rollout = FunctionTool(
 )
 
 
-async def _run_command(cmd: List[str]) -> str:
-    """Helper function to run commands asynchronously"""
-    try:
-        process = await asyncio.create_subprocess_exec(
-            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-        if process.returncode != 0:
-            return f"Error: {stderr.decode()}"
-        return stdout.decode()
-    except Exception as e:
-        return f"Error: {str(e)}"
-
-
-async def _set_rollout_image(
+def _set_rollout_image(
     rollout_name: Annotated[str, "The name of the rollout to update"],
     container_image: Annotated[str, "Container name and image in the format 'container=image'"],
     ns: Annotated[Optional[str], "The namespace for the resource. Default is None"],
@@ -267,7 +259,7 @@ async def _set_rollout_image(
     if ns:
         cmd.extend(["-n", ns])
 
-    return await _run_command(cmd)
+    return run_command(command="kubectl", args=cmd)
 
 
 set_rollout_image = FunctionTool(

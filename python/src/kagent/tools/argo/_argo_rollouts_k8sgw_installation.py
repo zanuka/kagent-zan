@@ -18,41 +18,51 @@ class GatewayPluginStatus:
     error_message: Optional[str] = None
 
 
-async def verify_gateway_plugin(
+def verify_gateway_plugin(
     version: Annotated[Optional[str], "Version of the Gateway API plugin to verify. If None, checks latest"] = None,
     namespace: Annotated[str, "Namespace where Argo Rollouts is installed"] = "argo-rollouts",
-) -> str:
+    should_install: Annotated[bool, "Flag to determine if the plugin should be installed if not present"] = True,
+) -> GatewayPluginStatus:
     """
     Verify Gateway API plugin installation for Argo Rollouts.
     Checks ConfigMap and logs for proper installation and configuration.
     """
     # First check if the ConfigMap exists and is properly configured
-    cmd = ["kubectl", "get", "configmap", "argo-rollouts-config", "-n", namespace, "-o", "yaml"]
+    cmd = ["get", "configmap", "argo-rollouts-config", "-n", namespace, "-o", "yaml"]
     try:
-        config_map = await run_command(cmd)
+        config_map = run_command(command="kubectl", args=cmd)
         if "argoproj-labs/gatewayAPI" not in config_map:
-            return await configure_gateway_plugin(version, namespace)
-        return "Gateway API plugin is already configured"
-    except Exception:
-        return await configure_gateway_plugin(version, namespace)
+            if should_install:
+                return configure_gateway_plugin(version, namespace)
+            else:
+                return GatewayPluginStatus(
+                    installed=False, error_message="Gateway API plugin is not configured and installation is disabled"
+                )
+        return GatewayPluginStatus(installed=True, error_message="Gateway API plugin is already configured")
+    except Exception as e:
+        if should_install:
+            return configure_gateway_plugin(version, namespace)
+        else:
+            return GatewayPluginStatus(installed=False, error_message=f"Error verifying plugin: {str(e)}")
 
 
-async def configure_gateway_plugin(
+def configure_gateway_plugin(
     version: Optional[str],
     namespace: str,
-) -> str:
+) -> GatewayPluginStatus:
     """
     Configure the Gateway API plugin by creating or updating the ConfigMap.
     """
-    # Determine system architecture
-    arch = get_system_architecture()
+    try:
+        # Determine system architecture
+        arch = get_system_architecture()
 
-    # If version not specified, get latest from GitHub
-    if not version:
-        version = await get_latest_version()
+        # If version not specified, get latest from GitHub
+        if not version:
+            version = get_latest_version()
 
-    # Create ConfigMap manifest
-    config_map = f"""
+        # Create ConfigMap manifest
+        config_map = f"""
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -64,13 +74,31 @@ data:
       location: "https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/download/v{version}/gatewayapi-plugin-{arch}"
 """
 
-    # Apply the ConfigMap
-    cmd = ["kubectl", "apply", "-f", "-"]
-    try:
-        await run_command(cmd, input=config_map)
-        return f"Successfully configured Gateway API plugin v{version} for {arch}"
+        # Create a temp file with the ConfigMap that adds the trafficRouterPlugins for the Kubernetes Gateway API
+        import tempfile
+        import os
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as temp_file:
+            temp_file.write(config_map)
+            temp_file.flush()
+
+            try:
+                # Apply the ConfigMap using the temporary file
+                cmd = ["apply", "-f", temp_file.name]
+                run_command(command="kubectl", args=cmd)
+                os.unlink(temp_file.name)
+                return GatewayPluginStatus(
+                    installed=True,
+                    version=version,
+                    architecture=arch,
+                )
+            except Exception as e:
+                os.unlink(temp_file.name)
+                return GatewayPluginStatus(
+                    installed=False, error_message=f"Failed to configure Gateway API plugin: {str(e)}"
+                )
     except Exception as e:
-        return f"Failed to configure Gateway API plugin: {str(e)}"
+        return GatewayPluginStatus(installed=False, error_message=f"Error during plugin configuration: {str(e)}")
 
 
 def get_system_architecture() -> str:
@@ -80,49 +108,57 @@ def get_system_architecture() -> str:
     system = platform.system().lower()
     machine = platform.machine().lower()
 
-    # Map common architectures
+    # Map machine architecture to supported plugin architecture
+    # See https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/ for supported architectures
     arch_map = {
         "x86_64": "amd64",
         "aarch64": "arm64",
         "armv7l": "arm",
     }
 
-    # Get architecture
+    # Determine the system architecture
     arch = arch_map.get(machine, machine)
 
-    return f"{system}-{arch}"
+    # Handle different operating systems
+    if system == "windows":
+        return f"windows-{arch}.exe"
+    elif system == "darwin":
+        return f"darwin-{arch}"
+    elif system == "linux":
+        return f"linux-{arch}"
+    else:
+        raise ValueError(f"Unsupported system: {system}")
 
 
-async def get_latest_version() -> str:
+def get_latest_version() -> str:
     """
     Get the latest version of the Gateway API plugin from GitHub.
     """
     cmd = [
-        "curl",
         "-s",
         "https://api.github.com/repos/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/latest",
     ]
     try:
-        result = await run_command(cmd)
+        result = run_command(command="curl", args=cmd)
         # Parse version from result
         version_match = re.search(r'"tag_name":\s*"v([^"]+)"', result)
         if version_match:
             return version_match.group(1)
-        return "0.4.0"  # Default to known stable version if unable to fetch
+        return "0.5.0"  # Default to latest known stable version if unable to fetch
     except Exception:
-        return "0.4.0"  # Default to known stable version
+        return "0.5.0"  # Default to known stable version
 
 
-async def check_plugin_logs(
+def check_plugin_logs(
     namespace: Annotated[str, "Namespace where Argo Rollouts is installed"] = "argo-rollouts",
     timeout: Annotated[Optional[int], "Timeout in seconds for log checking"] = 60,
-) -> GatewayPluginStatus:
+) -> str:
     """
     Check Argo Rollouts controller logs for plugin installation status.
     """
-    cmd = ["kubectl", "logs", "-n", namespace, "-l", "app.kubernetes.io/name=argo-rollouts", "--tail", "100"]
+    cmd = ["logs", "-n", namespace, "-l", "app.kubernetes.io/name=argo-rollouts", "--tail", "100"]
     try:
-        logs = await run_command(cmd)
+        logs = run_command(command="kubectl", args=cmd)
 
         # Parse download information
         download_pattern = r'Downloading plugin argoproj-labs/gatewayAPI from: .*/v([\d.]+)/gatewayapi-plugin-([\w-]+)"'
