@@ -6,18 +6,10 @@ from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 # Import all required tools
-from kagent.tools.argo import (
-    PauseRollout,
-    PromoteRollout,
-    SetRolloutImage,
-    GenerateResource,
-)
+from kagent.tools.argo import PauseRollout, PromoteRollout, SetRolloutImage, ArgoCRDTool, ArgoCRDToolConfig
 from kagent.tools.k8s import (
-    ApplyManifest,
     GetResources,
     GetPodLogs,
-    PatchResource,
-    DeleteResource,
     DescribeResource,
     GetResourceYAML,
 )
@@ -96,7 +88,7 @@ argo_debug_agent = AssistantAgent(
         PauseRollout(),
         PromoteRollout(),
         SetRolloutImage(),
-        GenerateResource(),
+        ArgoCRDTool(ArgoCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)),
         GetResources(),
         GetResourceYAML(),
         DescribeResource(),

@@ -9,7 +9,8 @@ from kagent.tools.argo import (
     # Installation & Verification
     VerifyArgoRolloutsControllerInstall,
     # Resource Generation
-    GenerateResource,
+    ArgoCRDTool,
+    ArgoCRDToolConfig,
 )
 
 from kagent.tools.k8s import (
@@ -38,7 +39,7 @@ argo_management_tools = [
 
 argo_setup_tools = [
     VerifyArgoRolloutsControllerInstall(),
-    GenerateResource(),
+    ArgoCRDTool(ArgoCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)),
 ]
 
 ARGO_SYSTEM_MESSAGE = """You are an Argo Rollouts specialist focused on progressive delivery and deployment automation. You
@@ -164,6 +165,6 @@ team = RoundRobinGroupChat(
 )
 
 # Usage example:
-task = "Help me translate my current productpage-v1 Kubernetes deployment in the default namespace to an Argo Rollout using the canary strategy and apply it to the cluster."
+task = "Help me translate my current reviews-v1 Kubernetes deployment in the default namespace to an Argo Rollout using the canary strategy and apply it to the cluster."
 
 asyncio.run(Console(team.run_stream(task=task)))

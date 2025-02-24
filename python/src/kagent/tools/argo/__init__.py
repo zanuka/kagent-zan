@@ -6,7 +6,7 @@ from ._kubectl_argo_rollouts import (
     VerifyArgoRolloutsControllerInstall,
 )
 
-from ._argo_crds import GenerateResource
+from ._argo_crds import ArgoCRDTool, ArgoCRDToolConfig
 
 from ._argo_rollouts_k8sgw_installation import (
     CheckPluginLogsTool,
@@ -19,7 +19,8 @@ __all__ = [
     "SetRolloutImage",
     "VerifyKubectlPluginInstall",
     "VerifyArgoRolloutsControllerInstall",
-    "GenerateResource",
+    "ArgoCRDTool",
+    "ArgoCRDToolConfig",
     "CheckPluginLogsTool",
     "VerifyGatewayPluginTool",
 ]

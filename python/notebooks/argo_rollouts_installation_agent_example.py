@@ -2,9 +2,7 @@ import asyncio
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.ui import Console
-from autogen_core import CancellationToken
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from autogen_agentchat.messages import TextMessage
 from autogen_agentchat.conditions import TextMentionTermination
 
 from kagent.tools.argo import (
@@ -14,7 +12,8 @@ from kagent.tools.argo import (
     CheckPluginLogsTool,
     VerifyGatewayPluginTool,
     # Resource Generation
-    GenerateResource,
+    ArgoCRDTool,
+    ArgoCRDToolConfig,
 )
 
 from kagent.tools.k8s import (
@@ -34,11 +33,11 @@ argo_setup_tools = [
     VerifyArgoRolloutsControllerInstall(),
     CheckPluginLogsTool(),
     VerifyGatewayPluginTool(),
-    GenerateResource(),
     GetResources(),
     GetResourceYAML(),
     GetAvailableAPIResources(),
     GetPodLogs(),
+    ArgoCRDTool(ArgoCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)),
 ]
 
 ARGO_SYSTEM_MESSAGE = f"""
