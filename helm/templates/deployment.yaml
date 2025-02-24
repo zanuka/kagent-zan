@@ -46,7 +46,7 @@ spec:
                   key: {{ .Values.openai.secretKey }}
           ports:
             - name: http
-              containerPort: {{ .Values.appService.targetPort }}
+              containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
           resources:
             {{- toYaml .Values.app.resources | nindent 12 }}
