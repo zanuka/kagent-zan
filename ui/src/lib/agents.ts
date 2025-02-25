@@ -1,58 +1,41 @@
-import { AssistantAgentConfig, ChatCompletionContextConfig, Component, KAgentToolConfig, ModelConfig, OpenAIClientConfig, SelectorGroupChatConfig, Team, ToolConfig } from "@/types/datamodel";
+import {
+  AssistantAgentConfig,
+  ChatCompletionContextConfig,
+  Component,
+  KAgentToolConfig,
+  ModelConfig,
+  OpenAIClientConfig,
+  RoundRobinGroupChatConfig,
+  Team,
+  ToolConfig,
+  UserProxyAgentConfig,
+} from "@/types/datamodel";
 import { CreateAgentFormData, Tool } from "./types";
 import { isMcpTool } from "./data";
 
 export const createTeamConfig = (agentConfig: Component<AssistantAgentConfig>, userId: string): Team => {
-  const planningAgentConfig: Component<AssistantAgentConfig> = {
-    provider: "autogen_agentchat.agents.AssistantAgent",
+  const userProxyConfig: Component<UserProxyAgentConfig> = {
+    provider: "autogen_agentchat.agents.UserProxyAgent",
     component_type: "agent",
     version: 1,
     component_version: 1,
-    description: "An agent for planning the tasks.",
-    label: "kagent_planner",
+    description: "An agent that represents a user.",
+    label: "kagent_user",
     config: {
-      name: "kagent_planner",
-      model_client: agentConfig.config.model_client,
-      tools: [],
-      handoffs: [],
-      model_context: agentConfig.config.model_context,
-      description: "Planning agent for kagent",
-      system_message: `
-You are a planning agent responsible for taking the users query and breaking it down tasks into logical, sequential steps.
-Today's date is: ${new Date().toISOString()}.
-
-## Instructions:
-1. **Carefully review the task and identify key components** to ensure all necessary steps are included.
-2. **Break down the task into smaller, manageable sub-tasks** that can be assigned to different team members.
-3. **Order and prioritize the sub-tasks** based on dependencies and requirements.
-4. **Assign each sub-task to the appropriate team member** based on their expertise and role.
-5. **Provide clear instructions and success criteria** for each sub-task to ensure accurate completion.
-6. **Verify the results of each sub-task** to confirm successful completion before proceeding to the next step.
-7. **Summarize the findings** and ensure all components of the task have been addressed.
-
-When assigning tasks, use this format:
-    1. <agent> : <specific task with clear success criteria>
-
-After all tasks have been completed, please summarize the findings and end with "TERMINATE".
-
-Your team members are:
-  ${agentConfig.config.name}: ${agentConfig.config.description}`,
-      reflect_on_tool_use: false,
-      tool_call_summary_format: "{result}",
+      name: "kagent_user",
+      description: "Human user",
     },
   };
 
-  // TODO: Defaulting to selectorgroupchat for now.
-  const groupChatConfig: Component<SelectorGroupChatConfig> = {
-    provider: "autogen_agentchat.teams.SelectorGroupChat",
+  const groupChatConfig: Component<RoundRobinGroupChatConfig> = {
+    provider: "autogen_agentchat.teams.RoundRobinGroupChat",
     component_type: "team",
     version: 1,
     component_version: 1,
     description: agentConfig.config.description,
-    // Name the team after the agent
     label: agentConfig.config.name,
     config: {
-      participants: [agentConfig, planningAgentConfig],
+      participants: [agentConfig, userProxyConfig],
       model_client: agentConfig.config.model_client,
       termination_condition: {
         provider: "autogen_agentchat.conditions.TextMentionTermination",
@@ -65,9 +48,6 @@ Your team members are:
           text: "TERMINATE",
         },
       },
-      selector_prompt:
-        "You are in a role play game. The following roles are available:\n{roles}.\nRead the following conversation. Then select the next role from {participants} to play. Only return the role.\n\n{history}\n\nRead the above conversation. Then select the next role from {participants} to play. Only return the role.\n",
-      allow_repeated_speaker: true,
     },
   };
 
@@ -101,17 +81,17 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
     return tools.map((tool) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let toolConfig: any;
-      
+
       if (isMcpTool(tool)) {
         // For MCP tools, use the exact config object provided
         toolConfig = { ...tool.config };
       } else {
         // For standard KAgent tools, use the KAgentToolConfig structure
         toolConfig = {
-          ...tool.config
+          ...tool.config,
         } as KAgentToolConfig;
       }
-      
+
       return {
         provider: tool.provider,
         component_type: "tool",

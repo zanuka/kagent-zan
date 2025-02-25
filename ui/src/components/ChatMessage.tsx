@@ -42,6 +42,11 @@ export default function ChatMessage({ message, run }: ChatMessageProps) {
   const source = message.config.source;
   const isUser = source === "user";
 
+  if (source === "system" || source === "kagent_user") {
+    // kagent_user is the user proxy, but we're already displaying the user message, so no need to show it twice
+    return null;
+  }
+
   return (
     <div className={`flex items-center gap-2 text-sm text-white/50 ${isUser ? "border-l-blue-500 bg-neutral-800 border border-[#3A3A3A]" : "border-l-violet-500 bg-transparent"} border-l-2 py-2 px-4`}>
       <div className="flex flex-col gap-1 w-full">

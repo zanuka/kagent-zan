@@ -3,8 +3,10 @@
 import { AgentGrid } from "@/components/AgentGrid";
 import { Button } from "@/components/ui/button";
 import { Team } from "@/types/datamodel";
-import { Bot, Plus } from "lucide-react";
+import { Bot, Plus, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useAgents } from "./AgentsProvider";
 
 interface AgentListProps {
   teams: Team[];
@@ -12,12 +14,31 @@ interface AgentListProps {
 
 export default function AgentList({ teams }: AgentListProps) {
   const router = useRouter();
+  const { refreshTeams } = useAgents();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshTeams();
+    setIsRefreshing(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-white">Your Agents</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-white">Your Agents</h1>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="text-white/70 hover:text-white"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
           <Button onClick={() => router.push("/agents/new")} className="bg-violet-500 hover:bg-violet-600">
             <Plus className="h-4 w-4 mr-2" />
             Create New Agent

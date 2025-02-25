@@ -4,6 +4,11 @@ import { createSession } from "@/app/actions/sessions";
 import { createRun } from "@/app/actions/runs";
 import { getWsUrl } from "./utils";
 
+export type ChatStatus =
+  | "ready" // Ready to accept messages
+  | "thinking" // Processing a message
+  | "error"; // Error state
+
 interface RunWithSession {
   run: Run;
   session: Session;
@@ -13,7 +18,7 @@ interface WebSocketHandlers {
   onMessage: (message: WebSocketMessage) => void;
   onError: (error: string) => void;
   onClose: () => void;
-  onStatusChange?: (status: "connecting" | "connected" | "reconnecting" | "closed") => void;
+  onStatusChange: (status: ChatStatus) => void;
 }
 
 export interface WebSocketManager {
@@ -49,10 +54,15 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
       const socket = new WebSocket(wsUrl);
       manager.socket = socket;
 
-      handlers.onStatusChange?.("connecting");
+      // If we're connecting with an initial message, we're already in "thinking" mode
+      // Otherwise we're ready for input
+      if (initialMessage) {
+        handlers.onStatusChange("thinking");
+      } else {
+        handlers.onStatusChange("ready");
+      }
 
       socket.onopen = () => {
-        handlers.onStatusChange?.("connected");
         manager.reconnectAttempts = 0;
         manager.isReconnecting = false;
 
@@ -77,12 +87,14 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
             case "message":
             case "result":
             case "completion":
-              if (message.data) {
-                handlers.onMessage(message);
-              }
+              handlers.onMessage(message);
+              break;
+            case "input_request":
+              handlers.onStatusChange("ready");
               break;
             case "error":
               handlers.onError((message.data as TextMessageConfig).content || "Unknown error occurred");
+              handlers.onStatusChange("error");
               break;
             case "system":
               console.log("System message:", message);
@@ -91,20 +103,22 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
         } catch (error) {
           console.error("Error parsing WebSocket message:", error);
           handlers.onError("Failed to parse message");
+          handlers.onStatusChange("error");
         }
       };
 
       socket.onerror = (error) => {
         console.error("WebSocket error:", error);
         handlers.onError("WebSocket connection error");
+        handlers.onStatusChange("error");
         maybeReconnect();
       };
 
       socket.onclose = (event) => {
-        handlers.onStatusChange?.("closed");
-
         if (!event.wasClean) {
           console.log("WebSocket connection lost. Attempting to reconnect...");
+          handlers.onError("Connection lost. Attempting to reconnect...");
+          handlers.onStatusChange("error");
           maybeReconnect();
         }
 
@@ -115,6 +129,7 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
     } catch (error) {
       console.error("Failed to create WebSocket:", error);
       handlers.onError("Failed to create WebSocket connection");
+      handlers.onStatusChange("error");
       maybeReconnect();
       return null;
     }
@@ -127,7 +142,6 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
     }
 
     manager.isReconnecting = true;
-    handlers.onStatusChange?.("reconnecting");
 
     // Exponential backoff with jitter
     const delay = Math.min(INITIAL_RETRY_DELAY * Math.pow(2, manager.reconnectAttempts) + Math.random() * 1000, MAX_RETRY_DELAY);
@@ -139,6 +153,8 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
   }
 
   function send(message: string) {
+    handlers.onStatusChange("thinking");
+
     if (manager.socket?.readyState === WebSocket.OPEN) {
       manager.socket.send(message);
     } else {

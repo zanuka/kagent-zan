@@ -15,17 +15,24 @@ export function AgentCard({ team }: AgentCardProps) {
   const router = useRouter();
   const agent = getUsersAgentFromTeam(team);
 
+  const handleCardClick = () => {
+      router.push(`/agents/${team.id}/chat`);
+
+  };
+
   return (
     <Card 
-      className="bg-[#2A2A2A] border-[#3A3A3A] hover:border-violet-500 transition-colors cursor-pointer" 
-      onClick={() => router.push(`/agents/${team.id}/chat`)}
+      className={`bg-[#2A2A2A] border-[#3A3A3A] transition-colors cursor-pointer hover:border-violet-500`}
+      onClick={handleCardClick}
     >
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <CardTitle className="flex items-center gap-2 text-white">
           <Bot className="h-5 w-5 text-violet-500" />
           {agent.label}
         </CardTitle>
-        <DeleteButton teamId={String(team.id)} />
+        <DeleteButton 
+          teamId={String(team.id)} 
+        />
       </CardHeader>
       <CardContent>
         <p className="text-white/70 text-sm">{agent.description}</p>

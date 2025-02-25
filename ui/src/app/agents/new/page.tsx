@@ -62,7 +62,7 @@ export default function NewAgentPage() {
     }
 
     if (!systemPrompt.trim()) {
-      newErrors.systemPrompt = "System prompt is required";
+      newErrors.systemPrompt = "Agent instructions are required";
     }
 
     if (!selectedModel) {
@@ -115,7 +115,7 @@ export default function NewAgentPage() {
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] text-white p-8">
-      <Button variant="ghost" className="mb-8 text-white/70 hover:text-white" onClick={() => window.history.back()} disabled={isSubmitting}>
+      <Button variant="ghost" className="mb-8" onClick={() => window.history.back()} disabled={isSubmitting}>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>

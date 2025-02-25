@@ -94,6 +94,7 @@ export interface RoundRobinGroupChatConfig {
   participants: Component<AgentConfig>[];
   termination_condition?: Component<TerminationConfig>;
   max_turns?: number;
+  model_client: Component<ModelConfig>;
 }
 
 export interface MultimodalWebSurferConfig {
