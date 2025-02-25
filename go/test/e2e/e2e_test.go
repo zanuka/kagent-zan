@@ -131,9 +131,9 @@ var _ = Describe("E2e", func() {
 				//	ModelConfig:    modelConfig.Name,
 				//	SelectorPrompt: "Please select a team member to help you with your Kubernetes issue.",
 				//},
+				ModelConfig: modelConfig.Name,
 				MagenticOneTeamConfig: &v1alpha1.MagenticOneTeamConfig{
-					ModelConfig: modelConfig.Name,
-					MaxStalls:   3,
+					MaxStalls: 3,
 					FinalAnswerPrompt: `We are working on the following task:
 {task}
 

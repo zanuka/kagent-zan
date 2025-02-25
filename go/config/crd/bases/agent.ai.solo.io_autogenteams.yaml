@@ -47,36 +47,29 @@ spec:
                     type: string
                   maxStalls:
                     type: integer
-                  modelConfig:
-                    type: string
                 required:
                 - finalAnswerPrompt
                 - maxStalls
-                - modelConfig
                 type: object
               maxTurns:
                 format: int64
                 type: integer
+              modelConfig:
+                type: string
               participants:
                 items:
                   type: string
                 type: array
+              roundRobinTeamConfig:
+                type: object
               selectorTeamConfig:
                 properties:
-                  modelConfig:
-                    type: string
                   selectorPrompt:
                     type: string
                 required:
-                - modelConfig
                 - selectorPrompt
                 type: object
               swarmTeamConfig:
-                properties:
-                  modelConfig:
-                    type: string
-                required:
-                - modelConfig
                 type: object
               terminationCondition:
                 properties:
@@ -113,6 +106,8 @@ spec:
                     required:
                     - conditions
                     type: object
+                  stopMessageTermination:
+                    type: object
                   textMentionTermination:
                     properties:
                       text:
@@ -124,6 +119,7 @@ spec:
             required:
             - description
             - maxTurns
+            - modelConfig
             - participants
             - terminationCondition
             type: object

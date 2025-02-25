@@ -3,6 +3,22 @@ from autogen_core import CancellationToken
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
 
+from kagent.tools.argo._argo_crds import (
+    ArgoCRDTool,
+    ArgoCRDToolConfig,
+    ArgoCRDToolInput,
+)
+from kagent.tools.argo._argo_rollouts_k8sgw_installation import (
+    check_plugin_logs,
+    verify_gateway_plugin,
+)
+from kagent.tools.argo._kubectl_argo_rollouts import (
+    pause_rollout,
+    promote_rollout,
+    set_rollout_image,
+    verify_argo_rollouts_controller_install,
+    verify_kubectl_plugin_install,
+)
 from kagent.tools.helm._helm import helm_list, helm_uninstall, helm_upgrade
 from kagent.tools.istio._istio_crds import (
     IstioCRDTool,
@@ -185,6 +201,34 @@ def prometheus(
 
 
 @app.command()
+def argo():
+    mcp.add_tool(verify_gateway_plugin._func, verify_gateway_plugin.name, verify_gateway_plugin.description)
+    mcp.add_tool(check_plugin_logs._func, check_plugin_logs.name, check_plugin_logs.description)
+    mcp.add_tool(
+        verify_kubectl_plugin_install._func,
+        verify_kubectl_plugin_install.name,
+        verify_kubectl_plugin_install.description,
+    )
+    mcp.add_tool(
+        verify_argo_rollouts_controller_install._func,
+        verify_argo_rollouts_controller_install.name,
+        verify_argo_rollouts_controller_install.description,
+    )
+    mcp.add_tool(pause_rollout._func, pause_rollout.name, pause_rollout.description)
+    mcp.add_tool(promote_rollout._func, promote_rollout.name, promote_rollout.description)
+    mcp.add_tool(set_rollout_image._func, set_rollout_image.name, set_rollout_image.description)
+
+    cfg = ArgoCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)
+
+    def argo_crd_tool(input: ArgoCRDToolInput):
+        return ArgoCRDTool(cfg).run_json(input.model_dump(), CancellationToken())
+
+    mcp.add_tool(argo_crd_tool, ArgoCRDTool(cfg).name, ArgoCRDTool(cfg).description)
+
+    mcp.run()
+
+
+@app.command()
 def istio():
     mcp.add_tool(
         analyze_cluster_configuration._func,
@@ -238,7 +282,6 @@ def k8s():
     mcp.add_tool(
         get_available_api_resources._func, get_available_api_resources.name, get_available_api_resources.description
     )
-
     mcp.run()
 
 

@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
@@ -51,8 +52,9 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme       = runtime.NewScheme()
+	setupLog     = ctrl.Log.WithName("setup")
+	podNamespace = os.Getenv("POD_NAMESPACE")
 )
 
 func init() {
@@ -62,6 +64,10 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
+
+	if podNamespace == "" {
+		podNamespace = "kagent"
+	}
 }
 
 // nolint:gocyclo
@@ -75,6 +81,7 @@ func main() {
 	var enableHTTP2 bool
 	var autogenStudioBaseURL string
 	var autogenStudioWsURL string
+	var defaultModelConfig types.NamespacedName
 	var tlsOpts []func(*tls.Config)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -96,6 +103,9 @@ func main() {
 
 	flag.StringVar(&autogenStudioBaseURL, "autogen-base-url", "http://127.0.0.1:80/api", "The base url of the Autogen Studio server.")
 	flag.StringVar(&autogenStudioWsURL, "autogen-ws-url", "ws://127.0.0.1:80/api/ws", "The base url of the Autogen Studio websocket server.")
+
+	flag.StringVar(&defaultModelConfig.Name, "default-model-config-name", "default-model-config", "The name of the default model config.")
+	flag.StringVar(&defaultModelConfig.Namespace, "default-model-config-namespace", podNamespace, "The namespace of the default model config.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -236,12 +246,14 @@ func main() {
 
 	apiTranslator := autogen.NewAutogenApiTranslator(
 		kubeClient,
+		defaultModelConfig,
 	)
 
 	autogenReconciler := autogen.NewAutogenReconciler(
 		apiTranslator,
 		kubeClient,
 		autogenClient,
+		defaultModelConfig,
 	)
 
 	if err = (&controller.AutogenTeamReconciler{

@@ -27,6 +27,9 @@ import (
 type AutogenTeamSpec struct {
 	Participants []string `json:"participants"`
 	Description  string   `json:"description"`
+	ModelConfig  string   `json:"modelConfig"`
+	// +kubebuilder:validation:Optional
+	RoundRobinTeamConfig *RoundRobinTeamConfig `json:"roundRobinTeamConfig"`
 	// +kubebuilder:validation:Optional
 	SelectorTeamConfig *SelectorTeamConfig `json:"selectorTeamConfig"`
 	// +kubebuilder:validation:Optional
@@ -37,25 +40,25 @@ type AutogenTeamSpec struct {
 	MaxTurns             int64                `json:"maxTurns"`
 }
 
+type RoundRobinTeamConfig struct{}
+
 type SelectorTeamConfig struct {
 	SelectorPrompt string `json:"selectorPrompt"`
-	ModelConfig    string `json:"modelConfig"`
 }
 
 type MagenticOneTeamConfig struct {
-	ModelConfig       string `json:"modelConfig"`
 	MaxStalls         int    `json:"maxStalls"`
 	FinalAnswerPrompt string `json:"finalAnswerPrompt"`
 }
 
 type SwarmTeamConfig struct {
-	ModelConfig string `json:"modelConfig"`
 }
 
 type TerminationCondition struct {
 	// ONEOF: maxMessageTermination, textMentionTermination, orTermination
 	MaxMessageTermination  *MaxMessageTermination  `json:"maxMessageTermination,omitempty"`
 	TextMentionTermination *TextMentionTermination `json:"textMentionTermination,omitempty"`
+	StopMessageTermination *StopMessageTermination `json:"stopMessageTermination,omitempty"`
 	OrTermination          *OrTermination          `json:"orTermination,omitempty"`
 }
 
@@ -66,6 +69,8 @@ type MaxMessageTermination struct {
 type TextMentionTermination struct {
 	Text string `json:"text"`
 }
+
+type StopMessageTermination struct{}
 
 type OrTermination struct {
 	Conditions []OrTerminationCondition `json:"conditions"`
