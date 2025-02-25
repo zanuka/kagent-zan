@@ -106,6 +106,8 @@ spec:
                     required:
                     - conditions
                     type: object
+                  stopMessageTermination:
+                    type: object
                   textMentionTermination:
                     properties:
                       text:

@@ -58,6 +58,7 @@ type TerminationCondition struct {
 	// ONEOF: maxMessageTermination, textMentionTermination, orTermination
 	MaxMessageTermination  *MaxMessageTermination  `json:"maxMessageTermination,omitempty"`
 	TextMentionTermination *TextMentionTermination `json:"textMentionTermination,omitempty"`
+	StopMessageTermination *StopMessageTermination `json:"stopMessageTermination,omitempty"`
 	OrTermination          *OrTermination          `json:"orTermination,omitempty"`
 }
 
@@ -68,6 +69,8 @@ type MaxMessageTermination struct {
 type TextMentionTermination struct {
 	Text string `json:"text"`
 }
+
+type StopMessageTermination struct{}
 
 type OrTermination struct {
 	Conditions []OrTerminationCondition `json:"conditions"`

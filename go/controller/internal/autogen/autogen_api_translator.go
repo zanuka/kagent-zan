@@ -55,9 +55,8 @@ func (a *autogenApiTranslator) TranslateGroupChatForAgent(ctx context.Context, a
 			Description:          agent.Spec.Description,
 			RoundRobinTeamConfig: &v1alpha1.RoundRobinTeamConfig{},
 			TerminationCondition: v1alpha1.TerminationCondition{
-				MaxMessageTermination: &v1alpha1.MaxMessageTermination{MaxMessages: 1},
+				StopMessageTermination: &v1alpha1.StopMessageTermination{},
 			},
-			MaxTurns: 1,
 		},
 	}
 
@@ -283,6 +282,9 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 	if terminationCondition.OrTermination != nil {
 		conditionsSet++
 	}
+	if terminationCondition.StopMessageTermination != nil {
+		conditionsSet++
+	}
 	if conditionsSet != 1 {
 		return nil, fmt.Errorf("exactly one termination condition must be set")
 	}
@@ -330,6 +332,16 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			Config: api.TerminationConfig{
 				Conditions: conditions,
 			},
+		}, nil
+	case terminationCondition.StopMessageTermination != nil:
+		return &api.TerminationComponent{
+			Provider:      "autogen_agentchat.conditions.StopMessageTermination",
+			Description:   makePtr("Terminate the conversation if a StopMessage is received."),
+			ComponentType: "termination",
+			Version:       makePtr(1),
+			//ComponentVersion: 1,
+			Config: api.TerminationConfig{},
+			Label:  makePtr("StopMessageTermination"),
 		}, nil
 	}
 
