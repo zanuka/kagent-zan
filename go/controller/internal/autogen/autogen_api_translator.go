@@ -210,6 +210,7 @@ func (a *autogenApiTranslator) TranslateGroupChatForTeam(
 		participants = append(participants, participant)
 	}
 
+	// always add user proxy agent
 	participants = append(participants, userProxyAgent)
 
 	if swarmTeamConfig != nil {
