@@ -146,7 +146,7 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
       handoffs: [],
       model_context: modelContext,
       system_message: formData.system_prompt,
-      reflect_on_tool_use: false,
+      reflect_on_tool_use: true,
       tool_call_summary_format: "{result}",
     },
   };
