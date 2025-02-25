@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,10 +26,22 @@ import (
 
 // AutogenAgentSpec defines the desired state of AutogenAgent.
 type AutogenAgentSpec struct {
-	Name          string   `json:"name,omitempty"`
-	Description   string   `json:"description,omitempty"`
-	SystemMessage string   `json:"systemMessage,omitempty"`
-	Tools         []string `json:"tools,omitempty"`
+	Name          string        `json:"name,omitempty"`
+	Description   string        `json:"description,omitempty"`
+	SystemMessage string        `json:"systemMessage,omitempty"`
+	Tools         []AutogenTool `json:"tools,omitempty"`
+}
+
+type AutogenTool struct {
+	Provider string `json:"provider,omitempty"`
+	// note: this implementation is due to the kubebuilder limitation https://github.com/kubernetes-sigs/controller-tools/issues/636
+	Config map[string]AnyType `json:"config,omitempty"`
+}
+
+type AnyType struct {
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
+	json.RawMessage `json:",inline"`
 }
 
 // AutogenAgentStatus defines the observed state of AutogenAgent.

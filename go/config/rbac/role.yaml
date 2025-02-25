@@ -10,7 +10,6 @@ rules:
   - autogenagents
   - autogenmodelconfigs
   - autogenteams
-  - autogentools
   verbs:
   - create
   - delete
@@ -25,7 +24,6 @@ rules:
   - autogenagents/finalizers
   - autogenmodelconfigs/finalizers
   - autogenteams/finalizers
-  - autogentools/finalizers
   verbs:
   - update
 - apiGroups:
@@ -34,7 +32,6 @@ rules:
   - autogenagents/status
   - autogenmodelconfigs/status
   - autogenteams/status
-  - autogentools/status
   verbs:
   - get
   - patch

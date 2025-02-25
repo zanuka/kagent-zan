@@ -687,11 +687,14 @@ spec:
 
     Your goal is to safely and efficiently execute kubectl commands to retrieve cluster information while maintaining stability and respecting resource constraints.
   tools:
-  - kagent.tools.k8s.GetPods
-  - kagent.tools.k8s.GetServices
-  - kagent.tools.k8s.ApplyManifest
-  - kagent.tools.k8s.GetResources
-  - kagent.tools.k8s.GetPodLogs
+  - provider: kagent.tools.k8s.GetPods
+  - provider: kagent.tools.k8s.GetServices
+  - provider: kagent.tools.k8s.ApplyManifest
+  - provider: kagent.tools.k8s.GetResources
+  - provider: kagent.tools.k8s.GetPodLogs
+  - config:
+      docs_download_url: https://doc-sqlite-db.s3.sa-east-1.amazonaws.com
+    provider: kagent.tools.docs.QueryTool
 status: {}
 ---
 apiVersion: agent.ai.solo.io/v1alpha1
