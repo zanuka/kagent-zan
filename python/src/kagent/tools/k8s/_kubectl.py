@@ -64,9 +64,7 @@ def _annotate_resource(
     ns: Annotated[Optional[str], "The namespace of the resource to annotate"],
 ) -> str:
     annotation_string = " ".join([f"{key}={value}" for key, value in annotations.items()])
-    return _run_kubectl_command(
-        f"annotate {resource_type} {name} {f'-n {ns} ' if ns else ''} {annotation_string}"
-    )
+    return _run_kubectl_command(f"annotate {resource_type} {name} {f'-n {ns} ' if ns else ''} {annotation_string}")
 
 
 def _remove_label(
@@ -162,7 +160,10 @@ def _get_resources(
         str, "The type of resource to get information about (deployment, service, pod, node, ...)"
     ],
     all_namespaces: Annotated[Optional[bool], "Whether to get resources from all namespaces"],
-    ns: Annotated[Optional[str], "The namespace of the resource to get information about, if unset will default to the current namespace"],
+    ns: Annotated[
+        Optional[str],
+        "The namespace of the resource to get information about, if unset will default to the current namespace",
+    ],
     output: Annotated[Optional[str], "The output format of the resource information"],
 ) -> str:
     if name and all_namespaces:
