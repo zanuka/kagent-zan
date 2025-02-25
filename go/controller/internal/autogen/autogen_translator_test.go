@@ -131,7 +131,7 @@ var _ = Describe("AutogenClient", func() {
 		err = kubeClient.Create(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 
-		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient).TranslateGroupChat(ctx, apiTeam)
+		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient).TranslateGroupChatForTeam(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(autogenTeam).NotTo(BeNil())
 
