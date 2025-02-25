@@ -77,6 +77,20 @@ from kagent.tools.prometheus._prometheus import (
     TSDBStatusInput,
     TSDBStatusTool,
 )
+from kagent.tools.argo import (
+    PauseRollout,
+    PromoteRollout,
+    SetRolloutImage,
+    VerifyKubectlPluginInstall,
+    VerifyArgoRolloutsControllerInstall,
+    CheckPluginLogsTool,
+    VerifyGatewayPluginTool,
+)
+from kagent.tools.argo._argo_crds import (
+    ArgoCRDTool,
+    ArgoCRDToolConfig,
+    ArgoCRDToolInput,
+)
 
 app = typer.Typer()
 
@@ -179,6 +193,32 @@ def prometheus(
         return TargetsTool(cfg).run_json(input.model_dump(), CancellationToken())
 
     mcp.add_tool(targets_tool, TargetsTool(cfg).name, TargetsTool(cfg).description)
+
+    mcp.run()
+
+
+@app.command()
+def argo():
+    mcp.add_tool(
+        VerifyKubectlPluginInstall._func, VerifyKubectlPluginInstall.name, VerifyKubectlPluginInstall.description
+    )
+    mcp.add_tool(
+        VerifyArgoRolloutsControllerInstall._func,
+        VerifyArgoRolloutsControllerInstall.name,
+        VerifyArgoRolloutsControllerInstall.description,
+    )
+    mcp.add_tool(CheckPluginLogsTool._func, CheckPluginLogsTool.name, CheckPluginLogsTool.description)
+    mcp.add_tool(VerifyGatewayPluginTool._func, VerifyGatewayPluginTool.name, VerifyGatewayPluginTool.description)
+    mcp.add_tool(PauseRollout._func, PauseRollout.name, PauseRollout.description)
+    mcp.add_tool(PromoteRollout._func, PromoteRollout.name, PromoteRollout.description)
+    mcp.add_tool(SetRolloutImage._func, SetRolloutImage.name, SetRolloutImage.description)
+
+    cfg = ArgoCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)
+
+    def argo_crd_tool(input: ArgoCRDToolInput):
+        return ArgoCRDTool(cfg).run_json(input.model_dump(), CancellationToken())
+
+    mcp.add_tool(argo_crd_tool, ArgoCRDTool(cfg).name, ArgoCRDTool(cfg).description)
 
     mcp.run()
 
