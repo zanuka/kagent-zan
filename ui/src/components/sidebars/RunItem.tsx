@@ -21,19 +21,19 @@ interface StatusIconProps {
 const StatusIcon = ({ status }: StatusIconProps) => {
   switch (status) {
     case "complete":
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle className="h-4 w-4 text-white/50" />;
     case "active":
     case "created":
       return <Loader2 className="h-4 w-4 text-white/50 animate-spin" />;
     case "stopped":
-      return <StopCircle className="h-4 w-4 text-red-500" />;
+      return <StopCircle className="h-4 w-4 text-white/50" />;
     case "awaiting_input":
-      return <MessageSquare className="h-4 w-4 text-yellow-500" />;
+      return <MessageSquare className="h-4 w-4 text-white/50" />;
     case "error":
     case "timeout":
-      return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      return <AlertTriangle className="h-4 w-4 text-white/50" />;
     default:
-      return <AlertCircle className="h-4 w-4 text-gray-500" />;
+      return <AlertCircle className="h-4 w-4 text-white/50" />;
   }
 };
 

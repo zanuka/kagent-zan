@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
 import { useResponsiveSidebar } from "@/components/sidebars/useResponsiveSidebar";
+import { createTeam } from "@/app/actions/teams";
 
 interface AgentDetailsSidebarProps {
   selectedTeam: Team | null;
@@ -17,7 +18,14 @@ interface AgentDetailsSidebarProps {
 export function AgentDetailsSidebar({ selectedTeam }: AgentDetailsSidebarProps) {
   const [isSystemPromptOpen, setIsSystemPromptOpen] = useState(false);
   const [currentSystemPrompt, setCurrentSystemPrompt] = useState("");
+  const [editedSystemPrompt, setEditedSystemPrompt] = useState("");
+  const [isPromptEdited, setIsPromptEdited] = useState(false);
+  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { isOpen, toggle } = useResponsiveSidebar({ breakpoint: 1024, side: "right" });
+
+  // Keep track of the current agent for updating
+  const [currentAgentIndex, setCurrentAgentIndex] = useState<number | null>(null);
 
   const renderAgentTools = (tools: Component<ToolConfig>[] = []) => {
     if (tools.length === 0) {
@@ -51,9 +59,60 @@ export function AgentDetailsSidebar({ selectedTeam }: AgentDetailsSidebarProps) 
     );
   };
 
-  const handleOpenSystemPrompt = (systemMessage: string) => {
+  const handleOpenSystemPrompt = (systemMessage: string, agentIndex: number) => {
     setCurrentSystemPrompt(systemMessage);
+    setEditedSystemPrompt(systemMessage);
+    setIsPromptEdited(false);
+    setCurrentAgentIndex(agentIndex);
     setIsSystemPromptOpen(true);
+  };
+
+  const handleSystemPromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedSystemPrompt(e.target.value);
+    setIsPromptEdited(e.target.value !== currentSystemPrompt);
+  };
+
+  const handleCloseSystemPrompt = () => {
+    if (isPromptEdited) {
+      setIsConfirmationDialogOpen(true);
+    } else {
+      setIsSystemPromptOpen(false);
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    setIsConfirmationDialogOpen(false);
+    setIsSystemPromptOpen(false);
+    setIsPromptEdited(false);
+  };
+
+  const handleContinueEditing = () => {
+    setIsConfirmationDialogOpen(false);
+  };
+
+  const handleUpdateSystemPrompt = async () => {
+    if (!selectedTeam || currentAgentIndex === null) return;
+
+    setIsUpdating(true);
+    try {
+      (selectedTeam.component.config.participants[currentAgentIndex].config as AssistantAgentConfig).system_message = editedSystemPrompt;
+
+      // Remove the created_at and updated_at variables from the selectedTeam - backend fails as the date/time is not in the correct format (or something)
+      // in any case, the backend updates the created_at and updated_at fields automatically anyway
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { created_at, updated_at, ...editedTeam } = selectedTeam;
+      await createTeam(editedTeam);
+
+      setCurrentSystemPrompt(editedSystemPrompt);
+      setIsPromptEdited(true);
+      setIsUpdating(false);
+      // Close the dialog
+      setIsSystemPromptOpen(false);
+    } catch (error) {
+      console.error("Failed to update instructions:", error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -108,10 +167,10 @@ export function AgentDetailsSidebar({ selectedTeam }: AgentDetailsSidebarProps) 
                                 <Button
                                   variant="link"
                                   size="sm"
-                                  onClick={() => handleOpenSystemPrompt(assistantAgent.system_message ?? "No system prompt available")}
+                                  onClick={() => handleOpenSystemPrompt(assistantAgent.system_message ?? "No system prompt available", index)}
                                   className="px-0 text-white/80 hover:text-white"
                                 >
-                                  View system prompt &rarr;
+                                  View instructions &rarr;
                                 </Button>
                               </div>
 
@@ -151,20 +210,45 @@ export function AgentDetailsSidebar({ selectedTeam }: AgentDetailsSidebarProps) 
         </div>
       </div>
 
-      <AlertDialog open={isSystemPromptOpen} onOpenChange={setIsSystemPromptOpen}>
+      {/* Agent Instructions Dialog */}
+      <AlertDialog open={isSystemPromptOpen} onOpenChange={handleCloseSystemPrompt}>
         <AlertDialogContent className="bg-[#2A2A2A] border border-[#3A3A3A] text-white max-w-4xl max-h-[80vh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>System Prompt</AlertDialogTitle>
+            <AlertDialogTitle>Agent Instructions</AlertDialogTitle>
           </AlertDialogHeader>
           <div className="my-4">
-            <div className="prose prose-invert max-w-none">
-              <ScrollArea className="max-h-[60vh]">
-                <ReactMarkdown>{currentSystemPrompt}</ReactMarkdown>
-              </ScrollArea>
-            </div>
+            <Textarea
+              value={editedSystemPrompt}
+              onChange={handleSystemPromptChange}
+              className="min-h-[60vh] bg-[#1A1A1A] border-[#3A3A3A] text-white font-mono text-sm"
+              placeholder="Enter agent instructions..."
+            />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent text-white hover:text-white/80 hover:bg-transparent">Close</AlertDialogCancel>
+            <div className="flex justify-between w-full">
+              <AlertDialogCancel className="bg-transparent text-white hover:text-white/80 hover:bg-transparent">Cancel</AlertDialogCancel>
+              <Button variant="default" onClick={handleUpdateSystemPrompt} disabled={!isPromptEdited || isUpdating} className="bg-violet-600 hover:bg-violet-700 text-white">
+                {isUpdating ? "Updating..." : "Update"}
+              </Button>
+            </div>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmation Dialog for Unsaved Changes */}
+      <AlertDialog open={isConfirmationDialogOpen} onOpenChange={setIsConfirmationDialogOpen}>
+        <AlertDialogContent className="bg-[#2A2A2A] border border-[#3A3A3A] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">You have unsaved changes to the instructions. Do you want to discard these changes?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleContinueEditing} className="bg-transparent text-white hover:text-white/80 hover:bg-transparent">
+              Continue Editing
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDiscardChanges} className="bg-red-600 hover:bg-red-700 text-white">
+              Discard Changes
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
