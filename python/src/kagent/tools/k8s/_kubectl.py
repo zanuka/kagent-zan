@@ -140,7 +140,10 @@ def _get_resource_yaml(
     resource_type: Annotated[
         str, "The type of resource to get the YAML definition for (deployment, service, pod, node, ...)"
     ],
-    name: Annotated[Optional[str], "The name of the resource to get the YAML definition for. If not provided, all resources of the given type will be returned."],
+    name: Annotated[
+        Optional[str],
+        "The name of the resource to get the YAML definition for. If not provided, all resources of the given type will be returned.",
+    ],
     ns: Annotated[Optional[str], "The namespace of the resource to get the definition for"],
 ) -> str:
     return _run_kubectl_command(f"get {resource_type} {name if name else ''} {f'-n {ns} ' if ns else ''} -o yaml")
@@ -155,7 +158,10 @@ def _execute_command(
 
 
 def _get_resources(
-    name: Annotated[Optional[str], "The name of the resource to get information about. If not provided, all resources of the given type will be returned."],
+    name: Annotated[
+        Optional[str],
+        "The name of the resource to get information about. If not provided, all resources of the given type will be returned.",
+    ],
     resource_type: Annotated[
         str, "The type of resource to get information about (deployment, service, pod, node, ...)"
     ],

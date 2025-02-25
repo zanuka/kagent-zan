@@ -81,20 +81,27 @@ Only items that match the filter will be returned.
     name="helm_list",
 )
 
-HelmList, HelmListConfig = create_typed_fn_tool(
-    helm_list, "kagent.tools.helm.List", "HelmList"
-)
+HelmList, HelmListConfig = create_typed_fn_tool(helm_list, "kagent.tools.helm.List", "HelmList")
+
 
 def _helm_upgrade(
     name: Annotated[str, "The name of the release"],
     chart: Annotated[str, "The chart to install"],
     namespace: Annotated[str, "The namespace to install the release in"],
     create_namespace: Annotated[Optional[bool], "If true, create the namespace if it does not exist"] = False,
-    set: Annotated[Optional[list[str]], "A list of key-value pairs to set on the release. (can specify multiple or separate values with commas: key1=val1,key2=val2)"] = None,
-    values: Annotated[Optional[list[str]], "A list of files to use as the value source. (can specify multiple or separate values with commas: myvalues.yaml,override.yaml)"] = None,
+    set: Annotated[
+        Optional[list[str]],
+        "A list of key-value pairs to set on the release. (can specify multiple or separate values with commas: key1=val1,key2=val2)",
+    ] = None,
+    values: Annotated[
+        Optional[list[str]],
+        "A list of files to use as the value source. (can specify multiple or separate values with commas: myvalues.yaml,override.yaml)",
+    ] = None,
     version: Annotated[Optional[str], "The version of the chart to install"] = None,
     install: Annotated[Optional[bool], "If true, install the release if it does not exist"] = False,
-    dry_run: Annotated[Optional[bool], "If true, show which releases will be uninstalled without actually uninstalling them"] = False,
+    dry_run: Annotated[
+        Optional[bool], "If true, show which releases will be uninstalled without actually uninstalling them"
+    ] = False,
     wait: Annotated[Optional[bool], "If true, wait for the release to be deployed"] = False,
 ) -> str:
     args: list[str] = [name, chart, "-n", namespace]
@@ -170,14 +177,15 @@ charts in a repository, use 'helm search'.
     name="helm_upgrade",
 )
 
-HelmUpgrade, HelmUpgradeConfig = create_typed_fn_tool(
-    helm_upgrade, "kagent.tools.helm.Upgrade", "HelmUpgrade"
-)
+HelmUpgrade, HelmUpgradeConfig = create_typed_fn_tool(helm_upgrade, "kagent.tools.helm.Upgrade", "HelmUpgrade")
+
 
 def _helm_uninstall(
     name: Annotated[str, "The name of the release"],
     namespace: Annotated[str, "The namespace to uninstall the release from"],
-    dry_run: Annotated[Optional[bool], "If true, show which releases will be uninstalled without actually uninstalling them"] = False,
+    dry_run: Annotated[
+        Optional[bool], "If true, show which releases will be uninstalled without actually uninstalling them"
+    ] = False,
     wait: Annotated[Optional[bool], "If true, wait for the release to be uninstalled"] = False,
 ) -> str:
     args: list[str] = [name, "-n", namespace]
