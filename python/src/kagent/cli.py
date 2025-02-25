@@ -3,6 +3,7 @@ from autogen_core import CancellationToken
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
 
+from kagent.tools.helm._helm import helm_list, helm_uninstall, helm_upgrade
 from kagent.tools.istio._istio_crds import (
     IstioCRDTool,
     IstioCRDToolConfig,
@@ -28,6 +29,7 @@ from kagent.tools.k8s._kubectl import (
     create_resource,
     delete_resource,
     describe_resource,
+    get_available_api_resources,
     get_cluster_configuration,
     get_events,
     get_pod_logs,
@@ -39,8 +41,6 @@ from kagent.tools.k8s._kubectl import (
     remove_label,
     rollout,
     scale,
-    get_available_api_resources,
-    
 )
 from kagent.tools.prometheus._prometheus import (
     AlertmanagersInput,
@@ -205,6 +205,7 @@ def istio():
     mcp.add_tool(remote_clusters._func, remote_clusters.name, remote_clusters.description)
 
     cfg = IstioCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)
+
     def istio_crd_tool(input: IstioCRDToolInput):
         return IstioCRDTool(cfg).run_json(input.model_dump(), CancellationToken())
 
@@ -229,11 +230,23 @@ def k8s():
     mcp.add_tool(rollout._func, rollout.name, rollout.description)
     mcp.add_tool(scale._func, scale.name, scale.description)
     mcp.add_tool(patch_resource._func, patch_resource.name, patch_resource.description)
-    mcp.add_tool(check_service_connectivity._func, check_service_connectivity.name, check_service_connectivity.description)
+    mcp.add_tool(
+        check_service_connectivity._func, check_service_connectivity.name, check_service_connectivity.description
+    )
     mcp.add_tool(create_resource._func, create_resource.name, create_resource.description)
     mcp.add_tool(get_events._func, get_events.name, get_events.description)
-    mcp.add_tool(get_available_api_resources._func, get_available_api_resources.name, get_available_api_resources.description)  
+    mcp.add_tool(
+        get_available_api_resources._func, get_available_api_resources.name, get_available_api_resources.description
+    )
 
+    mcp.run()
+
+
+@app.command()
+def helm():
+    mcp.add_tool(helm_list._func, helm_list.name, helm_list.description)
+    mcp.add_tool(helm_upgrade._func, helm_upgrade.name, helm_upgrade.description)
+    mcp.add_tool(helm_uninstall._func, helm_uninstall.name, helm_uninstall.description)
     mcp.run()
 
 
