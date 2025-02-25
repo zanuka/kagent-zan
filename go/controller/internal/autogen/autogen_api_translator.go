@@ -8,6 +8,7 @@ import (
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -15,43 +16,72 @@ import (
 const GlobalUserID = "guestuser@gmail.com"
 
 type AutogenApiTranslator interface {
-	TranslateGroupChat(
+	TranslateGroupChatForTeam(
 		ctx context.Context,
 		team *v1alpha1.AutogenTeam,
+	) (*api.Team, error)
+
+	TranslateGroupChatForAgent(
+		ctx context.Context,
+		team *v1alpha1.AutogenAgent,
 	) (*api.Team, error)
 }
 
 type autogenApiTranslator struct {
-	kube client.Client
+	kube               client.Client
+	defaultModelConfig types.NamespacedName
 }
 
 func NewAutogenApiTranslator(
 	kube client.Client,
+	defaultModelConfig types.NamespacedName,
 ) AutogenApiTranslator {
 	return &autogenApiTranslator{
-		kube: kube,
+		kube:               kube,
+		defaultModelConfig: defaultModelConfig,
 	}
 }
 
-func (a *autogenApiTranslator) TranslateGroupChat(
+func (a *autogenApiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.AutogenAgent) (*api.Team, error) {
+	// generate an internal round robin "team" for the individual agent
+	team := &v1alpha1.AutogenTeam{
+		ObjectMeta: agent.ObjectMeta,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "AutogenTeam",
+			APIVersion: "agent.ai.solo.io/v1alpha1",
+		},
+		Spec: v1alpha1.AutogenTeamSpec{
+			Participants:         []string{agent.Name},
+			Description:          agent.Spec.Description,
+			RoundRobinTeamConfig: &v1alpha1.RoundRobinTeamConfig{},
+			TerminationCondition: v1alpha1.TerminationCondition{
+				StopMessageTermination: &v1alpha1.StopMessageTermination{},
+			},
+		},
+	}
+
+	return a.TranslateGroupChatForTeam(ctx, team)
+}
+
+func (a *autogenApiTranslator) TranslateGroupChatForTeam(
 	ctx context.Context,
 	team *v1alpha1.AutogenTeam,
 ) (*api.Team, error) {
 
 	// get model config
+	roundRobinTeamConfig := team.Spec.RoundRobinTeamConfig
 	selectorTeamConfig := team.Spec.SelectorTeamConfig
 	magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
 	swarmTeamConfig := team.Spec.SwarmTeamConfig
 
-	var modelConfigName string
 	var groupChatType string
 	var teamConfig api.TeamConfig
-	if selectorTeamConfig != nil {
-		modelConfigName = selectorTeamConfig.ModelConfig
+	if roundRobinTeamConfig != nil {
+		groupChatType = "RoundRobinGroupChat"
+	} else if selectorTeamConfig != nil {
 		teamConfig.SelectorPrompt = selectorTeamConfig.SelectorPrompt
 		groupChatType = "SelectorGroupChat"
 	} else if magenticOneTeamConfig != nil {
-		modelConfigName = magenticOneTeamConfig.ModelConfig
 		groupChatType = "MagenticOneGroupChat"
 		teamConfig.MaxStalls = magenticOneTeamConfig.MaxStalls
 		if teamConfig.MaxStalls == 0 {
@@ -61,18 +91,24 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 		teamConfig.FinalAnswerPrompt = magenticOneTeamConfig.FinalAnswerPrompt
 	} else if swarmTeamConfig != nil {
 		groupChatType = "Swarm"
-		modelConfigName = swarmTeamConfig.ModelConfig
 	} else {
 		return nil, fmt.Errorf("no model config specified")
 	}
 
+	modelConfigRef := a.defaultModelConfig
+	if team.Spec.ModelConfig != "" {
+		modelConfigRef = types.NamespacedName{
+			Name:      team.Spec.ModelConfig,
+			Namespace: team.Namespace,
+		}
+	}
 	modelConfig := &v1alpha1.AutogenModelConfig{}
 	err := fetchObjKube(
 		ctx,
 		a.kube,
 		modelConfig,
-		modelConfigName,
-		team.Namespace,
+		modelConfigRef.Name,
+		modelConfigRef.Namespace,
 	)
 	if err != nil {
 		return nil, err
@@ -173,6 +209,9 @@ func (a *autogenApiTranslator) TranslateGroupChat(
 		participants = append(participants, participant)
 	}
 
+	// always add user proxy agent
+	participants = append(participants, userProxyAgent)
+
 	if swarmTeamConfig != nil {
 		planningAgent := MakeBuiltinPlanningAgent(
 			"planning_agent",
@@ -243,6 +282,9 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 	if terminationCondition.OrTermination != nil {
 		conditionsSet++
 	}
+	if terminationCondition.StopMessageTermination != nil {
+		conditionsSet++
+	}
 	if conditionsSet != 1 {
 		return nil, fmt.Errorf("exactly one termination condition must be set")
 	}
@@ -290,6 +332,16 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			Config: api.TerminationConfig{
 				Conditions: conditions,
 			},
+		}, nil
+	case terminationCondition.StopMessageTermination != nil:
+		return &api.TerminationComponent{
+			Provider:      "autogen_agentchat.conditions.StopMessageTermination",
+			Description:   makePtr("Terminate the conversation if a StopMessage is received."),
+			ComponentType: "termination",
+			Version:       makePtr(1),
+			//ComponentVersion: 1,
+			Config: api.TerminationConfig{},
+			Label:  makePtr("StopMessageTermination"),
 		}, nil
 	}
 

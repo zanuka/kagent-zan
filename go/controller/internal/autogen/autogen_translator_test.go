@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"os"
 	"os/exec"
@@ -105,10 +106,9 @@ var _ = Describe("AutogenClient", func() {
 					participant1.Name,
 					participant2.Name,
 				},
-				Description: "a team that tests things",
-				SelectorTeamConfig: &v1alpha1.SelectorTeamConfig{
-					ModelConfig: modelConfig.Name,
-				},
+				Description:        "a team that tests things",
+				ModelConfig:        modelConfig.Name,
+				SelectorTeamConfig: &v1alpha1.SelectorTeamConfig{},
 				TerminationCondition: v1alpha1.TerminationCondition{
 					MaxMessageTermination: &v1alpha1.MaxMessageTermination{MaxMessages: 10},
 				},
@@ -131,7 +131,10 @@ var _ = Describe("AutogenClient", func() {
 		err = kubeClient.Create(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 
-		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient).TranslateGroupChat(ctx, apiTeam)
+		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient, types.NamespacedName{
+			Namespace: modelConfig.Namespace,
+			Name:      modelConfig.Name,
+		}).TranslateGroupChatForTeam(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(autogenTeam).NotTo(BeNil())
 
