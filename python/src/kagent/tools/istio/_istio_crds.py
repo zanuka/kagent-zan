@@ -20,7 +20,7 @@ class IstioCRDToolConfig(BaseModel):
     """Base configuration for the Istio CRD tools."""
 
     model: Annotated[str, "The OpenAI model to use for generating the CRD. Defaults to gpt-4o-mini"] = "gpt-4o-mini"
-    openai_api_key: Annotated[Optional[str], "API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used."] = None
+    openai_api_key: Annotated[Optional[str], "API key for OpenA I services. If empty, the environment variable 'OPENAI_API_KEY' will be used."] = None
 
 class IstioCRDToolInput(BaseModel):
     istio_resource: Annotated[IstioResources, "Type of resource to generate"]

@@ -1,7 +1,7 @@
-from typing import Annotated, Optional
-import re
 import platform
+import re
 from dataclasses import dataclass
+from typing import Annotated, Optional
 
 from autogen_core.tools import FunctionTool
 
@@ -75,8 +75,8 @@ data:
 """
 
         # Create a temp file with the ConfigMap that adds the trafficRouterPlugins for the Kubernetes Gateway API
-        import tempfile
         import os
+        import tempfile
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as temp_file:
             temp_file.write(config_map)

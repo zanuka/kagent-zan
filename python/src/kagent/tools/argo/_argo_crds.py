@@ -3,15 +3,15 @@ from typing import Annotated, Optional
 
 from autogen_core import CancellationToken, Component
 from autogen_core.models import SystemMessage, UserMessage
-from autogen_core.tools import FunctionTool
 from autogen_core.tools import BaseTool
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+from pydantic import BaseModel
+
 from .prompts import (
     ANALYSIS_TEMPLATE_PROMPT,
     ROLLOUT_PROMPT,
 )
 from .prompts.base import ArgoResources
-from pydantic import BaseModel
 
 
 class ArgoCRDToolConfig(BaseModel):
@@ -20,7 +20,7 @@ class ArgoCRDToolConfig(BaseModel):
     model: Annotated[str, "The OpenAI model to use for generating the CRD. Defaults to gpt-4o-mini"] = "gpt-4o-mini"
     openai_api_key: Annotated[
         Optional[str], "API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used."
-    ]
+    ] = None
 
 
 class ArgoCRDToolInput(BaseModel):
