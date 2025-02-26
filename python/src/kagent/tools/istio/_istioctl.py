@@ -91,7 +91,7 @@ async def _proxy_config(
         "The type of configuration to get, the allowed values are: all, bootstrap, cluster, ecds, listener, log, route, secret",
     ] = "all",
 ) -> str:
-    return _run_istioctl_command(f"proxy-config {config_type} {'-n ' + ns if ns else ''} {pod_name}")
+    return _run_istioctl_command(f"proxy-config {config_type} {pod_name}{'.' + ns if ns else ''}")
 
 
 async def _generate_manifest(
