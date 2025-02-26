@@ -7,8 +7,8 @@ metadata:
   name: test-secret
   namespace: team-ns
 ---
-apiVersion: agent.ai.solo.io/v1alpha1
-kind: AutogenModelConfig
+apiVersion: kagent.dev/v1alpha1
+kind: ModelConfig
 metadata:
   creationTimestamp: null
   name: test-model
@@ -19,8 +19,8 @@ spec:
   model: gpt-4o
 status: {}
 ---
-apiVersion: agent.ai.solo.io/v1alpha1
-kind: AutogenAgent
+apiVersion: kagent.dev/v1alpha1
+kind: Agent
 metadata:
   creationTimestamp: null
   name: planning-agent
@@ -296,8 +296,8 @@ spec:
     Your primary goal is to efficiently coordinate AI agents to complete Kubernetes-related tasks while maintaining clarity, reliability, and proper task completion verification. You must always signal task completion by outputting "TERMINATE" on its own line when all success criteria are met.
 status: {}
 ---
-apiVersion: agent.ai.solo.io/v1alpha1
-kind: AutogenAgent
+apiVersion: kagent.dev/v1alpha1
+kind: Agent
 metadata:
   creationTimestamp: null
   name: kube-expert
@@ -458,8 +458,8 @@ spec:
     You aim to not just solve immediate issues but to help users understand the underlying concepts and best practices, promoting long-term cluster health and stability.
 status: {}
 ---
-apiVersion: agent.ai.solo.io/v1alpha1
-kind: AutogenAgent
+apiVersion: kagent.dev/v1alpha1
+kind: Agent
 metadata:
   creationTimestamp: null
   name: kubectl-user
@@ -697,8 +697,8 @@ spec:
     provider: kagent.tools.docs.QueryTool
 status: {}
 ---
-apiVersion: agent.ai.solo.io/v1alpha1
-kind: AutogenTeam
+apiVersion: kagent.dev/v1alpha1
+kind: Team
 metadata:
   creationTimestamp: null
   name: kube-team

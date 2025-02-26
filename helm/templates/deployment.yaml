@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "autogenstudio.fullname" . }}
+  name: {{ include "kagent.fullname" . }}
   labels:
-    {{- include "autogenstudio.labels" . | nindent 4 }}
+    {{- include "kagent.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "autogenstudio.selectorLabels" . | nindent 6 }}
+      {{- include "kagent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,7 +16,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "autogenstudio.selectorLabels" . | nindent 8 }}
+        {{- include "kagent.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -24,7 +24,7 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      serviceAccountName: {{ include "autogenstudio.fullname" . }}
+      serviceAccountName: {{ include "kagent.fullname" . }}
       containers:
         - name: controller
           securityContext:

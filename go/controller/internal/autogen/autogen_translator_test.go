@@ -2,6 +2,10 @@ package autogen_test
 
 import (
 	"context"
+	"os"
+	"os/exec"
+	"time"
+
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
@@ -11,10 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
-	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"time"
 )
 
 var (
@@ -58,24 +59,24 @@ var _ = Describe("AutogenClient", func() {
 			},
 		}
 
-		modelConfig := &v1alpha1.AutogenModelConfig{
+		modelConfig := &v1alpha1.ModelConfig{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-model",
 				Namespace: namespace,
 			},
-			Spec: v1alpha1.AutogenModelConfigSpec{
+			Spec: v1alpha1.ModelConfigSpec{
 				Model:            "gpt-4o",
 				APIKeySecretName: apikeySecret.Name,
 				APIKeySecretKey:  apikeySecretKey,
 			},
 		}
 
-		participant1 := &v1alpha1.AutogenAgent{
+		participant1 := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-participant1",
 				Namespace: namespace,
 			},
-			Spec: v1alpha1.AutogenAgentSpec{
+			Spec: v1alpha1.AgentSpec{
 				Name:          "test-participant1",
 				Description:   "a test participant",
 				SystemMessage: "You are a test participant",
@@ -83,12 +84,12 @@ var _ = Describe("AutogenClient", func() {
 			},
 		}
 
-		participant2 := &v1alpha1.AutogenAgent{
+		participant2 := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-participant2",
 				Namespace: namespace,
 			},
-			Spec: v1alpha1.AutogenAgentSpec{
+			Spec: v1alpha1.AgentSpec{
 				Name:          "test-participant2",
 				Description:   "a test participant",
 				SystemMessage: "You are a test participant",
@@ -96,12 +97,12 @@ var _ = Describe("AutogenClient", func() {
 			},
 		}
 
-		apiTeam := &v1alpha1.AutogenTeam{
+		apiTeam := &v1alpha1.Team{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-team",
 				Namespace: namespace,
 			},
-			Spec: v1alpha1.AutogenTeamSpec{
+			Spec: v1alpha1.TeamSpec{
 				Participants: []string{
 					participant1.Name,
 					participant2.Name,

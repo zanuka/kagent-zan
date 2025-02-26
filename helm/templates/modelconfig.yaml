@@ -1,9 +1,9 @@
-apiVersion: agent.ai.solo.io/v1alpha1
-kind: AutogenModelConfig
+apiVersion: kagent.dev/v1alpha1
+kind: ModelConfig
 metadata:
   name: default-model-config
   labels:
-    {{- include "autogenstudio.labels" . | nindent 4 }}
+    {{- include "kagent.labels" . | nindent 4 }}
 spec:
   apiKeySecretName: {{ .Values.openai.secretName }}
   apiKeySecretKey: {{ .Values.openai.secretKey }}
