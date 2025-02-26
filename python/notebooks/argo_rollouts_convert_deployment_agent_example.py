@@ -1,26 +1,26 @@
 import asyncio
-from autogen_agentchat.teams import RoundRobinGroupChat
+
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 from kagent.tools.argo import (
-    # Installation & Verification
-    VerifyArgoRolloutsControllerInstall,
     # Resource Generation
     ArgoCRDTool,
     ArgoCRDToolConfig,
+    # Installation & Verification
+    VerifyArgoRolloutsControllerInstall,
 )
-
 from kagent.tools.k8s import (
     ApplyManifest,
+    CreateResource,
+    DeleteResource,
+    DescribeResource,
     GetResources,
     GetResourceYAML,
-    DescribeResource,
-    CreateResource,
     PatchResource,
-    DeleteResource,
 )
 
 # Model configuration

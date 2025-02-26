@@ -1,24 +1,27 @@
 import asyncio
-from autogen_agentchat.teams import RoundRobinGroupChat
+
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
 # Import all required tools
-from kagent.tools.argo import PauseRollout, PromoteRollout, SetRolloutImage, ArgoCRDTool, ArgoCRDToolConfig
+from kagent.tools.argo import ArgoCRDTool, ArgoCRDToolConfig, PauseRollout, PromoteRollout, SetRolloutImage
 from kagent.tools.k8s import (
-    GetResources,
-    GetPodLogs,
     DescribeResource,
+    GetPodLogs,
+    GetResources,
     GetResourceYAML,
 )
 from kagent.tools.prometheus import (
-    QueryTool,
-    QueryRangeTool,
     Config as PrometheusConfig,
-    SeriesQueryTool,
+)
+from kagent.tools.prometheus import (
     LabelNamesTool,
+    QueryRangeTool,
+    QueryTool,
+    SeriesQueryTool,
 )
 
 # Prometheus configuration with analysis thresholds
@@ -27,7 +30,7 @@ PROMETHEUS_CONFIG = PrometheusConfig(
     base_url="http://localhost:9090/api/v1",
 )
 
-ARGO_DEBUG_SYSTEM_MESSAGE = f"""
+ARGO_DEBUG_SYSTEM_MESSAGE = """
 You are an Argo debugging and deployment specialist focused on managing, troubleshooting, and resolving issues with Argo Rollouts deployments.
 Assume that the Argo Rollouts controller is installed and configured correctly.
 

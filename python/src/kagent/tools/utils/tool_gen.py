@@ -2,12 +2,15 @@ import importlib
 import importlib.util
 import inspect
 import json
+import logging
 import sys
 from enum import Enum
 from typing import Any, Literal, Type, Union
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
+
+logging.basicConfig(level=logging.INFO)
 
 TOOL_DIRS = ["istio", "k8s", "prometheus", "docs"]
 
@@ -126,7 +129,7 @@ def get_config_instance(config_obj):
                 config_instance = config_obj(**dummy_args)
                 return config_instance
             except Exception as e:
-                print(f"Error instantiating config: {e}")
+                logging.error(f"Error instantiating config: {e}")
         return None
 
 
@@ -181,7 +184,7 @@ def main():
             tools = get_tool_configs(dir_name)
             all_config.extend(tools)
         except Exception as e:
-            print(f"Error processing directory {dir_name}: {e}")
+            logging.error(f"Error processing directory {dir_name}: {e}")
 
     # write to a file
     output_file = "tools.json"
@@ -191,7 +194,7 @@ def main():
     with open(output_file, "w") as f:
         json.dump(all_config, f, indent=2, default=str)
 
-    print(
+    logging.info(
         f"Tool configurations written to {output_file}. Copy the file to $HOME/.autogenstudio/configs/tools.json to import it to the backend."
     )
 

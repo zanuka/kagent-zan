@@ -26,10 +26,11 @@ jobs:
       - name: Run ruff linter
         # User GitHub-friendly output format
         # Ignore generated files
-        run: ruff check . --output-format=github --extend-exclude '**/*.ipynb'
+        working-directory: ./python
+        run: uv run ruff check
       - name: Run ruff format check
         run: |
-          if ! ruff format --diff . --extend-exclude '**/*.ipynb'; then
-            echo "Ruff formatting issues detected. Please run 'ruff format . --extend-exclude '**/*.ipynb' locally to fix formatting issues."
+          if ! uv run ruff format --diff .; then
+            echo "Ruff formatting issues detected. Please run 'uv run ruff format' locally to fix formatting issues."
             exit 1
           fi
