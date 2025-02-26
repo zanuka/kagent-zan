@@ -1,26 +1,26 @@
 import asyncio
-from autogen_agentchat.teams import RoundRobinGroupChat
+
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.ui import Console
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from autogen_agentchat.conditions import TextMentionTermination
 
 from kagent.tools.argo import (
-    # Installation & Verification
-    VerifyArgoRolloutsControllerInstall,
-    VerifyKubectlPluginInstall,
-    CheckPluginLogsTool,
-    VerifyGatewayPluginTool,
     # Resource Generation
     ArgoCRDTool,
     ArgoCRDToolConfig,
+    CheckPluginLogsTool,
+    # Installation & Verification
+    VerifyArgoRolloutsControllerInstall,
+    VerifyGatewayPluginTool,
+    VerifyKubectlPluginInstall,
 )
-
 from kagent.tools.k8s import (
-    GetResources,
-    GetResourceYAML,
     GetAvailableAPIResources,
     GetPodLogs,
+    GetResources,
+    GetResourceYAML,
 )
 
 # Model configuration
@@ -40,7 +40,7 @@ argo_setup_tools = [
     ArgoCRDTool(ArgoCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)),
 ]
 
-ARGO_SYSTEM_MESSAGE = f"""
+ARGO_SYSTEM_MESSAGE = """
 You are an Argo Rollouts installation verification specialist. 
 Your primary focus is checking the proper installation and setup of Argo Rollouts 
 components and dependencies. You do not create any resources.

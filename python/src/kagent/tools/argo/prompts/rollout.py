@@ -5,7 +5,7 @@ ROLLOUT_PROMPT = r"""
 
     If no rollout name is provided, default to 'rollout'. If a deployment is mentioned, use its name as the rollout name.
 
-    If a deployment is referenced, map its template, selector, and strategy fields directly to the corresponding rollout fields, 
+    If a deployment is referenced, map its template, selector, and strategy fields directly to the corresponding rollout fields,
     as both resources use corev1.PodTemplateSpec and define similar behaviors.
 
 # Context
@@ -3913,9 +3913,9 @@ status:
 
 # Examples
 
-UQ: 
+UQ:
   "Create a rollout using the Kubernetes Gateway API for a new version of the rollouts-demo application with a canary strategy based on the http-benchmark analysis run template."
-JSON: 
+JSON:
   {
     "apiVersion": "argoproj.io/v1alpha1",
     "kind": "Rollout",
@@ -4016,9 +4016,9 @@ JSON:
     }
   }
 
-UQ: 
+UQ:
   "Create a rollout using the Kubernetes Gateway API for a new version of the rollouts-demo application with a canary strategy using a green image."
-JSON: 
+JSON:
   {
     "apiVersion": "argoproj.io/v1alpha1",
     "kind": "Rollout",
@@ -4105,9 +4105,9 @@ JSON:
     }
   }
 
-UQ: 
+UQ:
   "Create a rollout for a new version of the rollout-bluegreen application using a blue-green strategy with manual promotion"
-JSON: 
+JSON:
   {
     "apiVersion": "argoproj.io/v1alpha1",
     "kind": "Rollout",
@@ -4153,9 +4153,9 @@ JSON:
     }
   }
 
-UQ: 
+UQ:
   "Create a rollout for the istio-subset-split application using a canary strategy with Istio traffic routing"
-JSON: 
+JSON:
   {
     "apiVersion": "argoproj.io/v1alpha1",
     "kind": "Rollout",
@@ -4225,5 +4225,4 @@ JSON:
       }
     }
   }
-  
 """

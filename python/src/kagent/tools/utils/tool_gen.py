@@ -2,13 +2,15 @@ import importlib
 import importlib.util
 import inspect
 import json
-import os
+import logging
 import sys
 from enum import Enum
-from typing import Any, Literal, Union
+from typing import Any, Literal, Type, Union
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
+
+logging.basicConfig(level=logging.INFO)
 
 TOOL_DIRS = ["istio", "k8s", "prometheus", "docs"]
 
@@ -92,16 +94,44 @@ def create_dummy_args(model_fields: dict[str, FieldInfo]):
     return dummy_args
 
 
+def get_tool_json(obj: Type[any], config: dict) -> dict:
+    description = ""
+
+    if "_description" in obj.__dict__:
+        description = obj.__dict__.get("_description")
+    if not description and "component_description" in obj.__dict__:
+        description = obj.__dict__.get("component_description")
+    if not description and hasattr(obj, "__doc__"):
+        description = obj.__doc__
+
+    provider = obj.__dict__.get("component_provider_override", "")
+    if not provider:
+        # The tool clases don't have component_provider_override attribute
+        # however, the class __module__ attribute contains the first part of the provider (minus the module name, e.g. kagent.tools.istio._istioctl)
+        # and the obj.__name__ is the actual tool name.
+        provider = f"{obj.__module__.rsplit('.', 1)[0]}.{obj.__name__}"
+
+    return {
+        "provider": provider,
+        "description": description,
+        "component_type": "tool",
+        "version": 1,
+        "label": obj.__name__,
+        "config": json.loads(config) if config else {},
+    }
+
+
 def get_config_instance(config_obj):
-  if issubclass(config_obj, BaseModel):
-    if hasattr(config_obj, "model_fields"):
-        dummy_args = create_dummy_args(config_obj.model_fields)
-        try:
-            config_instance = config_obj(**dummy_args)
-            return config_instance
-        except Exception as e:
-            print(f"Error instantiating config: {e}")
-    return None
+    if issubclass(config_obj, BaseModel):
+        if hasattr(config_obj, "model_fields"):
+            dummy_args = create_dummy_args(config_obj.model_fields)
+            try:
+                config_instance = config_obj(**dummy_args)
+                return config_instance
+            except Exception as e:
+                logging.error(f"Error instantiating config: {e}")
+        return None
+
 
 def get_tool_configs(module_path: str) -> list:
     module = importlib.import_module(f"kagent.tools.{module_path}")
@@ -118,7 +148,6 @@ def get_tool_configs(module_path: str) -> list:
         if not any(base.__name__ == "BaseTool" for base in obj.__mro__):
             continue
 
-        tool_instance = None
         config_instance = None
 
         # We'll be relying on a naming convention for the config class
@@ -139,13 +168,10 @@ def get_tool_configs(module_path: str) -> list:
                     raise Exception(f"Expected default 'Config' class for {name}")
                 config_instance = get_config_instance(config_obj)
 
-        if config_instance:
-            tool_instance = obj(config_instance)
-        else:
-            tool_instance = obj()
-
-        if tool_instance:
-            tool_components.append(json.loads(tool_instance.dump_component().model_dump_json()))
+        tool_json = get_tool_json(
+            obj, config_instance.model_dump_json(exclude={"description"}) if config_instance else None
+        )
+        tool_components.append(tool_json)
 
     return tool_components
 
@@ -158,7 +184,7 @@ def main():
             tools = get_tool_configs(dir_name)
             all_config.extend(tools)
         except Exception as e:
-            print(f"Error processing directory {dir_name}: {e}")
+            logging.error(f"Error processing directory {dir_name}: {e}")
 
     # write to a file
     output_file = "tools.json"
@@ -168,7 +194,10 @@ def main():
     with open(output_file, "w") as f:
         json.dump(all_config, f, indent=2, default=str)
 
-    print(f"Tool configurations written to {output_file}. Copy the file to $HOME/.autogenstudio/configs/tools.json to import it to the backend.")
+    logging.info(
+        f"Tool configurations written to {output_file}. Copy the file to $HOME/.autogenstudio/configs/tools.json to import it to the backend."
+    )
+
 
 if __name__ == "__main__":
     main()

@@ -172,6 +172,7 @@ Remember that PromQL is designed for time series data and operates on a pull-bas
 
 class PromQLTool(BaseTool, Component[PromQLToolConfig]):
     """Generates a PromQL query from a description."""
+
     component_type = "tool"
     component_config_schema = PromQLToolConfig
     component_input_schema = "kagent.tools.prometheus.PromQLTool"
