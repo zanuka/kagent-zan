@@ -26,11 +26,13 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Run ruff linter
-        # User GitHub-friendly output format
-        # Ignore generated files
+      - name: Sync dependencies
         working-directory: ./python
-        run: GIT_LFS_SKIP_SMUDGE=1 && uv run ruff check
+        run: GIT_LFS_SKIP_SMUDGE=1 && uv sync --all-extras
+
+      - name: Run ruff linter
+        working-directory: ./python
+        run: uv run ruff check
       - name: Run ruff format check
         run: |
           if ! uv run ruff format --diff .; then
