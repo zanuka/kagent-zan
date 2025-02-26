@@ -1,19 +1,13 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/spf13/cobra"
+	"github.com/abiosoft/ishell/v2"
 )
 
-func newInstallCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "install",
-		Short: "Install kagent",
-		RunE:  runInstall,
-	}
+func InstallCmd(c *ishell.Context) {
+	c.Print("not implemented")
 }
 
-func runInstall(cmd *cobra.Command, args []string) error {
-	return fmt.Errorf("not implemented")
+func UninstallCmd(c *ishell.Context) {
+	c.Print("not implemented")
 }

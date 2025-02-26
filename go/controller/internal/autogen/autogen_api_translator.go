@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
@@ -14,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const GlobalUserID = "guestuser@gmail.com"
+const GlobalUserID = "admin@kagent.io"
 
 type AutogenApiTranslator interface {
 	TranslateGroupChatForTeam(
