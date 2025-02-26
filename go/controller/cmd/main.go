@@ -272,13 +272,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "AutogenAgent")
 		os.Exit(1)
 	}
-	if err = (&controller.AutogenToolReconciler{
-		Client: kubeClient,
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "AutogenTool")
-		os.Exit(1)
-	}
 	if err = (&controller.AutogenModelConfigReconciler{
 		Client:     kubeClient,
 		Scheme:     mgr.GetScheme(),

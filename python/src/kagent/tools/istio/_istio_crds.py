@@ -18,12 +18,17 @@ from .prompts.base import IstioResources
 
 class IstioCRDToolConfig(BaseModel):
     """Base configuration for the Istio CRD tools."""
+
     model: Annotated[str, "The OpenAI model to use for generating the CRD. Defaults to gpt-4o-mini"] = "gpt-4o-mini"
-    openai_api_key: Annotated[Optional[str], "API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used."]
+    openai_api_key: Annotated[
+        Optional[str], "API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used."
+    ]
+
 
 class IstioCRDToolInput(BaseModel):
     istio_resource: Annotated[IstioResources, "Type of resource to generate"]
     policy_description: Annotated[str, "Detailed description of the policy to generate YAML for"]
+
 
 class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
     """
@@ -47,7 +52,12 @@ class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
         )
         self.config: IstioCRDToolConfig = config
 
-        super().__init__(args_type=IstioCRDToolInput, return_type=str, name="istio_crd", description="Generates an Istio resource YAML configuration from a detailed description.")
+        super().__init__(
+            args_type=IstioCRDToolInput,
+            return_type=str,
+            name="istio_crd",
+            description="Generates an Istio resource YAML configuration from a detailed description.",
+        )
 
     async def run(self, args: IstioCRDToolInput, cancellation_token: CancellationToken) -> str:
         """
@@ -75,7 +85,9 @@ class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
     def _from_config(cls, config: IstioCRDToolConfig) -> "IstioCRDTool":
         return cls(config)
 
-    async def _generate_crd(self, system_prompt: str, policy_description: str, cancellation_token: CancellationToken) -> str:
+    async def _generate_crd(
+        self, system_prompt: str, policy_description: str, cancellation_token: CancellationToken
+    ) -> str:
         """
         Asynchronously generates a Custom Resource Definition (CRD) based on the provided system prompt and policy description.
 
@@ -114,7 +126,6 @@ class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
         cancellation_token: CancellationToken,
     ) -> str:
         return await self._generate_crd(AUTH_POLICY_PROMPT, policy_description, cancellation_token)
-
 
     async def _generate_peer_auth_crd(
         self,

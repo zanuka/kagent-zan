@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
@@ -161,21 +162,19 @@ func (a *autogenApiTranslator) TranslateGroupChatForTeam(
 			return nil, err
 		}
 
-		//TODO: currently only supports builtin tools
 		var tools []api.ToolComponent
-		for _, toolRef := range agent.Spec.Tools {
-			toolProvider, toolConfig, err := translateToolConfig(ctx, a.kube, toolRef, team.Namespace)
+		for _, tool := range agent.Spec.Tools {
+			toolConfig, err := convertToolConfig(tool.Config)
 			if err != nil {
 				return nil, err
 			}
 
-			tool := api.ToolComponent{
-				Provider:      toolProvider,
+			tools = append(tools, api.ToolComponent{
+				Provider:      tool.Provider,
 				ComponentType: "tool",
 				Version:       makePtr(1),
 				Config:        toolConfig,
-			}
-			tools = append(tools, tool)
+			})
 		}
 
 		sysMsgPtr := makePtr(agent.Spec.SystemMessage)
@@ -247,16 +246,23 @@ func (a *autogenApiTranslator) TranslateGroupChatForTeam(
 	}, nil
 }
 
-func translateToolConfig(
-	ctx context.Context,
-	kube client.Client,
-	ref string,
-	namespace string,
-) (string, api.ToolConfig, error) {
-	// right now we only support builtin tools, so we just return the ref
-	// later this can fetch user-defined tools from k8s and translate them
-	// to autogen-compatible tools
-	return ref, api.ToolConfig{}, nil
+func convertToolConfig(config map[string]v1alpha1.AnyType) (map[string]interface{}, error) {
+	// convert to map[string]interface{} to allow kubebuilder schemaless validation
+	// see https://github.com/kubernetes-sigs/controller-tools/issues/636 for more info
+	// must unmarshal to interface{} to avoid json.RawMessage
+	convertedConfig := make(map[string]interface{})
+
+	raw, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(raw, &convertedConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertedConfig, nil
 }
 
 func makePtr[T any](v T) *T {
