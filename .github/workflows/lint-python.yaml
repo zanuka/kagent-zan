@@ -30,7 +30,7 @@ jobs:
         # User GitHub-friendly output format
         # Ignore generated files
         working-directory: ./python
-        run: uv run ruff check
+        run: GIT_LFS_SKIP_SMUDGE=1 && uv run ruff check
       - name: Run ruff format check
         run: |
           if ! uv run ruff format --diff .; then
