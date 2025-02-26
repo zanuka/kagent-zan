@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
@@ -16,19 +17,19 @@ import (
 
 const GlobalUserID = "guestuser@gmail.com"
 
-type AutogenApiTranslator interface {
+type ApiTranslator interface {
 	TranslateGroupChatForTeam(
 		ctx context.Context,
-		team *v1alpha1.AutogenTeam,
+		team *v1alpha1.Team,
 	) (*api.Team, error)
 
 	TranslateGroupChatForAgent(
 		ctx context.Context,
-		team *v1alpha1.AutogenAgent,
+		team *v1alpha1.Agent,
 	) (*api.Team, error)
 }
 
-type autogenApiTranslator struct {
+type apiTranslator struct {
 	kube               client.Client
 	defaultModelConfig types.NamespacedName
 }
@@ -36,22 +37,22 @@ type autogenApiTranslator struct {
 func NewAutogenApiTranslator(
 	kube client.Client,
 	defaultModelConfig types.NamespacedName,
-) AutogenApiTranslator {
-	return &autogenApiTranslator{
+) ApiTranslator {
+	return &apiTranslator{
 		kube:               kube,
 		defaultModelConfig: defaultModelConfig,
 	}
 }
 
-func (a *autogenApiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.AutogenAgent) (*api.Team, error) {
+func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*api.Team, error) {
 	// generate an internal round robin "team" for the individual agent
-	team := &v1alpha1.AutogenTeam{
+	team := &v1alpha1.Team{
 		ObjectMeta: agent.ObjectMeta,
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "AutogenTeam",
-			APIVersion: "agent.ai.solo.io/v1alpha1",
+			Kind:       "Team",
+			APIVersion: "kagent.dev/v1alpha1",
 		},
-		Spec: v1alpha1.AutogenTeamSpec{
+		Spec: v1alpha1.TeamSpec{
 			Participants:         []string{agent.Name},
 			Description:          agent.Spec.Description,
 			RoundRobinTeamConfig: &v1alpha1.RoundRobinTeamConfig{},
@@ -64,9 +65,9 @@ func (a *autogenApiTranslator) TranslateGroupChatForAgent(ctx context.Context, a
 	return a.TranslateGroupChatForTeam(ctx, team)
 }
 
-func (a *autogenApiTranslator) TranslateGroupChatForTeam(
+func (a *apiTranslator) TranslateGroupChatForTeam(
 	ctx context.Context,
-	team *v1alpha1.AutogenTeam,
+	team *v1alpha1.Team,
 ) (*api.Team, error) {
 
 	// get model config
@@ -103,7 +104,7 @@ func (a *autogenApiTranslator) TranslateGroupChatForTeam(
 			Namespace: team.Namespace,
 		}
 	}
-	modelConfig := &v1alpha1.AutogenModelConfig{}
+	modelConfig := &v1alpha1.ModelConfig{}
 	err := fetchObjKube(
 		ctx,
 		a.kube,
@@ -150,7 +151,7 @@ func (a *autogenApiTranslator) TranslateGroupChatForTeam(
 
 	var participants []api.TeamParticipant
 	for _, agentName := range team.Spec.Participants {
-		agent := &v1alpha1.AutogenAgent{}
+		agent := &v1alpha1.Agent{}
 		err := fetchObjKube(
 			ctx,
 			a.kube,

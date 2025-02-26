@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.1
-  name: autogenteams.agent.ai.solo.io
+  name: teams.kagent.dev
 spec:
-  group: agent.ai.solo.io
+  group: kagent.dev
   names:
-    kind: AutogenTeam
-    listKind: AutogenTeamList
-    plural: autogenteams
-    singular: autogenteam
+    kind: Team
+    listKind: TeamList
+    plural: teams
+    singular: team
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: AutogenTeam is the Schema for the autogenteams API.
+        description: Team is the Schema for the teams API.
         properties:
           apiVersion:
             description: |-
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AutogenTeamSpec defines the desired state of AutogenTeam.
+            description: TeamSpec defines the desired state of Team.
             properties:
               description:
                 type: string
@@ -124,7 +124,7 @@ spec:
             - terminationCondition
             type: object
           status:
-            description: AutogenTeamStatus defines the observed state of AutogenTeam.
+            description: TeamStatus defines the observed state of Team.
             type: object
         type: object
     served: true

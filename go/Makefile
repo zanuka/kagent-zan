@@ -1,5 +1,5 @@
 # Image configuration
-DOCKER_REGISTRY ?= gcr.io
+DOCKER_REGISTRY ?= ghcr.io
 DOCKER_REPO ?= solo-io-kagent
 IMAGE_NAME ?= autogenstudio-controller
 VERSION ?= $(shell git describe --tags --always --dirty)

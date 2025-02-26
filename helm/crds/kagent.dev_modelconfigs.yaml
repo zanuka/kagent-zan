@@ -4,21 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.1
-  name: autogenmodelconfigs.agent.ai.solo.io
+  name: modelconfigs.kagent.dev
 spec:
-  group: agent.ai.solo.io
+  group: kagent.dev
   names:
-    kind: AutogenModelConfig
-    listKind: AutogenModelConfigList
-    plural: autogenmodelconfigs
-    singular: autogenmodelconfig
+    kind: ModelConfig
+    listKind: ModelConfigList
+    plural: modelconfigs
+    singular: modelconfig
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: AutogenModelConfig is the Schema for the autogenmodelconfigs
-          API.
+        description: ModelConfig is the Schema for the modelconfigs API.
         properties:
           apiVersion:
             description: |-
@@ -38,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AutogenModelConfigSpec defines the desired state of AutogenModelConfig.
+            description: ModelConfigSpec defines the desired state of ModelConfig.
             properties:
               apiKeySecretKey:
                 type: string
@@ -52,7 +51,7 @@ spec:
             - model
             type: object
           status:
-            description: AutogenModelConfigStatus defines the observed state of AutogenModelConfig.
+            description: ModelConfigStatus defines the observed state of ModelConfig.
             type: object
         type: object
     served: true

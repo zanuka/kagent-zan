@@ -1,5 +1,5 @@
 # Image configuration
-DOCKER_REGISTRY ?= gcr.io
+DOCKER_REGISTRY ?= ghcr.io
 DOCKER_REPO ?= solo-io-kagent
 CONTROLLER_IMAGE_NAME ?= autogenstudio-controller
 APP_IMAGE_NAME ?= kagent-app

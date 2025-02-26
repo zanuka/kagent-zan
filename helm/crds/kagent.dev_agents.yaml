@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.1
-  name: autogenagents.agent.ai.solo.io
+  name: agents.kagent.dev
 spec:
-  group: agent.ai.solo.io
+  group: kagent.dev
   names:
-    kind: AutogenAgent
-    listKind: AutogenAgentList
-    plural: autogenagents
-    singular: autogenagent
+    kind: Agent
+    listKind: AgentList
+    plural: agents
+    singular: agent
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: AutogenAgent is the Schema for the autogenagents API.
+        description: Agent is the Schema for the agents API.
         properties:
           apiVersion:
             description: |-
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AutogenAgentSpec defines the desired state of AutogenAgent.
+            description: AgentSpec defines the desired state of Agent.
             properties:
               description:
                 type: string
@@ -61,7 +61,7 @@ spec:
                 type: array
             type: object
           status:
-            description: AutogenAgentStatus defines the observed state of AutogenAgent.
+            description: AgentStatus defines the observed state of Agent.
             type: object
         type: object
     served: true

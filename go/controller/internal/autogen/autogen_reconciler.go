@@ -3,6 +3,7 @@ package autogen
 import (
 	"context"
 	"fmt"
+
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,7 +19,7 @@ type AutogenReconciler interface {
 }
 
 type autogenReconciler struct {
-	translator AutogenApiTranslator
+	translator ApiTranslator
 
 	kube          client.Client
 	autogenClient *api.Client
@@ -27,7 +28,7 @@ type autogenReconciler struct {
 }
 
 func NewAutogenReconciler(
-	translator AutogenApiTranslator,
+	translator ApiTranslator,
 	kube client.Client,
 	autogenClient *api.Client,
 	defaultModelConfig types.NamespacedName,
@@ -42,7 +43,7 @@ func NewAutogenReconciler(
 
 func (a *autogenReconciler) ReconcileAutogenAgent(ctx context.Context, req ctrl.Request) error {
 	// reconcile the agent team itself
-	agent := &v1alpha1.AutogenAgent{}
+	agent := &v1alpha1.Agent{}
 	if err := a.kube.Get(ctx, req.NamespacedName, agent); err != nil {
 		return fmt.Errorf("failed to get agent %s: %v", req.Name, err)
 	}
@@ -78,7 +79,7 @@ func (a *autogenReconciler) ReconcileAutogenModelConfig(ctx context.Context, req
 }
 
 func (a *autogenReconciler) ReconcileAutogenTeam(ctx context.Context, req ctrl.Request) error {
-	team := &v1alpha1.AutogenTeam{}
+	team := &v1alpha1.Team{}
 	if err := a.kube.Get(ctx, req.NamespacedName, team); err != nil {
 		return fmt.Errorf("failed to get team %s: %v", req.Name, err)
 	}
@@ -104,7 +105,7 @@ func (a *autogenReconciler) ReconcileAutogenApiKeySecret(ctx context.Context, re
 	return a.reconcileTeams(ctx, teams...)
 }
 
-func (a *autogenReconciler) reconcileTeams(ctx context.Context, teams ...*v1alpha1.AutogenTeam) error {
+func (a *autogenReconciler) reconcileTeams(ctx context.Context, teams ...*v1alpha1.Team) error {
 	errs := map[types.NamespacedName]error{}
 	for _, team := range teams {
 		autogenTeam, err := a.translator.TranslateGroupChatForTeam(ctx, team)
@@ -125,7 +126,7 @@ func (a *autogenReconciler) reconcileTeams(ctx context.Context, teams ...*v1alph
 	return nil
 }
 
-func (a *autogenReconciler) reconcileAgents(ctx context.Context, agents ...*v1alpha1.AutogenAgent) error {
+func (a *autogenReconciler) reconcileAgents(ctx context.Context, agents ...*v1alpha1.Agent) error {
 	errs := map[types.NamespacedName]error{}
 	for _, agent := range agents {
 		autogenTeam, err := a.translator.TranslateGroupChatForAgent(ctx, agent)
@@ -162,8 +163,8 @@ func (a *autogenReconciler) upsertTeam(team *api.Team) error {
 	return a.autogenClient.CreateTeam(team)
 }
 
-func (a *autogenReconciler) findAgentsUsingModel(ctx context.Context, req ctrl.Request) ([]*v1alpha1.AutogenAgent, error) {
-	var agentsList v1alpha1.AutogenAgentList
+func (a *autogenReconciler) findAgentsUsingModel(ctx context.Context, req ctrl.Request) ([]*v1alpha1.Agent, error) {
+	var agentsList v1alpha1.AgentList
 	if err := a.kube.List(
 		ctx,
 		&agentsList,
@@ -172,8 +173,8 @@ func (a *autogenReconciler) findAgentsUsingModel(ctx context.Context, req ctrl.R
 		return nil, fmt.Errorf("failed to list agents: %v", err)
 	}
 
-	var agents []*v1alpha1.AutogenAgent
-	appendAgentIfUsesModel := func(agent *v1alpha1.AutogenAgent) {
+	var agents []*v1alpha1.Agent
+	appendAgentIfUsesModel := func(agent *v1alpha1.Agent) {
 		// TODO currently all agents use the default model config
 		// eventually we will want to support per-agent overrides
 		// then we will want to update this to check the agent's spec
@@ -189,8 +190,8 @@ func (a *autogenReconciler) findAgentsUsingModel(ctx context.Context, req ctrl.R
 	return agents, nil
 }
 
-func (a *autogenReconciler) findAgentsUsingApiKeySecret(ctx context.Context, req ctrl.Request) ([]*v1alpha1.AutogenAgent, error) {
-	var modelsList v1alpha1.AutogenModelConfigList
+func (a *autogenReconciler) findAgentsUsingApiKeySecret(ctx context.Context, req ctrl.Request) ([]*v1alpha1.Agent, error) {
+	var modelsList v1alpha1.ModelConfigList
 	if err := a.kube.List(
 		ctx,
 		&modelsList,
@@ -200,7 +201,7 @@ func (a *autogenReconciler) findAgentsUsingApiKeySecret(ctx context.Context, req
 	}
 
 	var models []string
-	appendModelIfUsesApiKeySecret := func(model v1alpha1.AutogenModelConfig) {
+	appendModelIfUsesApiKeySecret := func(model v1alpha1.ModelConfig) {
 		if model.Spec.APIKeySecretName == req.Name {
 			models = append(models, model.Name)
 		}
@@ -209,8 +210,8 @@ func (a *autogenReconciler) findAgentsUsingApiKeySecret(ctx context.Context, req
 		appendModelIfUsesApiKeySecret(model)
 	}
 
-	var agents []*v1alpha1.AutogenAgent
-	appendUniqueAgent := func(agent *v1alpha1.AutogenAgent) {
+	var agents []*v1alpha1.Agent
+	appendUniqueAgent := func(agent *v1alpha1.Agent) {
 		for _, t := range agents {
 			if t.Name == agent.Name {
 				return
@@ -238,8 +239,8 @@ func (a *autogenReconciler) findAgentsUsingApiKeySecret(ctx context.Context, req
 
 }
 
-func (a *autogenReconciler) findTeamsUsingAgent(ctx context.Context, req ctrl.Request) ([]*v1alpha1.AutogenTeam, error) {
-	var teamsList v1alpha1.AutogenTeamList
+func (a *autogenReconciler) findTeamsUsingAgent(ctx context.Context, req ctrl.Request) ([]*v1alpha1.Team, error) {
+	var teamsList v1alpha1.TeamList
 	if err := a.kube.List(
 		ctx,
 		&teamsList,
@@ -248,8 +249,8 @@ func (a *autogenReconciler) findTeamsUsingAgent(ctx context.Context, req ctrl.Re
 		return nil, fmt.Errorf("failed to list teams: %v", err)
 	}
 
-	var teams []*v1alpha1.AutogenTeam
-	appendTeamIfUsesAgent := func(team *v1alpha1.AutogenTeam) {
+	var teams []*v1alpha1.Team
+	appendTeamIfUsesAgent := func(team *v1alpha1.Team) {
 		for _, participant := range team.Spec.Participants {
 			if participant == req.Name {
 				teams = append(teams, team)
@@ -265,8 +266,8 @@ func (a *autogenReconciler) findTeamsUsingAgent(ctx context.Context, req ctrl.Re
 	return teams, nil
 }
 
-func (a *autogenReconciler) findTeamsUsingModel(ctx context.Context, req ctrl.Request) ([]*v1alpha1.AutogenTeam, error) {
-	var teamsList v1alpha1.AutogenTeamList
+func (a *autogenReconciler) findTeamsUsingModel(ctx context.Context, req ctrl.Request) ([]*v1alpha1.Team, error) {
+	var teamsList v1alpha1.TeamList
 	if err := a.kube.List(
 		ctx,
 		&teamsList,
@@ -275,8 +276,8 @@ func (a *autogenReconciler) findTeamsUsingModel(ctx context.Context, req ctrl.Re
 		return nil, fmt.Errorf("failed to list teams: %v", err)
 	}
 
-	var teams []*v1alpha1.AutogenTeam
-	appendTeamIfUsesModel := func(team *v1alpha1.AutogenTeam) {
+	var teams []*v1alpha1.Team
+	appendTeamIfUsesModel := func(team *v1alpha1.Team) {
 		if team.Spec.ModelConfig == req.Name {
 			teams = append(teams, team)
 		}
@@ -289,8 +290,8 @@ func (a *autogenReconciler) findTeamsUsingModel(ctx context.Context, req ctrl.Re
 	return teams, nil
 }
 
-func (a *autogenReconciler) findTeamsUsingApiKeySecret(ctx context.Context, req ctrl.Request) ([]*v1alpha1.AutogenTeam, error) {
-	var modelsList v1alpha1.AutogenModelConfigList
+func (a *autogenReconciler) findTeamsUsingApiKeySecret(ctx context.Context, req ctrl.Request) ([]*v1alpha1.Team, error) {
+	var modelsList v1alpha1.ModelConfigList
 	if err := a.kube.List(
 		ctx,
 		&modelsList,
@@ -300,7 +301,7 @@ func (a *autogenReconciler) findTeamsUsingApiKeySecret(ctx context.Context, req 
 	}
 
 	var models []string
-	appendModelIfUsesApiKeySecret := func(model v1alpha1.AutogenModelConfig) {
+	appendModelIfUsesApiKeySecret := func(model v1alpha1.ModelConfig) {
 		if model.Spec.APIKeySecretName == req.Name {
 			models = append(models, model.Name)
 		}
@@ -309,8 +310,8 @@ func (a *autogenReconciler) findTeamsUsingApiKeySecret(ctx context.Context, req 
 		appendModelIfUsesApiKeySecret(model)
 	}
 
-	var teams []*v1alpha1.AutogenTeam
-	appendUniqueTeam := func(team *v1alpha1.AutogenTeam) {
+	var teams []*v1alpha1.Team
+	appendUniqueTeam := func(team *v1alpha1.Team) {
 		for _, t := range teams {
 			if t.Name == team.Name {
 				return
