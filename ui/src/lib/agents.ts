@@ -1,19 +1,8 @@
-import {
-  AssistantAgentConfig,
-  ChatCompletionContextConfig,
-  Component,
-  KAgentToolConfig,
-  ModelConfig,
-  OpenAIClientConfig,
-  RoundRobinGroupChatConfig,
-  Team,
-  ToolConfig,
-  UserProxyAgentConfig,
-} from "@/types/datamodel";
-import { CreateAgentFormData, Tool } from "./types";
-import { isMcpTool } from "./data";
+import { AssistantAgentConfig, ChatCompletionContextConfig, Component, ModelConfig, OpenAIClientConfig, RoundRobinGroupChatConfig, Team, UserProxyAgentConfig } from "@/types/datamodel";
+import { CreateAgentFormData } from "./types";
+import { getCurrentUserId } from "@/app/actions/utils";
 
-export const createTeamConfig = (agentConfig: Component<AssistantAgentConfig>, userId: string): Team => {
+export const createTeamConfig = async (agentConfig: Component<AssistantAgentConfig>): Promise<Team> => {
   const userProxyConfig: Component<UserProxyAgentConfig> = {
     provider: "autogen_agentchat.agents.UserProxyAgent",
     component_type: "agent",
@@ -51,6 +40,7 @@ export const createTeamConfig = (agentConfig: Component<AssistantAgentConfig>, u
     },
   };
 
+  const userId = await getCurrentUserId();
   const teamConfig = {
     user_id: userId,
     version: 0,
@@ -75,33 +65,6 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
       provider: "autogen_ext.models.openai.OpenAIChatCompletionClient",
       model: "gpt-4o-mini",
     },
-  };
-
-  const transformTools = (tools: Tool[]): Component<ToolConfig>[] => {
-    return tools.map((tool) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let toolConfig: any;
-
-      if (isMcpTool(tool)) {
-        // For MCP tools, use the exact config object provided
-        toolConfig = { ...tool.config };
-      } else {
-        // For standard KAgent tools, use the KAgentToolConfig structure
-        toolConfig = {
-          ...tool.config,
-        } as KAgentToolConfig;
-      }
-
-      return {
-        provider: tool.provider,
-        component_type: "tool",
-        version: tool.version,
-        component_version: tool.component_version,
-        description: tool.description,
-        label: tool.label,
-        config: toolConfig,
-      };
-    });
   };
 
   const modelConfig = modelClientMap[formData.model.id];
@@ -142,7 +105,7 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
       name: formData.name,
       description: formData.description,
       model_client: modelClient,
-      tools: transformTools(formData.tools),
+      tools: formData.tools,
       handoffs: [],
       model_context: modelContext,
       system_message: formData.system_prompt,

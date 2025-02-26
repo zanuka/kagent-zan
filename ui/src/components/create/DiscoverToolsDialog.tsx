@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DiscoverToolsRequest, SseServerParams, StdioServerParameters, Tool } from "@/lib/types";
+import { DiscoverToolsRequest, SseServerParams, StdioServerParameters } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Terminal, Globe } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { discoverMCPTools } from "@/app/actions/tools";
+import { Component, Tool, ToolConfig } from "@/types/datamodel";
 
 interface DiscoverToolsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onShowSelectTools: (tools: Tool[]) => void;
+  onShowSelectTools: (tools: Component<ToolConfig>[]) => void;
 }
 
 export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: DiscoverToolsDialogProps) => {
@@ -162,7 +163,7 @@ export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: D
       if (discoveredToolsData.length > 0) {
         // Close this dialog and open the select tools dialog
         handleClose();
-        onShowSelectTools(discoveredToolsData);
+        onShowSelectTools(discoveredToolsData.map((tool) => tool.component));
       } else {
         setError("No tools were discovered. Please check your input and try again.");
       }

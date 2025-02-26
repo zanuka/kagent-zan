@@ -1,21 +1,22 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { isIdentifier } from "@/lib/utils";
-import { useUserStore } from "@/lib/userStore";
 import { Bot, ArrowLeft, Loader2, FunctionSquare } from "lucide-react";
-import { Model, Tool } from "@/lib/types";
+import { Model } from "@/lib/types";
 import { createTeamConfig, transformToAgentConfig } from "@/lib/agents";
 import { SystemPromptSection } from "@/components/create/SystemPromptSection";
 import { ModelSelectionSection } from "@/components/create/ModelSelectionSection";
-import { AVAILABLE_MODELS, TOOLS } from "@/lib/data";
+import { AVAILABLE_MODELS } from "@/lib/data";
 import { ToolsSection } from "@/components/create/ToolsSection";
 import { createTeam } from "@/app/actions/teams";
 import { useRouter } from "next/navigation";
+import { getBuiltInTools } from "@/app/actions/tools";
+import { Component, ToolConfig } from "@/types/datamodel";
 
 interface ValidationErrors {
   name?: string;
@@ -27,7 +28,6 @@ interface ValidationErrors {
 }
 
 export default function NewAgentPage() {
-  const { userId } = useUserStore();
   const router = useRouter();
 
   // Basic form state
@@ -37,14 +37,26 @@ export default function NewAgentPage() {
 
   // Default to the first model
   const [selectedModel, setSelectedModel] = useState<Model>(AVAILABLE_MODELS[0]);
+  const [allTools, setAllTools] = useState<Component<ToolConfig>[]>([]);
 
   // Tools state
-  const [selectedTools, setSelectedTools] = useState<Tool[]>([]);
+  const [selectedTools, setSelectedTools] = useState<Component<ToolConfig>[]>([]);
 
   // Overall form state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [generalError, setGeneralError] = useState("");
+
+  useEffect(() => {
+    const fetchAllTools = async () => {
+      // Fetch all tools
+      const response = await getBuiltInTools();
+      if (response.success && response.data) {
+        setAllTools(response.data);
+      }
+    };
+    fetchAllTools();
+  }, []);
 
   const validateForm = () => {
     const newErrors: ValidationErrors = {};
@@ -88,11 +100,10 @@ export default function NewAgentPage() {
         system_prompt: systemPrompt,
         model: selectedModel,
         tools: selectedTools,
-        user_id: userId,
       };
 
       const agentConfig = transformToAgentConfig(agentData);
-      const teamConfig = createTeamConfig(agentConfig, userId);
+      const teamConfig = await createTeamConfig(agentConfig);
 
       const result = await createTeam(teamConfig);
 
@@ -175,7 +186,7 @@ export default function NewAgentPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ToolsSection allTools={TOOLS} selectedTools={selectedTools} setSelectedTools={setSelectedTools} isSubmitting={isSubmitting}></ToolsSection>
+              <ToolsSection allTools={allTools} selectedTools={selectedTools} setSelectedTools={setSelectedTools} isSubmitting={isSubmitting}></ToolsSection>
             </CardContent>
           </Card>
 

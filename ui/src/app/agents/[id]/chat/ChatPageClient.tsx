@@ -79,7 +79,6 @@ export default function ChatPageClient({
     >
       <ChatInterface 
         selectedAgentTeam={initialData.agent}
-        isReadOnly={false}
         onNewSession={onNewSession}
       />
     </ChatLayout>

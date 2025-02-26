@@ -19,7 +19,6 @@ __all__ = [
     "ApplyWaypoint",
     "DeleteWaypoint",
     "GenerateManifest",
-    "GenerateResource",
     "GenerateWaypoint",
     "InstallIstio",
     "ListWaypoints",

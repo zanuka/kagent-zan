@@ -62,6 +62,12 @@ COPY python/README.md .
 RUN uv sync --all-extras && \
     chown -R python:pythongroup /app/python
 
+# Create the tools.json file, 
+# create the ~/.autogenstudio/configs folder and copy the tools.json file there
+RUN uv run tool_gen && \
+    mkdir -p $HOME/.autogenstudio/configs && \
+    cp tools.json $HOME/.autogenstudio/configs/tools.json
+
 # Set up Next.js UI
 WORKDIR /app/ui
 COPY --from=ui-builder /app/ui/next.config.ts ./

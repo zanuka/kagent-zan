@@ -31,11 +31,12 @@ jupyter-executor = [
 
 [project.scripts]
 kagent = "kagent.cli:run"
+tool_gen = "kagent.tools.utils.tool_gen:main"
 
 [tool.uv.sources]
-autogenstudio = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "1130cd2e3d51114daed63b5852727f10ce8fe431" }
-autogen-ext = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "1130cd2e3d51114daed63b5852727f10ce8fe431" }
-autogen-core = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-core", rev = "1130cd2e3d51114daed63b5852727f10ce8fe431" }
+autogenstudio = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "81faa5585c7da86722c75dd93f529732e84e740a" }
+autogen-ext = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "81faa5585c7da86722c75dd93f529732e84e740a" }
+autogen-core = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-core", rev = "81faa5585c7da86722c75dd93f529732e84e740a" }
 kagent = { workspace = true }
 
 [tool.ruff]
