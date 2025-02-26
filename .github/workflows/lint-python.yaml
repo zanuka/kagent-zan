@@ -28,7 +28,9 @@ jobs:
 
       - name: Sync dependencies
         working-directory: ./python
-        run: GIT_LFS_SKIP_SMUDGE=1 && uv sync --all-extras
+        run: |
+          export GIT_LFS_SKIP_SMUDGE=1
+          uv sync --all-extras
 
       - name: Run ruff linter
         working-directory: ./python
