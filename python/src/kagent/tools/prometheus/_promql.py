@@ -14,7 +14,7 @@ class PromQLToolConfig(BaseModel):
         description="The OpenAI model to use for generating PromQL queries. Defaults to gpt-4o-mini",
     )
     openai_api_key: str = Field(
-        default=os.environ.get("OPENAI_API_KEY", ""),
+        default=None,
         description="API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used.",
     )
 

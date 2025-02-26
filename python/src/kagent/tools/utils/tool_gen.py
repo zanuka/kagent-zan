@@ -53,7 +53,7 @@ def create_dummy_args(model_fields: dict[str, FieldInfo]):
 
         # Create appropriate dummy values based on type
         if field_type is str or (hasattr(field_type, "__name__") and field_type.__name__ == "str"):
-            dummy_args[field_name] = f"dummy_{field_name}"
+            dummy_args[field_name] = ""
         elif field_type is int or (hasattr(field_type, "__name__") and field_type.__name__ == "int"):
             dummy_args[field_name] = 42
         elif field_type is float or (hasattr(field_type, "__name__") and field_type.__name__ == "float"):
@@ -71,7 +71,7 @@ def create_dummy_args(model_fields: dict[str, FieldInfo]):
             dummy_args[field_name] = field_type.__args__[0]
         elif field_type is Any:
             # For Any type
-            dummy_args[field_name] = "dummy_value"
+            dummy_args[field_name] = ""
         elif is_optional:
             # For optional fields, use field name (as you requested)
             dummy_args[field_name] = field_name
@@ -151,11 +151,6 @@ def get_tool_configs(module_path: str) -> list:
 
 
 def main():
-    # If OPENAI_API_KEY is set, set it to a dummy value as
-    # some of the tools may default to it
-    if "OPENAI_API_KEY" in os.environ:
-        os.environ["OPENAI_API_KEY"] = "dummy_openai_api_key"
-
     all_config = []
 
     for dir_name in TOOL_DIRS:
