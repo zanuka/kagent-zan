@@ -3,6 +3,23 @@ from autogen_core import CancellationToken
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
 
+from kagent.tools.argo._argo_crds import (
+    ArgoCRDTool,
+    ArgoCRDToolConfig,
+    ArgoCRDToolInput,
+)
+from kagent.tools.argo._argo_rollouts_k8sgw_installation import (
+    check_plugin_logs,
+    verify_gateway_plugin,
+)
+from kagent.tools.argo._kubectl_argo_rollouts import (
+    pause_rollout,
+    promote_rollout,
+    set_rollout_image,
+    verify_argo_rollouts_controller_install,
+    verify_kubectl_plugin_install,
+)
+from kagent.tools.helm._helm import helm_list, helm_uninstall, helm_upgrade
 from kagent.tools.istio._istio_crds import (
     IstioCRDTool,
     IstioCRDToolConfig,
@@ -28,6 +45,7 @@ from kagent.tools.k8s._kubectl import (
     create_resource,
     delete_resource,
     describe_resource,
+    get_available_api_resources,
     get_cluster_configuration,
     get_events,
     get_pod_logs,
@@ -39,7 +57,6 @@ from kagent.tools.k8s._kubectl import (
     remove_label,
     rollout,
     scale,
-    get_available_api_resources,
 )
 from kagent.tools.prometheus._prometheus import (
     AlertmanagersInput,
@@ -76,20 +93,6 @@ from kagent.tools.prometheus._prometheus import (
     TargetsTool,
     TSDBStatusInput,
     TSDBStatusTool,
-)
-from kagent.tools.argo import (
-    PauseRollout,
-    PromoteRollout,
-    SetRolloutImage,
-    VerifyKubectlPluginInstall,
-    VerifyArgoRolloutsControllerInstall,
-    CheckPluginLogsTool,
-    VerifyGatewayPluginTool,
-)
-from kagent.tools.argo._argo_crds import (
-    ArgoCRDTool,
-    ArgoCRDToolConfig,
-    ArgoCRDToolInput,
 )
 
 app = typer.Typer()
@@ -199,19 +202,21 @@ def prometheus(
 
 @app.command()
 def argo():
+    mcp.add_tool(verify_gateway_plugin._func, verify_gateway_plugin.name, verify_gateway_plugin.description)
+    mcp.add_tool(check_plugin_logs._func, check_plugin_logs.name, check_plugin_logs.description)
     mcp.add_tool(
-        VerifyKubectlPluginInstall._func, VerifyKubectlPluginInstall.name, VerifyKubectlPluginInstall.description
+        verify_kubectl_plugin_install._func,
+        verify_kubectl_plugin_install.name,
+        verify_kubectl_plugin_install.description,
     )
     mcp.add_tool(
-        VerifyArgoRolloutsControllerInstall._func,
-        VerifyArgoRolloutsControllerInstall.name,
-        VerifyArgoRolloutsControllerInstall.description,
+        verify_argo_rollouts_controller_install._func,
+        verify_argo_rollouts_controller_install.name,
+        verify_argo_rollouts_controller_install.description,
     )
-    mcp.add_tool(CheckPluginLogsTool._func, CheckPluginLogsTool.name, CheckPluginLogsTool.description)
-    mcp.add_tool(VerifyGatewayPluginTool._func, VerifyGatewayPluginTool.name, VerifyGatewayPluginTool.description)
-    mcp.add_tool(PauseRollout._func, PauseRollout.name, PauseRollout.description)
-    mcp.add_tool(PromoteRollout._func, PromoteRollout.name, PromoteRollout.description)
-    mcp.add_tool(SetRolloutImage._func, SetRolloutImage.name, SetRolloutImage.description)
+    mcp.add_tool(pause_rollout._func, pause_rollout.name, pause_rollout.description)
+    mcp.add_tool(promote_rollout._func, promote_rollout.name, promote_rollout.description)
+    mcp.add_tool(set_rollout_image._func, set_rollout_image.name, set_rollout_image.description)
 
     cfg = ArgoCRDToolConfig(model="gpt-4o-mini", openai_api_key=None)
 
@@ -277,7 +282,14 @@ def k8s():
     mcp.add_tool(
         get_available_api_resources._func, get_available_api_resources.name, get_available_api_resources.description
     )
+    mcp.run()
 
+
+@app.command()
+def helm():
+    mcp.add_tool(helm_list._func, helm_list.name, helm_list.description)
+    mcp.add_tool(helm_upgrade._func, helm_upgrade.name, helm_upgrade.description)
+    mcp.add_tool(helm_uninstall._func, helm_uninstall.name, helm_uninstall.description)
     mcp.run()
 
 

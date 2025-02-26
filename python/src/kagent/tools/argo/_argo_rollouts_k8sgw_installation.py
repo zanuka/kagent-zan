@@ -1,7 +1,9 @@
-from typing import Annotated, Optional
-import re
+import os
 import platform
+import re
+import tempfile
 from dataclasses import dataclass
+from typing import Annotated, Optional
 
 from autogen_core.tools import FunctionTool
 
@@ -18,7 +20,7 @@ class GatewayPluginStatus:
     error_message: Optional[str] = None
 
 
-def verify_gateway_plugin(
+def _verify_gateway_plugin(
     version: Annotated[Optional[str], "Version of the Gateway API plugin to verify. If None, checks latest"] = None,
     namespace: Annotated[str, "Namespace where Argo Rollouts is installed"] = "argo-rollouts",
     should_install: Annotated[bool, "Flag to determine if the plugin should be installed if not present"] = True,
@@ -33,7 +35,7 @@ def verify_gateway_plugin(
         config_map = run_command(command="kubectl", args=cmd)
         if "argoproj-labs/gatewayAPI" not in config_map:
             if should_install:
-                return configure_gateway_plugin(version, namespace)
+                return _configure_gateway_plugin(version, namespace)
             else:
                 return GatewayPluginStatus(
                     installed=False, error_message="Gateway API plugin is not configured and installation is disabled"
@@ -41,12 +43,12 @@ def verify_gateway_plugin(
         return GatewayPluginStatus(installed=True, error_message="Gateway API plugin is already configured")
     except Exception as e:
         if should_install:
-            return configure_gateway_plugin(version, namespace)
+            return _configure_gateway_plugin(version, namespace)
         else:
             return GatewayPluginStatus(installed=False, error_message=f"Error verifying plugin: {str(e)}")
 
 
-def configure_gateway_plugin(
+def _configure_gateway_plugin(
     version: Optional[str],
     namespace: str,
 ) -> GatewayPluginStatus:
@@ -55,11 +57,11 @@ def configure_gateway_plugin(
     """
     try:
         # Determine system architecture
-        arch = get_system_architecture()
+        arch = _get_system_architecture()
 
         # If version not specified, get latest from GitHub
         if not version:
-            version = get_latest_version()
+            version = _get_latest_version()
 
         # Create ConfigMap manifest
         config_map = f"""
@@ -75,8 +77,6 @@ data:
 """
 
         # Create a temp file with the ConfigMap that adds the trafficRouterPlugins for the Kubernetes Gateway API
-        import tempfile
-        import os
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as temp_file:
             temp_file.write(config_map)
@@ -101,7 +101,7 @@ data:
         return GatewayPluginStatus(installed=False, error_message=f"Error during plugin configuration: {str(e)}")
 
 
-def get_system_architecture() -> str:
+def _get_system_architecture() -> str:
     """
     Determine the system architecture for plugin download.
     """
@@ -130,7 +130,7 @@ def get_system_architecture() -> str:
         raise ValueError(f"Unsupported system: {system}")
 
 
-def get_latest_version() -> str:
+def _get_latest_version() -> str:
     """
     Get the latest version of the Gateway API plugin from GitHub.
     """
@@ -149,10 +149,10 @@ def get_latest_version() -> str:
         return "0.5.0"  # Default to known stable version
 
 
-def check_plugin_logs(
+def _check_plugin_logs(
     namespace: Annotated[str, "Namespace where Argo Rollouts is installed"] = "argo-rollouts",
     timeout: Annotated[Optional[int], "Timeout in seconds for log checking"] = 60,
-) -> str:
+) -> GatewayPluginStatus:
     """
     Check Argo Rollouts controller logs for plugin installation status.
     """
@@ -181,26 +181,26 @@ def check_plugin_logs(
 
 
 # Create the function tools
-verify_gateway_plugin_tool = FunctionTool(
-    verify_gateway_plugin,
+verify_gateway_plugin = FunctionTool(
+    _verify_gateway_plugin,
     description="Verify and configure Gateway API plugin for Argo Rollouts",
     name="verify_gateway_plugin",
 )
 
-check_plugin_logs_tool = FunctionTool(
-    check_plugin_logs,
+check_plugin_logs = FunctionTool(
+    _check_plugin_logs,
     description="Check Argo Rollouts controller logs for Gateway API plugin installation status",
     name="check_plugin_logs",
 )
 
 VerifyGatewayPluginTool, VerifyGatewayPluginToolConfig = create_typed_fn_tool(
-    verify_gateway_plugin_tool,
+    verify_gateway_plugin,
     "kagent.tools.argo.VerifyGatewayPluginTool",
     "VerifyGatewayPluginTool",
 )
 
 CheckPluginLogsTool, CheckPluginLogsToolConfig = create_typed_fn_tool(
-    check_plugin_logs_tool,
+    check_plugin_logs,
     "kagent.tools.argo.CheckPluginLogsTool",
     "CheckPluginLogsTool",
 )

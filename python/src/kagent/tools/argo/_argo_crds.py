@@ -106,42 +106,16 @@ class ArgoCRDTool(BaseTool, Component[ArgoCRDToolConfig]):
         except Exception as e:
             return f"Error generating policy: {str(e)}"
 
-    async def _generate_crd(
-        self, system_prompt: str, policy_description: str, cancellation_token: CancellationToken
-    ) -> str:
-        """
-        Asynchronously generates a Custom Resource Definition (CRD) based on the provided system prompt and policy description.
-
-        Args:
-        system_prompt (str): The system prompt to guide the CRD generation.
-        policy_description (str): The description of the policy to be included in the CRD.
-
-        Returns:
-        str: The generated CRD content or an error message if the generation fails.
-
-        Raises:
-        Exception: If there is an error during the CRD generation process.
-        """
-        try:
-            if cancellation_token.is_cancelled():
-                raise Exception("Operation cancelled")
-
-            result = await self._model_client.create(
-                messages=[SystemMessage(content=system_prompt), UserMessage(content=policy_description, source="user")],
-                json_output=True,
-            )
-            return result.content
-        except Exception as e:
-            return f"Error generating policy: {str(e)}"
-
     async def _generate_rollout_crd(
         self,
         resource_description: Annotated[str, "Detailed description of the Rollout to generate YAML for"],
+        cancellation_token: CancellationToken,
     ) -> str:
-        return await self._generate_crd(ROLLOUT_PROMPT, resource_description)
+        return await self._generate_crd(ROLLOUT_PROMPT, resource_description, cancellation_token)
 
     async def _generate_analysis_template_crd(
         self,
         resource_description: Annotated[str, "Detailed description of the AnalysisTemplate to generate YAML for"],
+        cancellation_token: CancellationToken,
     ) -> str:
-        return await self._generate_crd(ANALYSIS_TEMPLATE_PROMPT, resource_description)
+        return await self._generate_crd(ANALYSIS_TEMPLATE_PROMPT, resource_description, cancellation_token)
