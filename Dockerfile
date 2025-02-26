@@ -70,6 +70,8 @@ RUN uv run tool_gen && \
 
 # Set up Next.js UI
 WORKDIR /app/ui
+RUN mkdir -p /app/ui/public
+
 COPY --from=ui-builder /app/ui/next.config.ts ./
 COPY --from=ui-builder /app/ui/public ./public
 COPY --from=ui-builder /app/ui/package.json ./package.json
