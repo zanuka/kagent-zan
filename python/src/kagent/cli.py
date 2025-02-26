@@ -28,6 +28,7 @@ from kagent.tools.k8s._kubectl import (
     create_resource,
     delete_resource,
     describe_resource,
+    get_available_api_resources,
     get_cluster_configuration,
     get_events,
     get_pod_logs,
@@ -39,8 +40,6 @@ from kagent.tools.k8s._kubectl import (
     remove_label,
     rollout,
     scale,
-    get_available_api_resources,
-    
 )
 from kagent.tools.prometheus._prometheus import (
     AlertmanagersInput,

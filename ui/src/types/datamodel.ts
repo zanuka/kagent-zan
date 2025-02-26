@@ -76,8 +76,19 @@ export interface FunctionToolConfig {
   global_imports: any[]; // Sequence[Import] equivalent
   has_cancellation_support: boolean;
 }
-export interface KAgentToolConfig {
-  // Nothing for now, but this is where the config would go
+
+export interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: any; // Schema equivalent
+}
+export interface MCPToolConfig {
+  server_params: any; // StdioServerParameters | SseServerParams equivalent
+  tool: MCPTool;
+}
+
+export interface BuiltInToolConfig {
+  [key: string]: any;
 }
 
 // Provider-based Configs
@@ -197,7 +208,7 @@ export type AgentConfig = MultimodalWebSurferConfig | AssistantAgentConfig | Use
 
 export type ModelConfig = OpenAIClientConfig | AzureOpenAIClientConfig;
 
-export type ToolConfig = FunctionToolConfig | KAgentToolConfig;
+export type ToolConfig = FunctionToolConfig | MCPToolConfig | BuiltInToolConfig;
 
 export type ChatCompletionContextConfig = UnboundedChatCompletionContextConfig;
 
@@ -212,6 +223,10 @@ export interface DBModel {
   created_at?: string;
   updated_at?: string;
   version?: number;
+}
+
+export interface Tool extends DBModel {
+  component: Component<ToolConfig>;
 }
 
 export interface Message extends DBModel {

@@ -171,9 +171,11 @@ Remember that PromQL is designed for time series data and operates on a pull-bas
 
 
 class PromQLTool(BaseTool, Component[PromQLToolConfig]):
+    """Generates a PromQL query from a description."""
     component_type = "tool"
     component_config_schema = PromQLToolConfig
     component_input_schema = "kagent.tools.prometheus.PromQLTool"
+    component_provider_override = "kagent.tools.prometheus.PromQLTool"
 
     def __init__(self, config: PromQLToolConfig) -> None:
         self._model = config.model
@@ -207,5 +209,5 @@ class PromQLTool(BaseTool, Component[PromQLToolConfig]):
         return PromQLToolConfig(model=self._model, openai_api_key=self._openai_api_key)
 
     @classmethod
-    def from_config(cls, config: PromQLToolConfig) -> "PromQLTool":
+    def _from_config(cls, config: PromQLToolConfig) -> "PromQLTool":
         return cls(config)

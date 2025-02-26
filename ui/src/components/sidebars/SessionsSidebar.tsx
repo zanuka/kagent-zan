@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, User, Settings, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import { isToday, isYesterday } from "date-fns";
 import { SessionWithRuns, Team } from "@/types/datamodel";
 import { SettingsModal } from "@/components/SettingsModal";
-import { useUserStore } from "@/lib/userStore";
 import { ActionButtons, EmptyState } from "@/components/sidebars/EmptyState";
 import SessionGroup from "@/components/sidebars/SessionGroup";
 import { useResponsiveSidebar } from "@/components/sidebars/useResponsiveSidebar";
@@ -18,7 +17,6 @@ interface SessionsSidebarProps {
 }
 
 export default function SessionsSidebar({ sessions = [], selectedTeam, onDeleteSession, onViewRun }: SessionsSidebarProps) {
-  const { userId } = useUserStore();
   const [showSettings, setShowSettings] = useState(false);
   const { isOpen, toggle } = useResponsiveSidebar({ breakpoint: 1024, side: "left" });
 
@@ -109,7 +107,7 @@ export default function SessionsSidebar({ sessions = [], selectedTeam, onDeleteS
           {/* Footer */}
           {isOpen && (
             <>
-              <div className="border-t border-[#3A3A3A] p-4 space-y-2 shrink-0">
+              {/* <div className="border-t border-[#3A3A3A] p-4 space-y-2 shrink-0">
                 <Button variant="ghost" className="w-full justify-start text-white/70 hover:text-white hover:bg-[#3A3A3A] gap-2" onClick={() => setShowSettings(true)}>
                   <Settings className="h-4 w-4" />
                   Settings
@@ -118,7 +116,7 @@ export default function SessionsSidebar({ sessions = [], selectedTeam, onDeleteS
                   <User className="h-4 w-4" />
                   {userId}
                 </div>
-              </div>
+              </div> */}
 
               <div className="p-4 border-t border-[#3A3A3A] shrink-0">
                 <div className="flex items-center justify-center gap-2 mb-2">

@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronRight, ChevronLeft, User, Bot, FunctionSquare } from "lucide-react";
-import type { Team, Component, ToolConfig, AssistantAgentConfig, UserProxyAgentConfig } from "@/types/datamodel";
+import type { Team, AssistantAgentConfig, UserProxyAgentConfig,ToolConfig, Component } from "@/types/datamodel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";

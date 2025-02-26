@@ -1,25 +1,25 @@
 import { useState, useEffect } from "react";
-import { Tool } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Search, Check, Download } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
+import { Component, ToolConfig } from "@/types/datamodel";
 
 interface SelectToolsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  availableTools: Tool[];
-  selectedTools: Tool[];
-  onToolsSelected: (selectedTools: Tool[]) => void;
-  initialSelection?: Tool[];
+  availableTools: Component<ToolConfig>[];
+  selectedTools: Component<ToolConfig>[];
+  onToolsSelected: (selectedTools: Component<ToolConfig>[]) => void;
+  initialSelection?: Component<ToolConfig>[];
 }
 
 export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selectedTools, onToolsSelected, initialSelection = [] }: SelectToolsDialogProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [localSelectedTools, setLocalSelectedTools] = useState<Tool[]>([]);
-  const [newlyDiscoveredTools, setNewlyDiscoveredTools] = useState<Tool[]>([]);
+  const [localSelectedTools, setLocalSelectedTools] = useState<Component<ToolConfig>[]>([]);
+  const [newlyDiscoveredTools, setNewlyDiscoveredTools] = useState<Component<ToolConfig>[]>([]);
 
   // Initialize local selection when dialog opens
   useEffect(() => {
@@ -51,7 +51,7 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
     const displayName = getToolDisplayName(tool)
     const displayDescription = getToolDescription(tool);
     const searchLower = searchTerm.toLowerCase();
-    return displayName.toLowerCase().includes(searchLower) || displayDescription.toLowerCase().includes(searchLower) || tool.provider.toLowerCase().includes(searchLower);
+    return displayName?.toLowerCase().includes(searchLower) || displayDescription?.toLowerCase().includes(searchLower) || tool.provider.toLowerCase().includes(searchLower);
   });
 
   // Sort tools to show newly discovered tools first
@@ -64,12 +64,12 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
     return 0;
   });
 
-  const handleToggleTool = (tool: Tool) => {
+  const handleToggleTool = (tool: Component<ToolConfig>) => {
     const toolId = getToolIdentifier(tool);
     const isSelected = localSelectedTools.some((t) => getToolIdentifier(t) === toolId);
 
     if (isSelected) {
-      setLocalSelectedTools(localSelectedTools.filter((t) => getToolIdentifier(t) !== toolId));
+      setLocalSelectedTools(localSelectedTools.filter((t) =>  getToolIdentifier(t) !== toolId));
     } else {
       setLocalSelectedTools([...localSelectedTools, tool]);
     }
@@ -84,11 +84,11 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
     onOpenChange(false);
   };
 
-  const renderToolItem = (tool: Tool) => {
+  const renderToolItem = (tool: Component<ToolConfig>) => {
     const displayName = getToolDisplayName(tool)
     const displayDescription = getToolDescription(tool);
     const toolId = getToolIdentifier(tool);
-    const isSelected = localSelectedTools.some((t) => getToolIdentifier(t) === toolId);
+    const isSelected = localSelectedTools.some((t) =>  getToolIdentifier(t) === toolId);
     const isNewlyDiscovered = newlyDiscoveredTools.some((t) => getToolIdentifier(t) === toolId);
 
     return (
@@ -110,7 +110,7 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
               )}
             </div>
             <div className="text-sm text-white/70">{displayDescription}</div>
-            <div className="text-xs text-white/50 mt-1">{tool.provider}</div>
+            <div className="text-xs text-white/50 mt-1">{getToolIdentifier(tool)}</div>
           </div>
           {isSelected && <Check className="w-4 h-4" />}
         </div>
@@ -161,7 +161,7 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
               {localSelectedTools.length} tools selected
               {newlyDiscoveredTools.length > 0 && (
                 <span className="ml-2 text-green-400">
-                  (including {newlyDiscoveredTools.filter((newTool) => localSelectedTools.some((selectedTool) => getToolIdentifier(selectedTool) === getToolIdentifier(newTool))).length} new)
+                  (including {newlyDiscoveredTools.filter((newTool) => localSelectedTools.some((selectedTool) => selectedTool.provider ===newTool.provider)).length} new)
                 </span>
               )}
             </div>

@@ -36,6 +36,7 @@ class IstioCRDTool(BaseTool, Component[IstioCRDToolConfig]):
     component_type = "tool"
     component_config_schema = IstioCRDToolConfig
     component_input_schema = "kagent.tools.istio.IstioCRDTool"
+    component_provider_override = "kagent.tools.istio.IstioCRDTool"
 
     def __init__(self, config: IstioCRDToolConfig) -> None:
         self._model = config.model

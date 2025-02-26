@@ -17,7 +17,7 @@ check-openai-key:
 	fi
 
 # Build targets
-.PHONY: create-kind-cluster build controller-manifests build-controller build-app kind-load-docker-images helm-install check-openai-key
+.PHONY: create-kind-cluster build controller-manifests build-controller build-app kind-load-docker-images check-openai-key helm-install
 
 create-kind-cluster:
 	kind create cluster --name autogen

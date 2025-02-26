@@ -1,11 +1,11 @@
-import { RunStatus } from "@/types/datamodel";
+import { Component, RunStatus, ToolConfig } from "@/types/datamodel";
 
 export interface CreateAgentFormData {
   name: string;
   description: string;
   system_prompt: string;
   model: Model;
-  tools: Tool[];
+  tools: Component<ToolConfig>[];
 }
 
 export interface StdioServerParameters {
@@ -41,19 +41,7 @@ export interface SseServerParams {
 
 export interface DiscoverToolsRequest {
   type: string;
-  server_params: StdioServerParameters | SseServerParams
-}
-
-// TODO: This should be removed and replaced with Component<ToolConfig>.
-// it will require creating a type that represents the MCPToolConfig
-export interface Tool {
-  provider: string;
-  version?: number;
-  component_version?: number;
-  label?: string;
-  description?: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  config: Record<string, any>;
+  server_params: StdioServerParameters | SseServerParams;
 }
 
 export interface Model {
