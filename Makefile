@@ -1,6 +1,6 @@
 # Image configuration
 DOCKER_REGISTRY ?= ghcr.io
-DOCKER_REPO ?= solo-io-kagent
+DOCKER_REPO ?= kagent-dev/kagent
 CONTROLLER_IMAGE_NAME ?= autogenstudio-controller
 APP_IMAGE_NAME ?= kagent-app
 VERSION ?= $(shell git describe --tags --always --dirty)
