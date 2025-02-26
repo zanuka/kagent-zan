@@ -195,15 +195,13 @@ type ModelConfig struct {
 
 // Tool Configuration
 type ToolComponent struct {
-	Provider      string     `json:"provider"`
-	ComponentType string     `json:"component_type"`
-	Version       *int       `json:"version,omitempty"`
-	Description   *string    `json:"description,omitempty"`
-	Config        ToolConfig `json:"config"`
-	Label         *string    `json:"label,omitempty"`
+	Provider      string                 `json:"provider"`
+	ComponentType string                 `json:"component_type"`
+	Version       *int                   `json:"version,omitempty"`
+	Description   *string                `json:"description,omitempty"`
+	Config        map[string]interface{} `json:"config"`
+	Label         *string                `json:"label,omitempty"`
 }
-
-type ToolConfig struct{}
 
 // ChatCompletionContext Configuration
 type ChatCompletionContextComponent struct {

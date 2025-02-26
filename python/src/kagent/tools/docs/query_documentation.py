@@ -19,7 +19,8 @@ DEFAULT_DB_URL = "https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"
 PRODUCT_DB_MAP = {
     "kubernetes": "kubernetes.db",
     "istio": "istio.db",
-    "argo": "argo.db",
+    "argo cd": "argo.db",
+    "argo rollouts": "argo-rollouts.db",
     "helm": "helm.db",
     "prometheus": "prometheus.db",
 }
@@ -104,7 +105,7 @@ class QueryInput(BaseModel):
         description="The search query to use for finding relevant documentation. Be specific and include relevant keywords."
     )
     product_name: str = Field(
-        description="The name of the product to search within. Examples include: 'istio', 'kubernetes', 'prometheus', 'argo', 'helm'."
+        description="The name of the product to search within. Examples include: 'istio', 'kubernetes', 'prometheus', 'argo cd', 'argo rollouts', 'helm'."
     )
     version: Optional[str] = Field(
         default=None,

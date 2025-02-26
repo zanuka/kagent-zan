@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"encoding/json"
 	"os"
 
 	"sigs.k8s.io/yaml"
@@ -85,12 +86,30 @@ var _ = Describe("E2e", func() {
 				Name:          "kubectl_execution_agent",
 				Description:   "The Kubectl User is responsible for running kubectl commands corresponding to user requests.",
 				SystemMessage: readFileAsString("systemprompts/kubectl-user-system-prompt.txt"),
-				Tools: []string{
-					string(v1alpha1.BuiltinTool_KubectlGetPods),
-					string(v1alpha1.BuiltinTool_KubectlGetServices),
-					string(v1alpha1.BuiltinTool_KubectlApplyManifest),
-					string(v1alpha1.BuiltinTool_KubectlGetResources),
-					string(v1alpha1.BuiltinTool_KubectlGetPodLogs),
+				Tools: []v1alpha1.AutogenTool{
+					{
+						Provider: string(v1alpha1.BuiltinTool_KubectlGetPods),
+					},
+					{
+						Provider: string(v1alpha1.BuiltinTool_KubectlGetServices),
+					},
+					{
+						Provider: string(v1alpha1.BuiltinTool_KubectlApplyManifest),
+					},
+					{
+						Provider: string(v1alpha1.BuiltinTool_KubectlGetResources),
+					},
+					{
+						Provider: string(v1alpha1.BuiltinTool_KubectlGetPodLogs),
+					},
+					{
+						Provider: "kagent.tools.docs.QueryTool",
+						Config: map[string]v1alpha1.AnyType{
+							"docs_download_url": {
+								RawMessage: makeRawMsg("https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"),
+							},
+						},
+					},
 				},
 			},
 		}
@@ -165,6 +184,12 @@ The answer should be phrased as if you were speaking to the user.`,
 		Expect(true).To(BeTrue())
 	})
 })
+
+func makeRawMsg(v interface{}) json.RawMessage {
+	data, err := json.Marshal(v)
+	Expect(err).NotTo(HaveOccurred())
+	return data
+}
 
 func writeKubeObjects(file string, objects ...metav1.Object) {
 	var bytes []byte

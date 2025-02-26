@@ -37,6 +37,7 @@ def get_http_client(config: Config, cancellation_token: CancellationToken) -> ht
 
 ArgsT = TypeVar("ArgsT", bound=BaseModel, contravariant=True)
 
+
 class BaseTool(BaseCoreTool[ArgsT, BaseModel], Component[Config]):
     """Base class for all Prometheus tools"""
 
@@ -230,6 +231,7 @@ class LabelValuesTool(BaseTool):
     @classmethod
     def _from_config(cls, config: Config) -> "LabelValuesTool":
         return cls(config)
+
 
 class TargetsInput(BaseModel):
     state: Optional[str] = Field(default=None, description="Target state filter, must be one of: active, dropped, any")
