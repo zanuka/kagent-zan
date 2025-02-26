@@ -2,6 +2,7 @@ import os
 import platform
 import re
 import tempfile
+
 from dataclasses import dataclass
 from typing import Annotated, Optional
 
@@ -77,7 +78,6 @@ data:
 """
 
         # Create a temp file with the ConfigMap that adds the trafficRouterPlugins for the Kubernetes Gateway API
-
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as temp_file:
             temp_file.write(config_map)
             temp_file.flush()

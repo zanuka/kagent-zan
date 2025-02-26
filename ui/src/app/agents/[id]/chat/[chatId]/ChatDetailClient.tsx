@@ -7,6 +7,7 @@ import ChatInterface from "@/components/ChatInterface";
 import { Run, Session, SessionWithRuns, Team } from "@/types/datamodel";
 import useChatStore from "@/lib/useChatStore";
 import { deleteSession } from "@/app/actions/sessions";
+import { ChatStatus } from "@/lib/ws";
 
 interface ChatDetailClientProps {
   initialData: {
@@ -20,7 +21,7 @@ interface ChatDetailClientProps {
 
 export default function ChatDetailClient({ initialData, agentId, chatId }: ChatDetailClientProps) {
   const router = useRouter();
-  const { loadChat, cleanup, status } = useChatStore();
+  const { loadChat, cleanup } = useChatStore();
 
   useEffect(() => {
     // Initialize the chat store with the initial data
@@ -29,7 +30,7 @@ export default function ChatDetailClient({ initialData, agentId, chatId }: ChatD
       session: initialData.viewState?.session || null,
       run: initialData.viewState?.run || null,
       messages: initialData.viewState?.run?.messages || [],
-      status: initialData.viewState?.run?.status || "ready",
+      status: initialData.viewState?.run?.status as ChatStatus || "ready",
     });
 
     // Load the chat to set up WebSocket connection if needed
@@ -74,7 +75,6 @@ export default function ChatDetailClient({ initialData, agentId, chatId }: ChatD
         selectedAgentTeam={initialData.agent}
         selectedRun={initialData.viewState?.run}
         selectedSession={initialData.viewState?.session}
-        isReadOnly={status === "complete"}
         onNewSession={onNewSession}
       />
     </ChatLayout>

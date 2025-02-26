@@ -2,7 +2,7 @@ import { getBackendUrl } from "@/lib/utils";
 
 export async function getCurrentUserId() {
   // TODO: this should come from login state
-  return "admin@kagent.io";
+  return "kagent.dev";
 }
 
 type ApiOptions = RequestInit & {
@@ -43,33 +43,7 @@ export async function fetchApi<T>(path: string, options: ApiOptions = {}): Promi
     }
 
     const jsonResponse = await response.json();
-
-    switch (options.method) {
-      case "GET":
-        if (!jsonResponse.hasOwnProperty("data")) {
-          throw new Error("GET response missing data property");
-        }
-        break;
-      case "POST":
-        if (!jsonResponse.hasOwnProperty("data")) {
-          throw new Error("POST response missing data property");
-        }
-        break;
-      case "DELETE":
-        if (Object.keys(jsonResponse).length === 0) {
-          return {} as T;
-        }
-        if (jsonResponse.hasOwnProperty("message")) {
-          return { message: jsonResponse.message } as T;
-        }
-        break;
-      default:
-        if (!jsonResponse.hasOwnProperty("data")) {
-          return jsonResponse as T;
-        }
-    }
-
-    return jsonResponse.data || jsonResponse;
+    return jsonResponse?.data || jsonResponse;
   } catch (error) {
     if (error instanceof TypeError && error.message === "Failed to fetch") {
       throw new Error(`Network error - Could not reach backend server`);

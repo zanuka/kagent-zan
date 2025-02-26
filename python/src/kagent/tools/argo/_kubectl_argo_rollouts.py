@@ -1,5 +1,4 @@
-import asyncio
-from typing import Annotated, List, Optional
+from typing import Annotated, Optional
 
 from autogen_core.tools import FunctionTool
 

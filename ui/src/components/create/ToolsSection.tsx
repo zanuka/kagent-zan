@@ -5,82 +5,51 @@ import { Input } from "@/components/ui/input";
 import { Plus, FunctionSquare, X, Settings2, Download } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
-import { Tool } from "@/lib/types";
-import { getToolDescription, getToolDisplayName, getToolIdentifier, getToolType, InterfaceField, isMcpTool, TOOL_CONFIGS } from "@/lib/data";
+import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
 import { Label } from "../ui/label";
 import { DiscoverToolsDialog } from "./DiscoverToolsDialog";
 import { SelectToolsDialog } from "./SelectToolsDialog";
+import { Component, ToolConfig } from "@/types/datamodel";
 
 interface ToolsSectionProps {
-  allTools: Tool[];
-  selectedTools: Tool[];
-  setSelectedTools: (tools: Tool[]) => void;
+  allTools: Component<ToolConfig>[];
+  selectedTools: Component<ToolConfig>[];
+  setSelectedTools: (tools: Component<ToolConfig>[]) => void;
   isSubmitting: boolean;
 }
 
 export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubmitting }: ToolsSectionProps) => {
   const [showToolSelector, setShowToolSelector] = useState(false);
   const [showDiscoverTools, setShowDiscoverTools] = useState(false);
-  const [configTool, setConfigTool] = useState<Tool | null>(null);
+  const [configTool, setConfigTool] = useState<Component<ToolConfig> | null>(null);
   const [showConfig, setShowConfig] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [discoveredToolsForSelection, setDiscoveredToolsForSelection] = useState<Tool[]>([]);
+  const [discoveredToolsForSelection, setDiscoveredToolsForSelection] = useState<Component<ToolConfig>[]>([]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleConfigSave = (toolProvider: string, newConfig: any) => {
     if (!configTool) return;
 
-    const toolType = getToolType(configTool.provider);
-    const metadata = TOOL_CONFIGS[toolType];
-
-    if (toolType === "unknown") {
-      setShowConfig(false);
-      setConfigTool(null);
-      return;
-    }
-
-    const isValid = validateFields(configTool, metadata);
-
-    if (!isValid) return;
-
-    const updatedTools = selectedTools.map((tool) => (tool.provider === toolProvider ? { ...tool, config: newConfig } : tool));
+    // TODO: this might not be correct (the getToolident)
+    const updatedTools = selectedTools.map((tool) => (getToolIdentifier(tool) === toolProvider ? { ...tool, config: newConfig } : tool));
     setSelectedTools(updatedTools);
     setShowConfig(false);
     setConfigTool(null);
-    setFieldErrors({});
   };
 
-  const handleToolSelect = (newSelectedTools: Tool[]) => {
+  const handleToolSelect = (newSelectedTools: Component<ToolConfig>[]) => {
     setSelectedTools(newSelectedTools);
     setShowToolSelector(false);
     setDiscoveredToolsForSelection([]);
   };
 
   const handleRemoveTool = (toolProvider: string) => {
-    const updatedTools = selectedTools.filter((tool) => tool.provider !== toolProvider);
+    const updatedTools = selectedTools.filter((tool) => getToolIdentifier(tool) !== toolProvider);
     setSelectedTools(updatedTools);
   };
 
-  const validateFields = (tool: Tool, metadata: (typeof TOOL_CONFIGS)[keyof typeof TOOL_CONFIGS]) => {
-    const errors: Record<string, string> = {};
-    let isValid = true;
-
-    if (!metadata.fields) return true;
-
-    metadata.fields.forEach((field: InterfaceField) => {
-      if (field.required && (!tool.config[field.key] || tool.config[field.key].trim() === "")) {
-        errors[field.key] = "This field is required";
-        isValid = false;
-      }
-    });
-
-    setFieldErrors(errors);
-    return isValid;
-  };
-
-  const handleShowSelectTools = (discoveredTools: Tool[]) => {
+  const handleShowSelectTools = (discoveredTools: Component<ToolConfig>[]) => {
     // This will be called from the DiscoverToolsDialog when tools are found
-    const newTools = discoveredTools.filter((tool) => !selectedTools.some((selected) => selected.provider === tool.provider));
+    const newTools = discoveredTools.filter((tool) => !selectedTools.some((selected) => getToolIdentifier(selected) === getToolIdentifier(tool)));
 
     if (newTools.length > 0) {
       setDiscoveredToolsForSelection(newTools);
@@ -91,58 +60,44 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
   const renderConfigDialog = () => {
     if (!configTool) return null;
 
-    const toolType = getToolType(configTool.provider);
-    const metadata = TOOL_CONFIGS[toolType];
-
-    const hasErrors = Object.keys(fieldErrors).length > 0;
+    const configObj = configTool.config;
 
     return (
       <Dialog open={showConfig} onOpenChange={setShowConfig}>
         <DialogContent className="bg-[#2A2A2A] border-[#3A3A3A] text-white">
           <DialogHeader>
-            <DialogTitle>Configure {configTool.label}</DialogTitle>
+            <DialogTitle>Configure {getToolDisplayName(configTool)}</DialogTitle>
           </DialogHeader>
 
           <div className="py-4">
-            {toolType === "unknown" ? (
-              <div className="text-white/70">No configuration options available for this tool.</div>
-            ) : (
-              <div className="space-y-4">
-                {metadata.fields?.map((field: InterfaceField) => (
-                  <div key={field.key} className="space-y-2">
-                    <Label htmlFor={field.key} className="flex items-center">
-                      {field.key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
+            <div className="space-y-4">
+              {Object.keys(configObj)
+                .filter((k) => k !== "description")
+                .map((field: string) => (
+                  <div key={field} className="space-y-2">
+                    <Label htmlFor={field} className="flex items-center">
+                      {field}
                     </Label>
                     <Input
-                      id={field.key}
-                      type={field.type === "string" ? (field.key.includes("password") ? "password" : "text") : field.type}
-                      value={configTool.config[field.key] || ""}
+                      id={field}
+                      type="text"
+                      value={configObj[field as keyof typeof configObj] || ""}
                       onChange={(e) => {
                         const newConfig = {
                           ...configTool.config,
-                          [field.key]: e.target.value,
+                          [field]: e.target.value,
                         };
+
                         setConfigTool({
                           ...configTool,
                           config: newConfig,
                         });
-                        // Clear error when user starts typing
-                        if (fieldErrors[field.key]) {
-                          setFieldErrors((prev) => {
-                            const updated = { ...prev };
-                            delete updated[field.key];
-                            return updated;
-                          });
-                        }
                       }}
-                      className={`bg-[#1A1A1A] border-[#3A3A3A] ${fieldErrors[field.key] ? "border-red-500" : ""}`}
+                      className={`bg-[#1A1A1A] border-[#3A3A3A]`}
                     />
-                    {fieldErrors[field.key] && <div className="text-red-500 text-sm mt-1">{fieldErrors[field.key]}</div>}
                   </div>
                 ))}
-              </div>
-            )}
+            </div>
           </div>
 
           <DialogFooter>
@@ -152,16 +107,11 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
                 onClick={() => {
                   setShowConfig(false);
                   setConfigTool(null);
-                  setFieldErrors({});
                 }}
               >
                 Cancel
               </Button>
-              <Button
-                className="bg-violet-500 hover:bg-violet-600 disabled:opacity-50"
-                onClick={() => handleConfigSave(configTool.provider, configTool.config)}
-                disabled={hasErrors || toolType === "unknown"}
-              >
+              <Button className="bg-violet-500 hover:bg-violet-600 disabled:opacity-50" onClick={() => handleConfigSave(configTool.provider, configTool.config)}>
                 Save Configuration
               </Button>
             </div>
@@ -173,17 +123,17 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
 
   const renderSelectedTools = () => (
     <div className="space-y-2">
-      {selectedTools.map((tool: Tool) => {
+      {selectedTools.map((tool: Component<ToolConfig>) => {
         const displayName = getToolDisplayName(tool);
         const displayDescription = getToolDescription(tool);
         return (
-          <Card key={getToolIdentifier(tool)} className="bg-[#1A1A1A] border-[#3A3A3A]">
+          <Card key={`${getToolIdentifier(tool)}`} className="bg-[#1A1A1A] border-[#3A3A3A]">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center text-xs">
+                <div className="flex items-center text-xs spac">
                   <div className="inline-flex space-x-2 items-center">
                     <FunctionSquare className={`h-4 w-4 ${isMcpTool(tool) ? "text-blue-400" : "text-yellow-500"}`} />
-                    <div className="inline-flex flex-col">
+                    <div className="inline-flex flex-col space-y-1">
                       <span className="text-white">{displayName}</span>
                       <span className="text-white/50">{displayDescription}</span>
                       {isMcpTool(tool) && <span className="text-blue-400/70 text-xs">MCP Tool</span>}
@@ -192,18 +142,19 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setConfigTool(tool);
-                      setShowConfig(true);
-                    }}
-                    disabled={isSubmitting || getToolType(tool.provider) === "unknown"}
-                    className="text-white/50 hover:text-white/90"
-                  >
-                    <Settings2 className="h-4 w-4" />
-                  </Button>
+                  {!isMcpTool(tool) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setConfigTool(tool);
+                        setShowConfig(true);
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      <Settings2 className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => handleRemoveTool(tool.provider)} disabled={isSubmitting} className="text-white/50">
                     <X className="h-4 w-4" />
                   </Button>

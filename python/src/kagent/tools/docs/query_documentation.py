@@ -37,7 +37,7 @@ class Config(BaseModel):
         description="Base URL for downloading the documentation database. If empty, the default URL will be used.",
     )
     openai_api_key: str = Field(
-        default=os.environ.get("OPENAI_API_KEY", ""),
+        default=None,
         description="API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used.",
     )
 
