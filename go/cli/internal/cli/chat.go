@@ -89,6 +89,4 @@ func ChatCmd(c *ishell.Context) {
 	task := c.ReadLine()
 
 	wsClient.StartInteractive(c, team, task)
-
-	c.SetPrompt("kagent> ")
 }

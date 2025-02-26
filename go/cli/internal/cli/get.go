@@ -11,6 +11,11 @@ import (
 )
 
 func GetCmd(c *ishell.Context) {
+	if len(c.Args) == 0 {
+		c.Printf("Usage: get [resource_type] [resource_name]\n")
+		return
+	}
+
 	cfg, err := config.Get()
 	if err != nil {
 		fmt.Printf("Failed to get config: %v\n", err)
@@ -71,11 +76,10 @@ func GetCmd(c *ishell.Context) {
 			}
 			c.Printf("Agent %s: %v\n", resourceName, agent)
 		}
-	case "session":
-		c.Printf("Getting session %s", resourceName)
 	default:
-		c.Printf("Unknown resource type: %s", resourceType)
+		c.Printf("Unknown resource type: %s\n", resourceType)
 	}
+
 }
 
 func printRuns(runs []api.Run) error {
