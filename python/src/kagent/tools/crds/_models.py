@@ -14,4 +14,3 @@ class CRDCreatorToolConfig(BaseModel):
 class CRDCreatorToolInput(BaseModel):
     resource_description: str = Field(description="Detailed description of the resource to generate YAML for")
     resource_type: CRDResourceTypes = Field(description="Type of resource to generate")
-
