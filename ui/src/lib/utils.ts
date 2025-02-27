@@ -1,4 +1,4 @@
-import { LLMCall } from "@/components/LLMCallModal";
+import { LLMCall } from "@/components/chat/LLMCallModal";
 import { FunctionCall, FunctionExecutionResult, ImageContent, TeamResult } from "@/types/datamodel";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -158,6 +158,10 @@ export const messageUtils = {
 
   isTextMessageContent(content: unknown): content is TextMessageConfig {
     return typeof content === "object" && content !== null && "content" in content && "type" in content && content.type === "TextMessage";
+  },
+
+  isStreamingContent(content: unknown): boolean{
+    return typeof content === "object" && content !== null && "type" in content && content.type === "ModelClientStreamingChunkEvent";
   },
 
   isUserTextMessageContent(content: unknown): content is TextMessageConfig {

@@ -1,6 +1,6 @@
 import React, { memo, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import { ChevronUp, ChevronDown, Maximize2, Bot } from "lucide-react";
+import { ChevronUp, ChevronDown, Maximize2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 
@@ -17,6 +17,8 @@ interface TruncatableTextProps {
 export const TruncatableText = memo(({ content, isJson = false, className = "", jsonThreshold = 1000, textThreshold = 500, showFullscreen = true, isStreaming = false }: TruncatableTextProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const threshold = isJson ? jsonThreshold : textThreshold;
+
+  // Only enable truncation for non-streaming, completed messages
   const shouldTruncate = !isStreaming && content.length > threshold;
 
   const toggleExpand = useCallback(() => {
@@ -30,7 +32,17 @@ export const TruncatableText = memo(({ content, isJson = false, className = "", 
       return <pre className="whitespace-pre-wrap">{displayContent.trim()}</pre>;
     }
 
-    return <ReactMarkdown className="prose-md prose prose-invert max-w-none">{displayContent.trim()}</ReactMarkdown>;
+    return (
+      <div className="relative">
+        <ReactMarkdown className={`prose-md prose prose-invert max-w-none ${isStreaming ? "streaming-content" : ""}`}>{displayContent.trim()}</ReactMarkdown>
+
+        {isStreaming && (
+          <div className="inline-flex items-center ml-2">
+            <div className="text-sm text-white/60 mt-1 animate-pulse">...</div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -40,14 +52,10 @@ export const TruncatableText = memo(({ content, isJson = false, className = "", 
           overflow-auto scroll w-full
           ${shouldTruncate && !isExpanded ? "max-h-[300px]" : "max-h-[10000px]"}
           ${className}
+          ${isStreaming ? "streaming" : ""}
         `}
       >
         {renderContent()}
-        {isStreaming && (
-          <span className="ml-1 animate-pulse">
-            <Bot />
-          </span>
-        )}
       </div>
 
       {shouldTruncate && !isStreaming && (

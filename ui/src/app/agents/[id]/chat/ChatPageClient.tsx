@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from "react";
-import ChatInterface from "@/components/ChatInterface";
+import ChatInterface from "@/components/chat/ChatInterface";
 import { ChatLayout } from "@/components/ChatLayout";
 import useChatStore from "@/lib/useChatStore";
 import { Team, Session, Run, SessionWithRuns } from "@/types/datamodel";

@@ -14,7 +14,7 @@ interface ChatState {
   websocketManager: WebSocketManager | null;
   team: Team | null;
   currentStreamingContent: string;
-  currentStreamingMessage: Message | null; // Add this to track the current streaming message
+  currentStreamingMessage: Message | null;
 
   // Actions
   initializeNewChat: (agentId: number) => Promise<void>;
@@ -39,21 +39,17 @@ const useChatStore = create<ChatState>((set, get) => ({
   currentStreamingContent: "",
   currentStreamingMessage: null,
 
-  setSessions: (sessions) => {
-    set({ sessions });
-  },
+  setSessions: (sessions) => set({ sessions }),
 
-  addSession: (session, runs) => {
+  addSession: (session, runs) =>
     set((state) => ({
       sessions: [{ session, runs }, ...state.sessions],
-    }));
-  },
+    })),
 
-  removeSession: (sessionId) => {
+  removeSession: (sessionId) =>
     set((state) => ({
       sessions: state.sessions.filter((s) => s.session.id !== sessionId),
-    }));
-  },
+    })),
 
   initializeNewChat: async (agentId) => {
     try {
@@ -91,147 +87,95 @@ const useChatStore = create<ChatState>((set, get) => ({
     const state = get();
     const { run, session } = state;
 
-    if (!run || !session?.id) return;
-
-    if (!message.data) {
-      console.warn("Received message without data", message);
+    if (!run || !session?.id || !message.data) {
+      console.warn("Invalid message or state", { run, session, message });
       return;
     }
 
     const messageConfig = message.data as AgentMessageConfig;
-    if (message.type === "message" && !messageUtils.isUserTextMessageContent(messageConfig)) {
-      if (
-        messageUtils.isTextMessageContent(messageConfig.content) ||
-        messageUtils.isFunctionExecutionResult(messageConfig.content) ||
-        messageUtils.isToolCallContent(messageConfig.content) ||
-        messageUtils.isMultiModalContent(messageConfig.content) ||
-        messageUtils.isLlmCallEvent(messageConfig.content)
-      ) {
-        const completeMessage = {
-          config: messageConfig,
-          session_id: session.id,
-          run_id: run.id,
-          message_meta: {},
-        };
+    if (messageUtils.isUserTextMessageContent(messageConfig)) {
+      return;
+    }
 
-        // Check for duplicates
-        const isDuplicate = state.messages.some((msg) =>
-          msg.config.content === messageConfig.content &&
-          msg.config.source === messageConfig.source);
-
-        if (isDuplicate) return;
-
-        // If we have a streaming message in progress, finalize it first
-        if (state.currentStreamingContent && state.currentStreamingMessage) {
-          // Create a finalized version of the streaming message
-          const finalizedStreamingMessage = {
-            ...state.currentStreamingMessage,
-            config: {
-              ...state.currentStreamingMessage.config,
-              content: state.currentStreamingContent,
-            },
-          };
-
-          // Update the messages array with the finalized streaming message
-          set((state) => {
-            // Find and replace the streaming message if it exists
-            const messagesWithFinalizedStreaming = state.messages.map(msg => 
-              msg === state.currentStreamingMessage ? finalizedStreamingMessage : msg
-            );
-            
-            // If it wasn't in the array, add it
-            if (state.currentStreamingMessage && !state.messages.includes(state.currentStreamingMessage)) {
-              messagesWithFinalizedStreaming.push(finalizedStreamingMessage);
-            }
-
-            return { messages: messagesWithFinalizedStreaming };
-          });
-        }
-
-        // Update run with the new message
-        const updatedRun = {
-          ...run,
-          messages: [...run.messages, completeMessage],
-          status: message.status || run.status,
-        };
-
-        set((state) => {
-          // Update sessions list with the new run
-          const updatedSessions = state.sessions.map((s) => {
-            if (s.session.id === session.id) {
-              return {
-                ...s,
-                runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)),
-              };
-            }
-            return s;
-          });
-
-          return {
-            messages: [...state.messages, completeMessage],
-            currentStreamingContent: "", // Clear streaming content
-            currentStreamingMessage: null, // Clear streaming message reference
-            run: updatedRun,
-            sessions: updatedSessions,
-          };
-        });
-      } else {
-        // We're getting a chunk of a streaming message
-        // Create or update the streaming message
-        const streamingMessage = state.currentStreamingMessage || {
-          config: {
-            ...messageConfig,
-            content: "",
-          },
-          session_id: session.id,
-          run_id: run.id,
-          message_meta: {},
-        };
-
-        // Update the content with the new chunk
-        const updatedContent = state.currentStreamingContent + messageConfig.content;
-        
-        set({
-          currentStreamingContent: updatedContent,
-          currentStreamingMessage: streamingMessage,
-        });
-      }
-    } else {
-      // For non-streaming messages (e.g. from user or system)
-      const newMessage = {
+    if (
+      messageUtils.isTeamResult(messageConfig) ||
+      messageUtils.isFunctionExecutionResult(messageConfig.content) ||
+      messageUtils.isToolCallContent(messageConfig.content) ||
+      messageUtils.isMultiModalContent(messageConfig.content) ||
+      messageUtils.isLlmCallEvent(messageConfig.content)
+    ) {
+      const systemMessage = {
         config: messageConfig,
         session_id: session.id,
         run_id: run.id,
         message_meta: {},
       };
 
-      // Check for duplicates
-      const isDuplicate = state.messages.some((msg) => msg.config.content === messageConfig.content && msg.config.source === messageConfig.source);
-      if (isDuplicate) return;
+      set((state) => ({
+        messages: [...state.messages, systemMessage],
+        run: {
+          ...run,
+          messages: [...run.messages, systemMessage],
+        },
+      }));
+      return;
+    }
 
-      // Update run with the new message
-      const updatedRun = {
-        ...run,
-        messages: [...run.messages, newMessage],
-        status: message.status || run.status,
+    // Check if this is a streaming chunk or complete message
+    const isStreamingChunk = messageUtils.isStreamingContent(messageConfig)
+
+    if (isStreamingChunk) {
+      // If this is a new streaming message (different source)
+      if (!state.currentStreamingMessage || state.currentStreamingMessage.config.source !== messageConfig.source) {
+        // Create new streaming message
+        const newStreamingMessage = {
+          config: messageConfig,
+          session_id: session.id,
+          run_id: run.id,
+          message_meta: {},
+        };
+        set({
+          currentStreamingMessage: newStreamingMessage,
+          currentStreamingContent: String(messageConfig.content),
+        });
+      } else {
+        // Append to existing streaming content
+        set((state) => ({
+          currentStreamingContent: state.currentStreamingContent + messageConfig.content,
+        }));
+      }
+    } else {
+      // For non-streaming/complete messages
+      const completeMessage = {
+        config: messageConfig,
+        session_id: session.id,
+        run_id: run.id,
+        message_meta: {},
       };
 
       set((state) => {
-        // Update sessions list with the new run
-        const updatedSessions = state.sessions.map((s) => {
-          if (s.session.id === session.id) {
-            return {
-              ...s,
-              runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)),
-            };
-          }
-          return s;
-        });
+        const updatedMessages = [...state.messages, completeMessage];
+        const updatedRun = {
+          ...run,
+          messages: updatedMessages,
+          status: message.status || run.status,
+        };
+
+        const updatedSessions = state.sessions.map((s) =>
+          s.session.id === session.id
+            ? {
+                ...s,
+                runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)),
+              }
+            : s
+        );
 
         return {
-          messages: [...state.messages, newMessage],
+          messages: updatedMessages,
           run: updatedRun,
           sessions: updatedSessions,
+          currentStreamingContent: "",
+          currentStreamingMessage: null,
         };
       });
     }
@@ -239,8 +183,6 @@ const useChatStore = create<ChatState>((set, get) => ({
 
   sendUserMessage: async (content, agentId) => {
     const state = get();
-
-    // Immediately set status to "thinking"
     set({ status: "thinking" });
 
     try {
@@ -252,66 +194,21 @@ const useChatStore = create<ChatState>((set, get) => ({
 
       const currentState = get();
       const { session, run, team } = currentState;
-      if (!session?.id || !run) {
-        throw new Error("Failed to create session");
+      if (!session?.id || !run || !team) {
+        throw new Error("Failed to initialize chat session");
       }
 
-      if (!team) {
-        throw new Error("Failed to get team details");
-      }
-
-      // Finalize any streaming message before sending a new one
-      if (currentState.currentStreamingContent && currentState.currentStreamingMessage) {
-        // Create a finalized version of the streaming message
-        const finalizedStreamingMessage = {
-          ...currentState.currentStreamingMessage,
-          config: {
-            ...currentState.currentStreamingMessage.config,
-            content: currentState.currentStreamingContent,
-          },
-        };
-
-        // Update the messages array with the finalized streaming message
-        set((state) => {
-          // Replace the streaming message if it exists in the array
-          const messagesWithFinalizedStreaming = state.messages.map(msg =>
-            msg === state.currentStreamingMessage ? finalizedStreamingMessage : msg
-          );
-          
-
-          // If it wasn't in the array, add it
-          if (state.currentStreamingMessage && !state.messages.includes(state.currentStreamingMessage)) {
-            messagesWithFinalizedStreaming.push(finalizedStreamingMessage);
-          }
-
-          // Clear streaming state
-          return { 
-            messages: messagesWithFinalizedStreaming,
-            currentStreamingContent: "",
-            currentStreamingMessage: null,
-          };
-        });
-      }
-      
-      // Create and store message on server
+      // Send the message
       const userMessage = await sendMessage(content, run.id, session.id);
 
-      // Update both local state and sessions list regardless of whether this is the first message
+      // Update state with user message
       set((state) => {
         const updatedRun = {
           ...run,
           messages: [...run.messages, userMessage],
         };
 
-        const updatedSessions = state.sessions.map((s) => {
-          if (s.session.id === session.id) {
-            return {
-              ...s,
-              runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)),
-            };
-          }
-          return s;
-        });
+        const updatedSessions = state.sessions.map((s) => (s.session.id === session.id ? { ...s, runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)) } : s));
 
         return {
           messages: [...state.messages, userMessage],
@@ -324,11 +221,11 @@ const useChatStore = create<ChatState>((set, get) => ({
       let manager = currentState.websocketManager;
 
       if (!manager) {
-        // First message - setup WebSocket with initial message
+        // First message - setup WebSocket
         const startMessage: InitialMessage = {
           type: "start",
           task: content,
-          team_config: team?.component,
+          team_config: team.component,
         };
 
         manager = setupWebSocket(
@@ -342,25 +239,22 @@ const useChatStore = create<ChatState>((set, get) => ({
                 set({ status: "ready" });
               }
             },
-            onStatusChange: (status) => {
-              set({ status });
-            },
+            onStatusChange: (status) => set({ status }),
           },
           startMessage
         );
 
         set({ websocketManager: manager });
-        // Return here because the first message is sent via the startMessage
-        return;
       } else {
         // Subsequent messages - send as input_response
-        const messagePayload = {
-          type: "input_response",
-          response: content,
-          runId: run.id,
-          sessionId: session.id,
-        };
-        manager.send(JSON.stringify(messagePayload));
+        manager.send(
+          JSON.stringify({
+            type: "input_response",
+            response: content,
+            runId: run.id,
+            sessionId: session.id,
+          })
+        );
       }
     } catch (error) {
       set({
@@ -383,12 +277,7 @@ const useChatStore = create<ChatState>((set, get) => ({
         get().addSession(session, [run]);
       }
 
-      // Determine initial status based on run status
-      let initialStatus: ChatStatus = "ready";
-
-      if (run.status === "error" || run.status === "timeout") {
-        initialStatus = "error";
-      }
+      const initialStatus: ChatStatus = run.status === "error" || run.status === "timeout" ? "error" : "ready";
 
       set({
         session,

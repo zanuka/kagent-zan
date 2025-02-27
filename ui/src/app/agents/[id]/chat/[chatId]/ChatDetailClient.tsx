@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ChatLayout } from "@/components/ChatLayout";
-import ChatInterface from "@/components/ChatInterface";
+import ChatInterface from "@/components/chat/ChatInterface";
 import { Run, Session, SessionWithRuns, Team } from "@/types/datamodel";
 import useChatStore from "@/lib/useChatStore";
 import { deleteSession } from "@/app/actions/sessions";

@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Team, Message, RunStatus, Session, Run } from "@/types/datamodel";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import ChatMessage from "./ChatMessage";
+import ChatMessage from "@/components/chat/ChatMessage";
 import useChatStore from "@/lib/useChatStore";
 import { ChatStatus } from "@/lib/ws";
+import StreamingMessage from "./StreamingMessage";
 
 interface TokenStats {
   total: number;
@@ -189,10 +190,12 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
               </div>
             )}
             {displayMessages.map((msg, index) => (
-              <ChatMessage key={`${msg.run_id}-${index}`} message={msg} run={actualRun} isStreaming={false} />
+              <ChatMessage key={`${msg.run_id}-${msg.config.source}-${index}`} message={msg} run={actualRun} />
             ))}
-            {showStreamingMessage && (
-              <ChatMessage
+
+            {showStreamingMessage && currentStreamingMessage && (
+              <StreamingMessage
+                key={`streaming-${currentStreamingMessage.config.source}`}
                 message={{
                   ...currentStreamingMessage,
                   config: {
@@ -200,8 +203,6 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
                     content: currentStreamingContent,
                   },
                 }}
-                run={actualRun}
-                isStreaming={true}
               />
             )}
           </div>
