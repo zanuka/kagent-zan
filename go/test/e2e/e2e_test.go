@@ -41,52 +41,52 @@ var _ = Describe("E2e", func() {
 			},
 		}
 
-		modelConfig := &v1alpha1.AutogenModelConfig{
+		modelConfig := &v1alpha1.ModelConfig{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-model",
 				Namespace: namespace,
 			},
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "AutogenModelConfig",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
+				APIVersion: "kagent.dev/v1alpha1",
 			},
-			Spec: v1alpha1.AutogenModelConfigSpec{
+			Spec: v1alpha1.ModelConfigSpec{
 				Model:            "gpt-4o",
 				APIKeySecretName: apikeySecret.Name,
 				APIKeySecretKey:  apikeySecretKey,
 			},
 		}
 
-		planningAgent := &v1alpha1.AutogenAgent{
+		planningAgent := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "planning-agent",
 				Namespace: namespace,
 			},
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "AutogenAgent",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
+				APIVersion: "kagent.dev/v1alpha1",
 			},
-			Spec: v1alpha1.AutogenAgentSpec{
+			Spec: v1alpha1.AgentSpec{
 				Name:          "planning_agent",
 				Description:   "The Planning Agent is responsible for planning and scheduling tasks. The planning agent is also responsible for deciding when the user task has been accomplished and terminating the conversation.",
 				SystemMessage: readFileAsString("systemprompts/planning-agent-system-prompt.txt"),
 			},
 		}
 
-		kubectlUser := &v1alpha1.AutogenAgent{
+		kubectlUser := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kubectl-user",
 				Namespace: namespace,
 			},
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "AutogenAgent",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
+				APIVersion: "kagent.dev/v1alpha1",
 			},
-			Spec: v1alpha1.AutogenAgentSpec{
+			Spec: v1alpha1.AgentSpec{
 				Name:          "kubectl_execution_agent",
 				Description:   "The Kubectl User is responsible for running kubectl commands corresponding to user requests.",
 				SystemMessage: readFileAsString("systemprompts/kubectl-user-system-prompt.txt"),
-				Tools: []v1alpha1.AutogenTool{
+				Tools: []v1alpha1.Tool{
 					{
 						Provider: string(v1alpha1.BuiltinTool_KubectlGetPods),
 					},
@@ -114,32 +114,32 @@ var _ = Describe("E2e", func() {
 			},
 		}
 
-		kubeExpert := &v1alpha1.AutogenAgent{
+		kubeExpert := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kube-expert",
 				Namespace: namespace,
 			},
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "AutogenAgent",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
+				APIVersion: "kagent.dev/v1alpha1",
 			},
-			Spec: v1alpha1.AutogenAgentSpec{
+			Spec: v1alpha1.AgentSpec{
 				Name:          "kubernetes_expert_agent",
 				Description:   "The Kubernetes Expert AI Agent specializing in cluster operations, troubleshooting, and maintenance.",
 				SystemMessage: readFileAsString("systemprompts/kube-expert-system-prompt.txt"),
 			},
 		}
 
-		apiTeam := &v1alpha1.AutogenTeam{
+		apiTeam := &v1alpha1.Team{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kube-team",
 				Namespace: namespace,
 			},
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "AutogenTeam",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
+				APIVersion: "kagent.dev/v1alpha1",
 			},
-			Spec: v1alpha1.AutogenTeamSpec{
+			Spec: v1alpha1.TeamSpec{
 				Participants: []string{
 					planningAgent.Name,
 					kubectlUser.Name,

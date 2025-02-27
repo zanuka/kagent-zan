@@ -11,8 +11,8 @@ openai:
 
 controller:
   image:
-    registry: gcr.io
-    repository: solo-io-kagent/autogenstudio-controller
+    registry: ghcr.io
+    repository: kagent-dev/kagent/autogenstudio-controller
     tag: ""  # Will default to global, then Chart version
     pullPolicy: IfNotPresent
   resources:
@@ -25,8 +25,8 @@ controller:
 
 app:
   image:
-    registry: gcr.io
-    repository: solo-io-kagent/kagent-app
+    registry: ghcr.io
+    repository: kagent-dev/kagent/kagent-app
     tag: ""  # Will default to global, then Chart version
     pullPolicy: IfNotPresent
   resources:

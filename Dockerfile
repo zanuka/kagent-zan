@@ -3,6 +3,8 @@ FROM node:18-alpine AS ui-builder
 WORKDIR /app/ui
 
 COPY ui/package*.json ./
+RUN mkdir -p /app/ui/public
+
 RUN npm ci
 
 COPY ui/ .
@@ -70,6 +72,7 @@ RUN uv run tool_gen && \
 
 # Set up Next.js UI
 WORKDIR /app/ui
+
 COPY --from=ui-builder /app/ui/next.config.ts ./
 COPY --from=ui-builder /app/ui/public ./public
 COPY --from=ui-builder /app/ui/package.json ./package.json

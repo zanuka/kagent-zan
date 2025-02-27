@@ -42,6 +42,9 @@ kagent = { workspace = true }
 [tool.ruff]
 line-length = 120
 fix = true
+exclude = [
+  "notebooks/",
+]
 
 target-version = "py312"
 
