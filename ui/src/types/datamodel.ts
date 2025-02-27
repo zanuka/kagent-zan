@@ -134,6 +134,7 @@ export interface AssistantAgentConfig {
   system_message?: string;
   reflect_on_tool_use: boolean;
   tool_call_summary_format: string;
+  model_client_stream: boolean;
 }
 
 export interface UserProxyAgentConfig {

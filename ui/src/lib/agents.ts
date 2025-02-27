@@ -111,6 +111,7 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
       system_message: formData.system_prompt,
       reflect_on_tool_use: true,
       tool_call_summary_format: "{result}",
+      model_client_stream: true,
     },
   };
 
