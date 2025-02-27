@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 	"github.com/kagent-dev/kagent/go/autogen/api"
 )
@@ -56,8 +56,16 @@ func NewClient(wsURL string, runID string, config Config) (*Client, error) {
 	}, nil
 }
 
+type Shell interface {
+	ReadLine() string
+	// Println prints to output and ends with newline character.
+	Println(val ...interface{})
+	// Printf prints to output using string format.
+	Printf(format string, val ...interface{})
+}
+
 // StartInteractive initiates the interactive session with the server
-func (c *Client) StartInteractive(team api.Team, task string) error {
+func (c *Client) StartInteractive(ctx Shell, team api.Team, task string) error {
 	defer c.conn.Close()
 
 	interrupt := make(chan os.Signal, 1)
@@ -75,7 +83,7 @@ func (c *Client) StartInteractive(team api.Team, task string) error {
 		return fmt.Errorf("failed to send start message: %v", err)
 	}
 
-	go c.handleMessages(inputTimeout)
+	go c.handleMessages(ctx, inputTimeout)
 
 	select {
 	case <-interrupt:
@@ -112,19 +120,25 @@ func getMessageContentType(data json.RawMessage) (ContentType, error) {
 	return ContentType(typeStr), nil
 }
 
-func (c *Client) handleMessages(inputTimeout chan struct{}) {
+func (c *Client) handleMessages(ctx Shell, inputTimeout chan struct{}) {
 	defer close(c.done)
+	bold_yellow := color.New(color.FgYellow, color.Bold).SprintFunc()
+	bold_green := color.New(color.FgGreen, color.Bold).SprintFunc()
 
+	// Tool call requests and executions are sent as separate messages, but we should print them together
+	// so if we receive a tool call request, we buffer it until we receive the corresponding tool call execution
+	// We only need to buffer one request and one execution at a time
+	var bufferedToolCallRequest *ToolCallRequest
 	for {
 		var msg BaseWebSocketMessage
 		err := c.conn.ReadJSON(&msg)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading message: %v\n", err)
+			ctx.Printf("Error reading message: %v\n", err)
 			return
 		}
 		switch msg.Type {
 		case MessageTypeError:
-			fmt.Fprintf(os.Stderr, "Error: %s\n", msg.Error)
+			ctx.Printf("Error: %s\n", msg.Error)
 			return
 
 		case MessageTypeMessage:
@@ -137,48 +151,75 @@ func (c *Client) handleMessages(inputTimeout chan struct{}) {
 			case ContentTypeText:
 				var textMessage TextMessage
 				if err := json.Unmarshal(msg.Data, &textMessage); err != nil {
-					fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
+					ctx.Printf("Error parsing message data: %v\n", err)
 					continue
 				}
-				fmt.Printf("%s: %s\n", textMessage.Source, textMessage.Content)
+				// Do not re-print the user's input, or system message asking for input
+				if textMessage.Source == "user" || textMessage.Source == "system" {
+					continue
+				}
+				ctx.Printf("%s: %s\n", bold_yellow("Event Type"), contentType)
+				ctx.Printf("%s: %s\n", bold_green("Source"), textMessage.Source)
+				ctx.Println()
+				ctx.Println(textMessage.Content)
+				ctx.Println("----------------------------------")
+				ctx.Println()
 			case ContentTypeToolCallRequest:
 				var toolCallRequest ToolCallRequest
 				if err := json.Unmarshal(msg.Data, &toolCallRequest); err != nil {
-					fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
+					ctx.Printf("Error parsing message data: %v\n", err)
 					continue
 				}
-				fmt.Printf("%s (function call request) \n", toolCallRequest.Source)
-				for _, functionCall := range toolCallRequest.Content {
-					fmt.Printf("  %s(%s)\n", functionCall.Name, functionCall.Arguments)
-				}
+				// Buffer the tool call request until we receive the corresponding tool call execution
+				bufferedToolCallRequest = &toolCallRequest
 
 			case ContentTypeToolCallExecution:
 				var toolCallExecution ToolCallExecution
 				if err := json.Unmarshal(msg.Data, &toolCallExecution); err != nil {
-					fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
+					ctx.Printf("Error parsing message data: %v\n", err)
 					continue
 				}
-				fmt.Printf("%s (function call execution)\n", toolCallExecution.Source)
-				for _, functionExecution := range toolCallExecution.Content {
-					fmt.Printf("%s\n", functionExecution.Content)
+				ctx.Printf("%s: %s\n", bold_yellow("Event Type"), "ToolCall(s)")
+				ctx.Printf("%s: %s\n", bold_green("Source"), toolCallExecution.Source)
+
+				// For each function execution, find the corresponding tool call request and print them together
+				for i, functionExecution := range toolCallExecution.Content {
+					for _, functionRequest := range bufferedToolCallRequest.Content {
+						if functionExecution.CallID == functionRequest.ID {
+							ctx.Println()
+							ctx.Println("++++++++")
+							ctx.Printf("Tool Call %d: (id: %s)\n", i, functionRequest.ID)
+							ctx.Println()
+							ctx.Printf("%s(%s)\n", functionRequest.Name, functionRequest.Arguments)
+							ctx.Println()
+							ctx.Println(functionExecution.Content)
+							ctx.Println("++++++++")
+							ctx.Println()
+						}
+					}
 				}
+
+				ctx.Println("----------------------------------")
+				ctx.Println()
+				// Reset the buffered tool call request now that we've received the execution
+				bufferedToolCallRequest = nil
 			}
 
 		case MessageTypeInputRequest:
 			go c.handleInputTimeout(inputTimeout)
-			if err := c.handleUserInput(msg.Data); err != nil {
-				fmt.Fprintf(os.Stderr, "Error handling input: %v\n", err)
+			if err := c.handleUserInput(ctx, msg.Data); err != nil {
+				ctx.Printf("Error handling input: %v\n", err)
 				return
 			}
 
 		case MessageTypeResult, MessageTypeCompletion:
 			var msgResult CompletionMessage
 			if err := json.Unmarshal(msg.Data, &msgResult); err != nil {
-				fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
+				ctx.Printf("Error parsing message data: %v\n", err)
 				continue
 			}
 
-			fmt.Printf("\n(%s) Task completed:\n%s", msgResult.Status, msgResult.Data)
+			ctx.Printf("\n(%s) Task completed:\n%s", msgResult.Status, msgResult.Data)
 		}
 
 	}
@@ -200,20 +241,16 @@ func (c *Client) handleInputTimeout(inputTimeout chan struct{}) {
 	}
 }
 
-func (c *Client) handleUserInput(msg json.RawMessage) error {
+func (c *Client) handleUserInput(ctx Shell, msg json.RawMessage) error {
 	var inputRequest InputRequestMessage
 	if err := json.Unmarshal(msg, &inputRequest); err != nil {
 		return fmt.Errorf("error parsing input request: %v", err)
 	}
-	fmt.Printf("%s: %s\n", inputRequest.Source, inputRequest.Content)
-	scanner := bufio.NewScanner(os.Stdin)
-	if scanner.Scan() {
-		response := scanner.Text()
-		inputMsg := InputResponseMessage{
-			Type:     MessageTypeInputResponse,
-			Response: response,
-		}
-		return c.conn.WriteJSON(inputMsg)
+	// fmt.Printf("%s: %s\n", inputRequest.Source, inputRequest.Content)
+	input := ctx.ReadLine()
+	inputMsg := InputResponseMessage{
+		Type:     MessageTypeInputResponse,
+		Response: input,
 	}
-	return fmt.Errorf("failed to read user input")
+	return c.conn.WriteJSON(inputMsg)
 }

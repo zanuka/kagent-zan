@@ -14,8 +14,8 @@ const (
 	OutputFormatTable OutputFormat = "table"
 )
 
-// PrintOutput handles the output formatting based on the configured output format
-func PrintOutput(data interface{}, tableHeaders []string, tableRows [][]string) error {
+// printOutput handles the output formatting based on the configured output format
+func printOutput(data interface{}, tableHeaders []string, tableRows [][]string) error {
 	format := OutputFormat(viper.GetString("output_format"))
 
 	switch format {
