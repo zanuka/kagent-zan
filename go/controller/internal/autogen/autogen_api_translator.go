@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const GlobalUserID = "guestuser@gmail.com"
+const GlobalUserID = "admin@kagent.io"
 
 type ApiTranslator interface {
 	TranslateGroupChatForTeam(
