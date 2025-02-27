@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"fmt"
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -18,7 +18,7 @@ func GetCmd(c *ishell.Context) {
 
 	cfg, err := config.Get()
 	if err != nil {
-		fmt.Printf("Failed to get config: %v\n", err)
+		c.Printf("Failed to get config: %v\n", err)
 		return
 	}
 
@@ -55,7 +55,8 @@ func GetCmd(c *ishell.Context) {
 				c.Printf("Failed to get run %s: %v\n", resourceName, err)
 				return
 			}
-			c.Printf("Run %s: %v\n", resourceName, run)
+			byt, _ := json.MarshalIndent(run, "", "  ")
+			c.Println(string(byt))
 		}
 	case "agent":
 		if resourceName == "" {
@@ -74,7 +75,8 @@ func GetCmd(c *ishell.Context) {
 				c.Printf("Failed to get agent %s: %v\n", resourceName, err)
 				return
 			}
-			c.Printf("Agent %s: %v\n", resourceName, agent)
+			byt, _ := json.MarshalIndent(agent, "", "  ")
+			c.Println(string(byt))
 		}
 	default:
 		c.Printf("Unknown resource type: %s\n", resourceType)

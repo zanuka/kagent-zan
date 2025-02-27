@@ -59,6 +59,16 @@ Examples:
 		},
 	})
 
+	shell.NotFound(func(c *ishell.Context) {
+		// Hidden create command
+		if len(c.Args) > 0 && c.Args[0] == "create" {
+			cli.CreateCmd(c)
+			c.SetPrompt(bold_blue("kagent >> "))
+		} else {
+			c.Println("Command not found. Type 'help' to see available commands.")
+		}
+	})
+
 	shell.AddCmd(&ishell.Cmd{
 		Name:    "install",
 		Aliases: []string{"i"},
@@ -68,6 +78,7 @@ Examples:
 			c.SetPrompt(bold_blue("kagent >> "))
 		},
 	})
+
 	shell.AddCmd(&ishell.Cmd{
 		Name:    "uninstall",
 		Aliases: []string{"u"},
