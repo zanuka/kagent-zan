@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Team, Message, RunStatus, Session, Run } from "@/types/datamodel";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import ChatMessage from "./ChatMessage";
+import ChatMessage from "@/components/chat/ChatMessage";
 import useChatStore from "@/lib/useChatStore";
 import { ChatStatus } from "@/lib/ws";
+import StreamingMessage from "./StreamingMessage";
 
 interface TokenStats {
   total: number;
@@ -50,7 +51,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
     output: 0,
   });
 
-  const { status, messages, run, sendUserMessage, cleanup } = useChatStore();
+  const { status, messages, run, sendUserMessage, cleanup, currentStreamingContent, currentStreamingMessage } = useChatStore();
 
   useEffect(() => {
     return () => {
@@ -62,7 +63,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, currentStreamingContent]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -166,12 +167,15 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
   const runStatus = actualRun?.status;
   const canSendMessage = status !== "thinking" && runStatus !== "complete" && runStatus !== "error" && runStatus !== "stopped";
 
+  // Should we show the streaming message?
+  const showStreamingMessage = !selectedRun && currentStreamingContent && currentStreamingMessage;
+
   return (
     <div className="w-full h-screen flex flex-col justify-center transition-all duration-300 ease-in-out pt-[1.5rem]">
       <div ref={containerRef} className="flex-1 overflow-y-auto my-8 transition-all duration-300 p-4 -translate-y-[1.5rem]">
         <ScrollArea>
           <div className="flex flex-col space-y-5">
-            {displayMessages.length === 0 && (
+            {displayMessages.length === 0 && !showStreamingMessage && (
               <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
                 <MessageSquarePlus className="mb-4 h-8 w-8 text-violet-500" />
                 <h3 className="mb-2 text-xl font-medium text-white/90">Ready to start chatting?</h3>
@@ -186,8 +190,21 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
               </div>
             )}
             {displayMessages.map((msg, index) => (
-              <ChatMessage key={index} message={msg} run={actualRun} />
+              <ChatMessage key={`${msg.run_id}-${msg.config.source}-${index}`} message={msg} run={actualRun} />
             ))}
+
+            {showStreamingMessage && currentStreamingMessage && (
+              <StreamingMessage
+                key={`streaming-${currentStreamingMessage.config.source}`}
+                message={{
+                  ...currentStreamingMessage,
+                  config: {
+                    ...currentStreamingMessage.config,
+                    content: currentStreamingContent,
+                  },
+                }}
+              />
+            )}
           </div>
         </ScrollArea>
       </div>

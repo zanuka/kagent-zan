@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { ChatStatus, setupWebSocket, WebSocketManager } from "./ws";
 import { AgentMessageConfig, InitialMessage, Message, Run, Session, Team, WebSocketMessage, SessionWithRuns } from "@/types/datamodel";
 import { loadExistingChat, sendMessage, startNewChat } from "@/app/actions/chat";
+import { messageUtils } from "./utils";
 
 interface ChatState {
   session: Session | null;
@@ -12,6 +13,8 @@ interface ChatState {
   error: string | null;
   websocketManager: WebSocketManager | null;
   team: Team | null;
+  currentStreamingContent: string;
+  currentStreamingMessage: Message | null;
 
   // Actions
   initializeNewChat: (agentId: number) => Promise<void>;
@@ -33,34 +36,28 @@ const useChatStore = create<ChatState>((set, get) => ({
   error: null,
   websocketManager: null,
   team: null,
+  currentStreamingContent: "",
+  currentStreamingMessage: null,
 
-  setSessions: (sessions) => {
-    set({ sessions });
-  },
+  setSessions: (sessions) => set({ sessions }),
 
-  addSession: (session, runs) => {
+  addSession: (session, runs) =>
     set((state) => ({
       sessions: [{ session, runs }, ...state.sessions],
-    }));
-  },
+    })),
 
-  removeSession: (sessionId) => {
+  removeSession: (sessionId) =>
     set((state) => ({
       sessions: state.sessions.filter((s) => s.session.id !== sessionId),
-    }));
-  },
-
+    })),
 
   initializeNewChat: async (agentId) => {
     try {
       // Clean up any existing websocket
       get().cleanup();
-  
       const { team, session, run } = await startNewChat(agentId);
-  
       // Add the new session to sessions list
       get().addSession(session, [run]);
-  
       set({
         team,
         session,
@@ -69,6 +66,8 @@ const useChatStore = create<ChatState>((set, get) => ({
         status: "ready",
         error: null,
         websocketManager: null,
+        currentStreamingContent: "",
+        currentStreamingMessage: null,
       });
     } catch (error) {
       set({
@@ -78,6 +77,8 @@ const useChatStore = create<ChatState>((set, get) => ({
         run: null,
         messages: [],
         websocketManager: null,
+        currentStreamingContent: "",
+        currentStreamingMessage: null,
       });
     }
   },
@@ -86,113 +87,147 @@ const useChatStore = create<ChatState>((set, get) => ({
     const state = get();
     const { run, session } = state;
 
-    if (!run || !session?.id) return;
-
-    if (!message.data) {
-      console.warn("Received message without data", message);
+    if (!run || !session?.id || !message.data) {
+      console.warn("Invalid message or state", { run, session, message });
       return;
     }
 
     const messageConfig = message.data as AgentMessageConfig;
-    const newMessage = {
-      config: messageConfig,
-      session_id: session.id,
-      run_id: run.id,
-      message_meta: {},
-    };
-    const isDuplicate = state.messages.some((msg) => msg.config.content === messageConfig.content && msg.config.source === messageConfig.source);
-    if (isDuplicate) return;
+    if (messageUtils.isUserTextMessageContent(messageConfig)) {
+      return;
+    }
 
-    // Update the run in both the current session and sessions list
-    const updatedRun = {
-      ...run,
-      messages: [...run.messages, newMessage],
-      status: message.status || run.status,
-    };
-
-    set((state) => {
-      // Update the sessions list with the new run
-      const updatedSessions = state.sessions.map((s) => {
-        if (s.session.id === session.id) {
-          return {
-            ...s,
-            runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)),
-          };
-        }
-        return s;
-      });
-
-      return {
-        messages: [...state.messages, newMessage],
-        run: updatedRun,
-        sessions: updatedSessions,
-        // Status will already be set to "ready" by the WebSocket handler
+    if (
+      messageUtils.isTeamResult(messageConfig) ||
+      messageUtils.isFunctionExecutionResult(messageConfig.content) ||
+      messageUtils.isToolCallContent(messageConfig.content) ||
+      messageUtils.isMultiModalContent(messageConfig.content) ||
+      messageUtils.isLlmCallEvent(messageConfig.content)
+    ) {
+      const systemMessage = {
+        config: messageConfig,
+        session_id: session.id,
+        run_id: run.id,
+        message_meta: {},
       };
-    });
-    
-    // Don't explicitly set status here since the WebSocket handler takes care of it
+
+      set((state) => ({
+        messages: [...state.messages, systemMessage],
+        run: {
+          ...run,
+          messages: [...run.messages, systemMessage],
+        },
+      }));
+      return;
+    }
+
+    // Check if this is a streaming chunk or complete message
+    const isStreamingChunk = messageUtils.isStreamingContent(messageConfig)
+
+    if (isStreamingChunk) {
+      // If this is a new streaming message (different source)
+      if (!state.currentStreamingMessage || state.currentStreamingMessage.config.source !== messageConfig.source) {
+        // Create new streaming message
+        const newStreamingMessage = {
+          config: messageConfig,
+          session_id: session.id,
+          run_id: run.id,
+          message_meta: {},
+        };
+        set({
+          currentStreamingMessage: newStreamingMessage,
+          currentStreamingContent: String(messageConfig.content),
+        });
+      } else {
+        // Append to existing streaming content
+        set((state) => ({
+          currentStreamingContent: state.currentStreamingContent + messageConfig.content,
+        }));
+      }
+    } else {
+      // For non-streaming/complete messages
+      const completeMessage = {
+        config: messageConfig,
+        session_id: session.id,
+        run_id: run.id,
+        message_meta: {},
+      };
+
+      set((state) => {
+        const updatedMessages = [...state.messages, completeMessage];
+        const updatedRun = {
+          ...run,
+          messages: updatedMessages,
+          status: message.status || run.status,
+        };
+
+        const updatedSessions = state.sessions.map((s) =>
+          s.session.id === session.id
+            ? {
+                ...s,
+                runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)),
+              }
+            : s
+        );
+
+        return {
+          messages: updatedMessages,
+          run: updatedRun,
+          sessions: updatedSessions,
+          currentStreamingContent: "",
+          currentStreamingMessage: null,
+        };
+      });
+    }
   },
 
   sendUserMessage: async (content, agentId) => {
     const state = get();
-    
-    // Immediately set status to "thinking"
     set({ status: "thinking" });
-    
+
     try {
       // If no session exists, create one
       if (!state.session || !state.run) {
         await get().initializeNewChat(agentId);
         set({ status: "thinking" });
       }
-  
+
       const currentState = get();
       const { session, run, team } = currentState;
-      if (!session?.id || !run) {
-        throw new Error("Failed to create session");
+      if (!session?.id || !run || !team) {
+        throw new Error("Failed to initialize chat session");
       }
 
-      if (!team) {
-        throw new Error("Failed to get team details");
-      }
-      // Create and store message on server
+      // Send the message
       const userMessage = await sendMessage(content, run.id, session.id);
-      
-      // Update both local state and sessions list regardless of whether this is the first message
+
+      // Update state with user message
       set((state) => {
         const updatedRun = {
           ...run,
           messages: [...run.messages, userMessage],
         };
-  
-        const updatedSessions = state.sessions.map((s) => {
-          if (s.session.id === session.id) {
-            return {
-              ...s,
-              runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)),
-            };
-          }
-          return s;
-        });
-  
+
+        const updatedSessions = state.sessions.map((s) => (s.session.id === session.id ? { ...s, runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)) } : s));
+
         return {
           messages: [...state.messages, userMessage],
           run: updatedRun,
           sessions: updatedSessions,
         };
       });
-      
+
       // Check if we already have a websocket manager
       let manager = currentState.websocketManager;
-      
+
       if (!manager) {
-        // First message - setup WebSocket with initial message
+        // First message - setup WebSocket
         const startMessage: InitialMessage = {
           type: "start",
           task: content,
-          team_config: team?.component,
+          team_config: team.component,
         };
-  
+
         manager = setupWebSocket(
           run.id,
           {
@@ -204,30 +239,27 @@ const useChatStore = create<ChatState>((set, get) => ({
                 set({ status: "ready" });
               }
             },
-            onStatusChange: (status) => {
-              set({ status });
-            },
+            onStatusChange: (status) => set({ status }),
           },
           startMessage
         );
-  
+
         set({ websocketManager: manager });
-        // Return here because the first message is sent via the startMessage
-        return;
       } else {
         // Subsequent messages - send as input_response
-        const messagePayload = {
-          type: "input_response",
-          response: content,
-          runId: run.id,
-          sessionId: session.id,
-        };
-        manager.send(JSON.stringify(messagePayload));
+        manager.send(
+          JSON.stringify({
+            type: "input_response",
+            response: content,
+            runId: run.id,
+            sessionId: session.id,
+          })
+        );
       }
     } catch (error) {
-      set({ 
-        error: `Failed to send message: ${error}`, 
-        status: "error" 
+      set({
+        error: `Failed to send message: ${error}`,
+        status: "error",
       });
     }
   },
@@ -245,13 +277,8 @@ const useChatStore = create<ChatState>((set, get) => ({
         get().addSession(session, [run]);
       }
 
-      // Determine initial status based on run status
-      let initialStatus: ChatStatus = "ready";
-      
-      if (run.status === "error" || run.status === "timeout") {
-        initialStatus = "error";
-      }
-      
+      const initialStatus: ChatStatus = run.status === "error" || run.status === "timeout" ? "error" : "ready";
+
       set({
         session,
         run,
@@ -260,6 +287,8 @@ const useChatStore = create<ChatState>((set, get) => ({
         status: initialStatus,
         error: run.error_message || null,
         websocketManager: null,
+        currentStreamingContent: "",
+        currentStreamingMessage: null,
       });
     } catch (error) {
       set({
@@ -269,6 +298,8 @@ const useChatStore = create<ChatState>((set, get) => ({
         run: null,
         messages: [],
         websocketManager: null,
+        currentStreamingContent: "",
+        currentStreamingMessage: null,
       });
     }
   },
@@ -286,6 +317,8 @@ const useChatStore = create<ChatState>((set, get) => ({
       websocketManager: null,
       error: null,
       team: null,
+      currentStreamingContent: "",
+      currentStreamingMessage: null,
     });
   },
 }));

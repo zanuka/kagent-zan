@@ -115,6 +115,7 @@ def get_tool_json(obj: Type[any], config: dict) -> dict:
         "provider": provider,
         "description": description,
         "component_type": "tool",
+        "component_version": 1,
         "version": 1,
         "label": obj.__name__,
         "config": json.loads(config) if config else {},

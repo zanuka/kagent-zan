@@ -1,8 +1,8 @@
-import { LLMCall } from "@/components/LLMCallModal";
+import { LLMCall } from "@/components/chat/LLMCallModal";
 import { FunctionCall, FunctionExecutionResult, ImageContent, TeamResult } from "@/types/datamodel";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { AssistantAgentConfig, Component, Team } from "@/types/datamodel";
+import type { AssistantAgentConfig, Component, Team, TextMessageConfig } from "@/types/datamodel";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -154,6 +154,18 @@ export const messageUtils = {
   isFunctionExecutionResult(content: unknown): content is FunctionExecutionResult[] {
     if (!Array.isArray(content)) return false;
     return content.every((item) => typeof item === "object" && item !== null && "call_id" in item && "content" in item);
+  },
+
+  isTextMessageContent(content: unknown): content is TextMessageConfig {
+    return typeof content === "object" && content !== null && "content" in content && "type" in content && content.type === "TextMessage";
+  },
+
+  isStreamingContent(content: unknown): boolean{
+    return typeof content === "object" && content !== null && "type" in content && content.type === "ModelClientStreamingChunkEvent";
+  },
+
+  isUserTextMessageContent(content: unknown): content is TextMessageConfig {
+    return messageUtils.isTextMessageContent(content) && content.source === "user";
   },
 
   isLlmCallEvent(content: unknown): content is LLMCall {
