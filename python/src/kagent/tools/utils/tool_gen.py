@@ -1,11 +1,14 @@
+import argparse
 import importlib
 import importlib.util
 import inspect
 import json
 import logging
+import os
 import sys
 from enum import Enum
-from typing import Any, Literal, Type, Union
+from pathlib import Path
+from typing import Any, Literal, Optional, Type, Union
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
@@ -177,7 +180,32 @@ def get_tool_configs(module_path: str) -> list:
     return tool_components
 
 
-def main():
+def main(args=None) -> None:
+    """
+    Generate tool configurations and save them to the specified output file or folder.
+
+    Args:
+        args: Command line arguments (used when called as an entry point).
+              Can be None (in which case sys.argv will be used) or a list of strings.
+    """
+    parser = argparse.ArgumentParser(description="Generate tool configurations")
+    parser.add_argument("--output-folder", "-o", type=str, help="Path to the folder where output file should be saved")
+    parser.add_argument(
+        "--output-file", "-f", type=str, default="tools.json", help="Name of the output file (default: tools.json)"
+    )
+
+    parsed_args = parser.parse_args(args if args is not None else sys.argv[1:])
+
+    output_folder = parsed_args.output_folder
+    output_file = parsed_args.output_file
+
+    if output_folder:
+        output_path = Path(output_folder)
+        output_path.mkdir(parents=True, exist_ok=True)
+        file_path = os.path.join(output_folder, output_file)
+    else:
+        file_path = output_file
+
     all_config = []
 
     for dir_name in TOOL_DIRS:
@@ -187,16 +215,12 @@ def main():
         except Exception as e:
             logging.error(f"Error processing directory {dir_name}: {e}")
 
-    # write to a file
-    output_file = "tools.json"
-    if len(sys.argv) > 1:
-        output_file = sys.argv[1]
-
-    with open(output_file, "w") as f:
+    # Write to the output file
+    with open(file_path, "w") as f:
         json.dump(all_config, f, indent=2, default=str)
 
     logging.info(
-        f"Tool configurations written to {output_file}. Copy the file to $HOME/.autogenstudio/configs/tools.json to import it to the backend."
+        f"Tool configurations written to {file_path}. Copy the file to $HOME/.autogenstudio/configs/tools.json to import it to the backend."
     )
 
 
