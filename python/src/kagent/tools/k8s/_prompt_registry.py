@@ -1,25 +1,23 @@
 import logging
 from typing import Dict
 
-from ._resource_types import CRDResourceTypes
+from ._resource_types import ResourceTypes
 from .argo import ANALYSIS_TEMPLATE_PROMPT, ROLLOUT_PROMPT
 from .istio import AUTH_POLICY_PROMPT, GATEWAY_PROMPT, PEER_AUTHENTICATION_PROMPT, VIRTUAL_SERVICE_PROMPT
-from .promql import PROMQL_PROMPT
 
 logger = logging.getLogger(__name__)
 
-PROMPT_REGISTRY: Dict[CRDResourceTypes, str] = {
-    CRDResourceTypes.ISTIO_AUTH_POLICY: AUTH_POLICY_PROMPT,
-    CRDResourceTypes.ISTIO_GATEWAY: GATEWAY_PROMPT,
-    CRDResourceTypes.ISTIO_PEER_AUTHENTICATION: PEER_AUTHENTICATION_PROMPT,
-    CRDResourceTypes.ISTIO_VIRTUAL_SERVICE: VIRTUAL_SERVICE_PROMPT,
-    CRDResourceTypes.ARGO_ROLLOUT: ROLLOUT_PROMPT,
-    CRDResourceTypes.ARGO_ANALYSIS_TEMPLATE: ANALYSIS_TEMPLATE_PROMPT,
-    CRDResourceTypes.PROMETHEUS_PROMQL: PROMQL_PROMPT,
+PROMPT_REGISTRY: Dict[ResourceTypes, str] = {
+    ResourceTypes.ISTIO_AUTH_POLICY: AUTH_POLICY_PROMPT,
+    ResourceTypes.ISTIO_GATEWAY: GATEWAY_PROMPT,
+    ResourceTypes.ISTIO_PEER_AUTHENTICATION: PEER_AUTHENTICATION_PROMPT,
+    ResourceTypes.ISTIO_VIRTUAL_SERVICE: VIRTUAL_SERVICE_PROMPT,
+    ResourceTypes.ARGO_ROLLOUT: ROLLOUT_PROMPT,
+    ResourceTypes.ARGO_ANALYSIS_TEMPLATE: ANALYSIS_TEMPLATE_PROMPT,
 }
 
 
-def get_system_prompt(resource_type: CRDResourceTypes) -> str:
+def get_system_prompt(resource_type: ResourceTypes) -> str:
     """
     Retrieve the system prompt for the specified resource type.
 

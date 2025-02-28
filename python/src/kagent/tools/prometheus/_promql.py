@@ -1,3 +1,11 @@
+from typing import Optional
+
+from autogen_core import CancellationToken, Component
+from autogen_core.tools import BaseTool
+from pydantic import BaseModel, Field
+
+from ..common.llm_tool import LLMCallError, LLMTool, LLMToolConfig, LLMToolInput
+
 PROMQL_PROMPT = """
 # PromQL Query Generator
 
@@ -142,3 +150,77 @@ Always assume the user is looking for a working query they can immediately use i
 
 Remember that PromQL is designed for time series data and operates on a pull-based model with periodic scraping. Account for these characteristics when designing queries.
 """
+
+
+class GeneratePromQLToolConfig(LLMToolConfig):
+    """Configuration for the GeneratePromQLTool."""
+
+    pass
+
+
+class GeneratePromQLToolInput(BaseModel):
+    """Input for the GeneratePromQLTool."""
+
+    query_description: str = Field(..., description="The description of the PromQL query to generate.")
+
+
+class GeneratePromQLError(LLMCallError):
+    """Exception raised for errors in the PromQL generation process."""
+
+    pass
+
+
+class GeneratePromQLTool(BaseTool, Component[GeneratePromQLToolConfig]):
+    """
+    GeneratePromQLTool that generates PromQL queries from natural language descriptions.
+
+    Args:
+        config (GeneratePromQLToolConfig): Configuration for the GeneratePromQLTool.
+    """
+
+    component_description = "GeneratePromQLTool generates PromQL queries from natural language descriptions."
+    component_type = "tool"
+    component_config_schema = GeneratePromQLToolConfig
+    component_input_schema = "kagent.tools.prometheus.GeneratePromQLTool"
+
+    def __init__(self, config: GeneratePromQLToolConfig) -> None:
+        self.config = config
+        self._llm_tool = LLMTool(config)
+
+        super().__init__(
+            args_type=GeneratePromQLToolInput,
+            return_type=str,
+            name="GeneratePromQLTool",
+            description="Generates a PromQL query from a natural language description.",
+        )
+
+    async def _generate_query(
+        self,
+        query_description: str,
+        cancellation_token: Optional[CancellationToken] = None,
+    ) -> str:
+        """
+        Asynchronously generates a PromQL query based on the provided query description.
+
+        Args:
+           query_description: The description of the query to be generated.
+           cancellation_token: Token to signal cancellation.
+        """
+        return await self._llm_tool.call(
+            LLMToolInput(
+                system_prompt=PROMQL_PROMPT,
+                user_message=query_description,
+                json_output=False,
+            ),
+            cancellation_token=cancellation_token,
+        )
+
+    async def run(self, input: GeneratePromQLToolInput, cancellation_token: Optional[CancellationToken] = None) -> str:
+        """
+        Run the GeneratePromQLTool with the provided input.
+
+        Args:
+           input (GeneratePromQLToolInput): The input for the tool.
+           cancellation_token: Token to signal cancellation.
+        """
+        return await self._generate_query(input.query_description, cancellation_token=cancellation_token)

@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field
 
-from ._resource_types import CRDResourceTypes
+from ._resource_types import ResourceTypes
 
 
-class CRDCreatorToolConfig(BaseModel):
+class GenerateResourceToolConfig(BaseModel):
     model: str = Field(default="gpt-4o-mini", description="The OpenAI model to use for generating the CRD.")
     openai_api_key: str = Field(
         default="",
@@ -11,6 +11,6 @@ class CRDCreatorToolConfig(BaseModel):
     )
 
 
-class CRDCreatorToolInput(BaseModel):
+class GenerateResourceToolInput(BaseModel):
     resource_description: str = Field(description="Detailed description of the resource to generate YAML for")
-    resource_type: CRDResourceTypes = Field(description="Type of resource to generate")
+    resource_type: ResourceTypes = Field(description="Type of resource to generate")

@@ -12,7 +12,7 @@ from pydantic.fields import FieldInfo
 
 logging.basicConfig(level=logging.INFO)
 
-TOOL_DIRS = ["istio", "k8s", "prometheus", "docs", "crds"]
+TOOL_DIRS = ["istio", "k8s", "prometheus", "docs"]
 
 
 def create_dummy_args(model_fields: dict[str, FieldInfo]):
