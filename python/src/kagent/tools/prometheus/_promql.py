@@ -183,7 +183,6 @@ class GeneratePromQLTool(BaseTool, Component[GeneratePromQLToolConfig]):
     component_config_schema = GeneratePromQLToolConfig
     component_provider_override = "kagent.tools.prometheus.GeneratePromQLTool"
 
-
     def __init__(self, config: GeneratePromQLToolConfig) -> None:
         self.config = config
         self._llm_tool = LLMTool(config)
