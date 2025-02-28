@@ -181,7 +181,8 @@ class GeneratePromQLTool(BaseTool, Component[GeneratePromQLToolConfig]):
     component_description = "GeneratePromQLTool generates PromQL queries from natural language descriptions."
     component_type = "tool"
     component_config_schema = GeneratePromQLToolConfig
-    component_input_schema = "kagent.tools.prometheus.GeneratePromQLTool"
+    component_provider_override = "kagent.tools.prometheus.GeneratePromQLTool"
+
 
     def __init__(self, config: GeneratePromQLToolConfig) -> None:
         self.config = config

@@ -48,7 +48,7 @@ class LLMTool(BaseTool, Component[LLMToolConfig]):
     )
     component_type = "tool"
     component_config_schema = LLMToolConfig
-    component_input_schema = "LLMTool"
+    component_provider_override = "kagent.tools.common.LLMTool"
 
     def __init__(self, config: LLMToolConfig) -> None:
         self.config = config

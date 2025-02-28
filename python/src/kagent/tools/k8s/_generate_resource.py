@@ -43,7 +43,7 @@ class GenerateResourceTool(BaseTool, Component[GenerateResourceToolConfig]):
     component_description = "GenerateResourceTool knows how to generate a resource YAML configuration for Istio, Gateway API, Argo resources from a detailed description."
     component_type = "tool"
     component_config_schema = GenerateResourceToolConfig
-    component_input_schema = "kagent.tools.k8s.GenerateResourceTool"
+    component_provider_override = "kagent.tools.k8s.GenerateResourceTool"
 
     def __init__(self, config: GenerateResourceToolConfig) -> None:
         self.config = config
