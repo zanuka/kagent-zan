@@ -12,13 +12,13 @@ type Team struct {
 
 // TeamComponent represents the component field in the Team response
 type TeamComponent struct {
-	Provider         string     `json:"provider"`
-	ComponentType    string     `json:"component_type"`
-	Version          int        `json:"version"`
-	ComponentVersion int        `json:"component_version"`
-	Description      *string    `json:"description"`
-	Config           TeamConfig `json:"config"`
-	Label            string     `json:"label"`
+	Provider         string                 `json:"provider"`
+	ComponentType    string                 `json:"component_type"`
+	Version          int                    `json:"version"`
+	ComponentVersion int                    `json:"component_version"`
+	Description      *string                `json:"description"`
+	Config           map[string]interface{} `json:"config"`
+	Label            string                 `json:"label"`
 }
 
 // APIResponse is the common response wrapper for all API responses
@@ -68,22 +68,6 @@ type HTTPToolConfig struct {
 // BuiltInToolConfig represents the configuration for built-in tools
 type BuiltInToolConfig struct {
 	FnName string `json:"fn_name"`
-}
-
-// TeamConfig represents either a SelectorGroupChatConfig or RoundRobinGroupChatConfig
-type TeamConfig struct {
-	// Shared fields between both configs
-	Participants         []TeamParticipant     `json:"participants"`
-	TerminationCondition *TerminationComponent `json:"termination_condition,omitempty"`
-	MaxTurns             *int                  `json:"max_turns,omitempty"`
-
-	ModelClient *ModelComponent `json:"model_client,omitempty"`
-	// SelectorGroupChat specific fields
-	SelectorPrompt       string `json:"selector_prompt"`
-	AllowRepeatedSpeaker bool   `json:"allow_repeated_speaker"`
-	// MagentoOneGroupChat specific fields
-	MaxStalls         int    `json:"max_stalls"`
-	FinalAnswerPrompt string `json:"final_answer_prompt"`
 }
 
 // Config types

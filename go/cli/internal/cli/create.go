@@ -15,6 +15,8 @@ func CreateCmd(c *ishell.Context) {
 		return
 	}
 
+	c.Println(c.Args)
+
 	resourceType := c.Args[0]
 	fileName := c.Args[1]
 
@@ -44,6 +46,6 @@ func CreateCmd(c *ishell.Context) {
 			return
 		}
 	default:
-		c.Println("Invalid resource type. Valid resource types are: agent, task")
+		c.Println("Invalid resource type. Valid resource types are: team")
 	}
 }

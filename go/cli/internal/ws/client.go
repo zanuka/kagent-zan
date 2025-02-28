@@ -129,6 +129,9 @@ func (c *Client) handleMessages(ctx Shell, inputTimeout chan struct{}) {
 	// so if we receive a tool call request, we buffer it until we receive the corresponding tool call execution
 	// We only need to buffer one request and one execution at a time
 	var bufferedToolCallRequest *ToolCallRequest
+	// This is a map of agent source to whether we are currently streaming from that agent
+	// If we are then we don't want to print the whole TextMessage, but only the content of the ModelStreamingEvent
+	streaming := map[string]bool{}
 	for {
 		var msg BaseWebSocketMessage
 		err := c.conn.ReadJSON(&msg)
@@ -152,6 +155,12 @@ func (c *Client) handleMessages(ctx Shell, inputTimeout chan struct{}) {
 				var textMessage TextMessage
 				if err := json.Unmarshal(msg.Data, &textMessage); err != nil {
 					ctx.Printf("Error parsing message data: %v\n", err)
+					continue
+				}
+				// If we are streaming from this agent, don't print the whole TextMessage, but only the content of the ModelStreamingEvent
+				if streaming[textMessage.Source] {
+					// reset buffer?
+					ctx.Println()
 					continue
 				}
 				// Do not re-print the user's input, or system message asking for input
@@ -203,6 +212,14 @@ func (c *Client) handleMessages(ctx Shell, inputTimeout chan struct{}) {
 				ctx.Println()
 				// Reset the buffered tool call request now that we've received the execution
 				bufferedToolCallRequest = nil
+			case ContentTypeModelStreaming:
+				var modelStreaming ModelStreamingEvent
+				if err := json.Unmarshal(msg.Data, &modelStreaming); err != nil {
+					ctx.Printf("Error parsing message data: %v\n", err)
+					continue
+				}
+				streaming[modelStreaming.Source] = true
+				ctx.Printf(modelStreaming.Content)
 			}
 
 		case MessageTypeInputRequest:

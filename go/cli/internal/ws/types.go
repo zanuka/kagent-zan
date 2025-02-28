@@ -35,6 +35,7 @@ const (
 	ContentTypeToolCallExecution ContentType = "ToolCallExecutionEvent"
 	ContentTypeStop              ContentType = "StopMessage"
 	ContentTypeHandoff           ContentType = "HandoffMessage"
+	ContentTypeModelStreaming    ContentType = "ModelClientStreamingChunkEvent"
 )
 
 type BaseWebSocketMessage struct {
@@ -69,6 +70,12 @@ type ToolCallExecution struct {
 	Content     []FunctionExecutionResult `json:"content"`
 	Source      string                    `json:"source"`
 	ModelsUsage api.ModelsUsage           `json:"models_usage"`
+}
+
+type ModelStreamingEvent struct {
+	Type    MessageType `json:"type"`
+	Content string      `json:"content"`
+	Source  string      `json:"source"`
 }
 
 type FunctionExecutionResult struct {

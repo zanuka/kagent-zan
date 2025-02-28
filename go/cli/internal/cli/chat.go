@@ -66,7 +66,7 @@ func ChatCmd(c *ishell.Context) {
 		return
 	}
 
-	promptStr := fmt.Sprintf("%s--%s> ", team.Component.Label, session.Name)
+	promptStr := BoldGreen(fmt.Sprintf("%s--%s> ", team.Component.Label, session.Name))
 	c.SetPrompt(promptStr)
 
 	run, err := client.CreateRun(&api.CreateRunRequest{
@@ -84,9 +84,10 @@ func ChatCmd(c *ishell.Context) {
 		c.Println(err)
 		return
 	}
-
-	c.Print(promptStr + "Enter a task: ")
+	c.ShowPrompt(false)
+	c.Print("Enter a task: ")
 	task := c.ReadLine()
+	c.ShowPrompt(true)
 
 	wsClient.StartInteractive(c, team, task)
 }
