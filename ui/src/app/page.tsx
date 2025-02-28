@@ -8,17 +8,17 @@ import { LoadingState } from "@/components/LoadingState";
 function AgentListContent() {
   const { teams, loading, error } = useAgents();
 
-  if (loading) {
-    return <LoadingState />;
-  }
-
-  if (error) {
-    return <ErrorState message={error} />;
-  }
-
-  return <AgentList teams={teams} />;
+  return (
+    <>
+      {error ? (
+        <ErrorState message={error} />
+      ) : (
+        <AgentList teams={teams || []} />
+      )}
+      {loading && <LoadingState />}
+    </>
+  );
 }
-
 export default function AgentListPage() {
   return (
     <AgentsProvider>
