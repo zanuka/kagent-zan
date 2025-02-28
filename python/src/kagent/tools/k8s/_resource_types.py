@@ -11,3 +11,10 @@ class ResourceTypes(Enum):
     # Argo
     ARGO_ROLLOUT = "rollout"
     ARGO_ANALYSIS_TEMPLATE = "analysis_template"
+
+    # Gateway API
+    GWAPI_GATEWAY = "gateway"
+    GWAPI_GATEWAY_CLASS = "gateway_class"
+    GWAPI_GRPC_ROUTE = "grpc_route"
+    GWAPI_HTTP_ROUTE = "http_route"
+    GWAPI_REFERENCE_GRANT = "reference_grant"
