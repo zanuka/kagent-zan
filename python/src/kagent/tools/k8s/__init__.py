@@ -1,3 +1,4 @@
+from ._generate_resource import GenerateResourceTool, GenerateResourceToolConfig
 from ._kubectl import (
     AnnotateResource,
     ApplyManifest,
@@ -40,4 +41,6 @@ __all__ = [
     "RemoveLabel",
     "Rollout",
     "Scale",
+    "GenerateResourceTool",
+    "GenerateResourceToolConfig",
 ]

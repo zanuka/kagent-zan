@@ -1,4 +1,3 @@
-from ._argo_crds import ArgoCRDTool, ArgoCRDToolConfig
 from ._argo_rollouts_k8sgw_installation import (
     CheckPluginLogsTool,
     VerifyGatewayPluginTool,
@@ -17,8 +16,6 @@ __all__ = [
     "SetRolloutImage",
     "VerifyKubectlPluginInstall",
     "VerifyArgoRolloutsControllerInstall",
-    "ArgoCRDTool",
-    "ArgoCRDToolConfig",
     "CheckPluginLogsTool",
     "VerifyGatewayPluginTool",
 ]

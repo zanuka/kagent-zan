@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { ChevronUp, ChevronDown, Maximize2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
+import CodeBlock from "./CodeBlock";
 
 interface TruncatableTextProps {
   content: string;
@@ -13,6 +14,19 @@ interface TruncatableTextProps {
   showFullscreen?: boolean;
   isStreaming?: boolean;
 }
+
+const components = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  code: (props: any) => {
+    const { children, className } = props;
+    // If it has a language class, it's a code block, not inline code
+    if (className) {
+      return <CodeBlock className={className}>{[children]}</CodeBlock>;
+    }
+    // For inline code, just return the default
+    return <code className={className}>{children}</code>;
+  },
+};
 
 export const TruncatableText = memo(({ content, isJson = false, className = "", jsonThreshold = 1000, textThreshold = 500, showFullscreen = true, isStreaming = false }: TruncatableTextProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -34,7 +48,9 @@ export const TruncatableText = memo(({ content, isJson = false, className = "", 
 
     return (
       <div className="relative">
-        <ReactMarkdown className={`prose-md prose prose-invert max-w-none ${isStreaming ? "streaming-content" : ""}`}>{displayContent.trim()}</ReactMarkdown>
+        <ReactMarkdown className={`prose-md prose prose-invert max-w-none ${isStreaming ? "streaming-content" : ""}`} components={components}>
+          {displayContent.trim()}
+        </ReactMarkdown>
 
         {isStreaming && (
           <div className="inline-flex items-center ml-2">

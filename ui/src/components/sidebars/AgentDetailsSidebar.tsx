@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronRight, ChevronLeft, User, Bot, FunctionSquare } from "lucide-react";
-import type { Team, AssistantAgentConfig, UserProxyAgentConfig,ToolConfig, Component } from "@/types/datamodel";
+import type { Team, AssistantAgentConfig, UserProxyAgentConfig, ToolConfig, Component } from "@/types/datamodel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -41,16 +41,14 @@ export function AgentDetailsSidebar({ selectedTeam }: AgentDetailsSidebarProps) 
 
           return (
             <li key={toolIdentifier}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="hover:text-white/60 transition-colors">{displayName}</span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{displayDescription}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="hover:text-white/60 transition-colors">{displayName}</span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{displayDescription}</p>
+                </TooltipContent>
+              </Tooltip>
               {isMcpTool(tool) && <span className="ml-2 text-xs bg-blue-400/20 text-blue-400 px-2 py-0.5 rounded">MCP</span>}
             </li>
           );
