@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/abiosoft/ishell/v2"
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
 	"github.com/kagent-dev/kagent/go/cli/internal/ws"
 	"golang.org/x/exp/rand"
@@ -32,7 +32,7 @@ func ChatCmd(c *ishell.Context) {
 		return
 	}
 
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
+	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
 	// Get the team based on the input + userID
 	teams, err := client.ListTeams(cfg.UserID)
 	if err != nil {
@@ -55,7 +55,7 @@ func ChatCmd(c *ishell.Context) {
 		return
 	}
 
-	session, err := client.CreateSession(&api.CreateSession{
+	session, err := client.CreateSession(&autogen_client.CreateSession{
 		UserID: cfg.UserID,
 		// This will probably be created on the apiserver side in the future
 		Name:   sessionName,
@@ -69,7 +69,7 @@ func ChatCmd(c *ishell.Context) {
 	promptStr := BoldGreen(fmt.Sprintf("%s--%s> ", *team.Component.Label, session.Name))
 	c.SetPrompt(promptStr)
 
-	run, err := client.CreateRun(&api.CreateRunRequest{
+	run, err := client.CreateRun(&autogen_client.CreateRunRequest{
 		SessionID: session.ID,
 		UserID:    session.UserID,
 	})

@@ -10,7 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 )
 
 // Config holds the WebSocket client configuration
@@ -65,7 +65,7 @@ type Shell interface {
 }
 
 // StartInteractive initiates the interactive session with the server
-func (c *Client) StartInteractive(ctx Shell, team api.Team, task string) error {
+func (c *Client) StartInteractive(ctx Shell, team autogen_client.Team, task string) error {
 	defer c.conn.Close()
 
 	interrupt := make(chan os.Signal, 1)

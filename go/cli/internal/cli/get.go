@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell/v2"
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
 )
 
@@ -22,7 +22,7 @@ func GetCmd(c *ishell.Context) {
 		return
 	}
 
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
+	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
 
 	resourceType := ""
 	resourceName := ""
@@ -84,7 +84,7 @@ func GetCmd(c *ishell.Context) {
 
 }
 
-func printRuns(runs []api.Run) error {
+func printRuns(runs []autogen_client.Run) error {
 	headers := []string{"ID", "CONTENT", "MESSAGES", "STATUS", "CREATED"}
 	rows := make([][]string, len(runs))
 	for i, run := range runs {
@@ -106,7 +106,7 @@ func printRuns(runs []api.Run) error {
 	return printOutput(runs, headers, rows)
 }
 
-func printTeams(teams []api.Team) error {
+func printTeams(teams []autogen_client.Team) error {
 	// Prepare table data
 	headers := []string{"NAME", "CREATED"}
 	rows := make([][]string, len(teams))

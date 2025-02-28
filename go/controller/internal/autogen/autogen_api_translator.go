@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,12 +22,12 @@ type ApiTranslator interface {
 	TranslateGroupChatForTeam(
 		ctx context.Context,
 		team *v1alpha1.Team,
-	) (*api.Team, error)
+	) (*autogen_client.Team, error)
 
 	TranslateGroupChatForAgent(
 		ctx context.Context,
 		team *v1alpha1.Agent,
-	) (*api.Team, error)
+	) (*autogen_client.Team, error)
 }
 
 type apiTranslator struct {
@@ -44,7 +45,7 @@ func NewAutogenApiTranslator(
 	}
 }
 
-func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*api.Team, error) {
+func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*autogen_client.Team, error) {
 	// generate an internal round robin "team" for the individual agent
 	team := &v1alpha1.Team{
 		ObjectMeta: agent.ObjectMeta,
@@ -68,7 +69,7 @@ func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v
 func (a *apiTranslator) TranslateGroupChatForTeam(
 	ctx context.Context,
 	team *v1alpha1.Team,
-) (*api.Team, error) {
+) (*autogen_client.Team, error) {
 
 	// get model config
 	roundRobinTeamConfig := team.Spec.RoundRobinTeamConfig
@@ -263,7 +264,7 @@ func (a *apiTranslator) TranslateGroupChatForTeam(
 		return nil, fmt.Errorf("no team config specified")
 	}
 
-	return &api.Team{
+	return &autogen_client.Team{
 		Id:        generateIdFromString(team.Name + "-" + team.Namespace),
 		UserID:    GlobalUserID, // always use global id
 		Component: teamConfig,

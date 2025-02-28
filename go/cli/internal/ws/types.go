@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 )
 
 const (
@@ -59,17 +60,17 @@ type TextMessage struct {
 }
 
 type ToolCallRequest struct {
-	Type        MessageType     `json:"type"`
-	Content     []FunctionCall  `json:"content"`
-	Source      string          `json:"source"`
-	ModelsUsage api.ModelsUsage `json:"models_usage"`
+	Type        MessageType                `json:"type"`
+	Content     []FunctionCall             `json:"content"`
+	Source      string                     `json:"source"`
+	ModelsUsage autogen_client.ModelsUsage `json:"models_usage"`
 }
 
 type ToolCallExecution struct {
-	Type        MessageType               `json:"type"`
-	Content     []FunctionExecutionResult `json:"content"`
-	Source      string                    `json:"source"`
-	ModelsUsage api.ModelsUsage           `json:"models_usage"`
+	Type        MessageType                `json:"type"`
+	Content     []FunctionExecutionResult  `json:"content"`
+	Source      string                     `json:"source"`
+	ModelsUsage autogen_client.ModelsUsage `json:"models_usage"`
 }
 
 type ModelStreamingEvent struct {

@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
 	. "github.com/onsi/ginkgo/v2"
@@ -38,7 +38,7 @@ var _ = Describe("AutogenClient", func() {
 		// sleep for a while to allow autogen server to start
 		<-time.After(3 * time.Second)
 
-		client := api.NewClient("http://localhost:8081/api", "ws://localhost:8081/api/ws")
+		client := autogen_client.New("http://localhost:8081/api", "ws://localhost:8081/api/ws")
 
 		scheme := scheme.Scheme
 		err := v1alpha1.AddToScheme(scheme)

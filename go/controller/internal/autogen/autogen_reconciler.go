@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,7 +22,7 @@ type autogenReconciler struct {
 	translator ApiTranslator
 
 	kube          client.Client
-	autogenClient *api.Client
+	autogenClient *autogen_client.Client
 
 	defaultModelConfig types.NamespacedName
 }
@@ -30,7 +30,7 @@ type autogenReconciler struct {
 func NewAutogenReconciler(
 	translator ApiTranslator,
 	kube client.Client,
-	autogenClient *api.Client,
+	autogenClient *autogen_client.Client,
 	defaultModelConfig types.NamespacedName,
 ) AutogenReconciler {
 	return &autogenReconciler{
@@ -147,7 +147,7 @@ func (a *autogenReconciler) reconcileAgents(ctx context.Context, agents ...*v1al
 	return nil
 }
 
-func (a *autogenReconciler) upsertTeam(team *api.Team) error {
+func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
 	// delete if team exists
 	existingTeam, err := a.autogenClient.GetTeam(*team.Component.Label, GlobalUserID)
 	if err != nil {

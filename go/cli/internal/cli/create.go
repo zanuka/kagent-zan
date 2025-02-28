@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/abiosoft/ishell/v2"
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
 )
 
@@ -32,11 +32,11 @@ func CreateCmd(c *ishell.Context) {
 		return
 	}
 
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
+	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
 
 	switch resourceType {
 	case "team":
-		var team api.Team
+		var team autogen_client.Team
 		if err := json.Unmarshal(f, &team); err != nil {
 			c.Printf("Error unmarshalling team: %v\n", err)
 			return

@@ -1,4 +1,4 @@
-package api
+package client
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
-func NewClient(baseURL, wsURL string) *Client {
+func New(baseURL, wsURL string) *Client {
 	// Ensure baseURL doesn't end with a slash
 	baseURL = strings.TrimRight(baseURL, "/")
 

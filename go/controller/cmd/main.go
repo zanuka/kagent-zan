@@ -27,7 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
 	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
 
@@ -231,7 +231,7 @@ func main() {
 	builtinTools := syncutils.NewAtomicMap[string, string]()
 	builtinTools.Set("k8s-get-pod", "k8s.get_pod")
 
-	autogenClient := api.NewClient(
+	autogenClient := autogen_client.New(
 		autogenStudioBaseURL,
 		autogenStudioWsURL,
 	)
@@ -324,7 +324,7 @@ func main() {
 
 func waitForAutogenReady(
 	log logr.Logger,
-	client *api.Client,
+	client *autogen_client.Client,
 	timeout, interval time.Duration,
 ) error {
 	log.Info("waiting for autogen to become ready")

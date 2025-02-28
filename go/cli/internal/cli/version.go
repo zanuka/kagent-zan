@@ -2,7 +2,7 @@ package cli
 
 import (
 	"github.com/abiosoft/ishell/v2"
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
 )
 
@@ -25,7 +25,7 @@ func VersionCmd(c *ishell.Context) {
 		return
 	}
 
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
+	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
 	version, err := client.GetVersion()
 	if err != nil {
 		c.Println("Warning: Could not fetch backend version")
