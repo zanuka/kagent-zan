@@ -68,11 +68,7 @@ class LLMTool(BaseTool, Component[LLMToolConfig]):
         Returns:
             OpenAIChatCompletionClient: The OpenAI model client.
         """
-        api_key = self.config.openai_api_key or os.environ.get("OPENAI_API_KEY")
-        if not api_key:
-            logger.error("No OpenAI API key provided and none found in environment.")
-            raise ValueError("No OpenAI API key provided.")
-
+        api_key = self.config.openai_api_key or os.environ.get("OPENAI_API_KEY") or ""
         return OpenAIChatCompletionClient(
             model=self.config.model,
             api_key=api_key,

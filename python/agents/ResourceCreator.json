@@ -1,0 +1,95 @@
+{
+    "provider": "autogen_agentchat.teams.RoundRobinGroupChat",
+    "component_type": "team",
+    "version": 1,
+    "component_version": 1,
+    "description": "An agent that knows how to create and apply YAML resources to Kubernetes",
+    "label": "ResourceCreator",
+    "config": {
+      "participants": [
+        {
+          "provider": "autogen_agentchat.agents.AssistantAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "description": "An agent that knows how to create and apply YAML resources to Kubernetes",
+          "label": "ResourceCreator",
+          "config": {
+            "name": "ResourceCreator",
+            "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+              "component_type": "model",
+              "version": 1,
+              "component_version": 1,
+              "description": "Chat completion client for OpenAI hosted models.",
+              "label": "OpenAIChatCompletionClient",
+              "config": {
+                "model": "gpt-4o"
+              }
+            },
+            "tools": [
+              {
+                "provider": "kagent.tools.k8s.GenerateResourceTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "description": "GenerateResourceTool knows how to generate a resource YAML configuration for Istio, Gateway API, Argo resources from a detailed description.",
+                "label": "GenerateResourceTool",
+                "config": {
+                  "model": "gpt-4o-mini",
+                  "temperature": 0.0
+                }
+              },
+              {
+                "provider": "kagent.tools.k8s.ApplyManifest",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "description": "Apply a YAML resource file to the Kubernetes cluster.",
+                "label": "ApplyManifest",
+                "config": {}
+              }
+            ],
+            "handoffs": [],
+            "model_context": {
+              "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+              "label": "UnboundedChatCompletionContext",
+              "config": {}
+            },
+            "description": "An agent that knows how to create and apply YAML resources to Kubernetes",
+            "system_message": "You're a friendly and helpful agent that uses tools to create various Kubernetes resources and knows how to apply them to the cluster and explain it to the user if asked.\n\n# Instructions\n\n- If user question is unclear, ask for clarification before running any tools\n- Always be helpful and friendly\n- If you don't know how to answer the question, tell the user \"Sorry, I don't know how to answer that\"\n- If there are additional things user should update before applying the resource, please call that out. For example, if you're assuming certain things such as namespace names or service names.\n\n\n# Response format\n\n- ALWAYS respond in Markdown\n- Your response should include a summary of actions you took and an explanation of the result\n        ",
+            "model_client_stream": true,
+            "reflect_on_tool_use": true,
+            "tool_call_summary_format": "{result}"
+          }
+        },
+        {
+          "provider": "autogen_agentchat.agents.UserProxyAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "description": "An agent that can represent a human user through an input function.",
+          "label": "kagent_user",
+          "config": {
+            "name": "kagent_user",
+            "description": "Human user"
+          }
+        }
+      ],
+      "termination_condition": {
+        "provider": "autogen_agentchat.conditions.TextMentionTermination",
+        "component_type": "termination",
+        "version": 1,
+        "component_version": 1,
+        "description": "Terminate the conversation if a specific text is mentioned.",
+        "label": "TextMentionTermination",
+        "config": {
+          "text": "TERMINATE"
+        }
+      }
+    }
+  }

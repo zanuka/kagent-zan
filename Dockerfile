@@ -4,6 +4,7 @@ WORKDIR /app/ui
 
 COPY ui/package*.json ./
 RUN mkdir -p /app/ui/public
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm ci
 
@@ -64,11 +65,10 @@ COPY python/README.md .
 RUN uv sync --all-extras && \
     chown -R python:pythongroup /app/python
 
-# Create the tools.json file, 
-# create the ~/.autogenstudio/configs folder and copy the tools.json file there
-RUN uv run tool_gen && \
-    mkdir -p $HOME/.autogenstudio/configs && \
-    cp tools.json $HOME/.autogenstudio/configs/tools.json
+# Generate tools and agents
+RUN mkdir -p /root/.autogenstudio/configs
+RUN uv run tool_gen -o /root/.autogenstudio/configs
+COPY python/agents/*.json /root/.autogenstudio/configs
 
 # Set up Next.js UI
 WORKDIR /app/ui
