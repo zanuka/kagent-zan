@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 )
 
 const (
@@ -35,6 +36,7 @@ const (
 	ContentTypeToolCallExecution ContentType = "ToolCallExecutionEvent"
 	ContentTypeStop              ContentType = "StopMessage"
 	ContentTypeHandoff           ContentType = "HandoffMessage"
+	ContentTypeModelStreaming    ContentType = "ModelClientStreamingChunkEvent"
 )
 
 type BaseWebSocketMessage struct {
@@ -46,9 +48,9 @@ type BaseWebSocketMessage struct {
 
 // StartMessage represents the initial message sent to start a task
 type StartMessage struct {
-	Type       MessageType       `json:"type"`
-	Task       string            `json:"task"`
-	TeamConfig api.TeamComponent `json:"team_config"`
+	Type       MessageType    `json:"type"`
+	Task       string         `json:"task"`
+	TeamConfig *api.Component `json:"team_config"`
 }
 
 type TextMessage struct {
@@ -58,17 +60,23 @@ type TextMessage struct {
 }
 
 type ToolCallRequest struct {
-	Type        MessageType     `json:"type"`
-	Content     []FunctionCall  `json:"content"`
-	Source      string          `json:"source"`
-	ModelsUsage api.ModelsUsage `json:"models_usage"`
+	Type        MessageType                `json:"type"`
+	Content     []FunctionCall             `json:"content"`
+	Source      string                     `json:"source"`
+	ModelsUsage autogen_client.ModelsUsage `json:"models_usage"`
 }
 
 type ToolCallExecution struct {
-	Type        MessageType               `json:"type"`
-	Content     []FunctionExecutionResult `json:"content"`
-	Source      string                    `json:"source"`
-	ModelsUsage api.ModelsUsage           `json:"models_usage"`
+	Type        MessageType                `json:"type"`
+	Content     []FunctionExecutionResult  `json:"content"`
+	Source      string                     `json:"source"`
+	ModelsUsage autogen_client.ModelsUsage `json:"models_usage"`
+}
+
+type ModelStreamingEvent struct {
+	Type    MessageType `json:"type"`
+	Content string      `json:"content"`
+	Source  string      `json:"source"`
 }
 
 type FunctionExecutionResult struct {

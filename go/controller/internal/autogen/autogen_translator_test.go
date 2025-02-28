@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
 	. "github.com/onsi/ginkgo/v2"
@@ -30,15 +30,15 @@ var _ = Describe("AutogenClient", func() {
 	It("should interact with autogen server", func() {
 		ctx := context.Background()
 
-		go func() {
-			// start autogen server
-			startAutogenServer(ctx)
-		}()
+		// go func() {
+		// 	// start autogen server
+		// 	startAutogenServer(ctx)
+		// }()
 
 		// sleep for a while to allow autogen server to start
 		<-time.After(3 * time.Second)
 
-		client := api.NewClient("http://localhost:8081/api", "ws://localhost:8081/api/ws")
+		client := autogen_client.New("http://localhost:8081/api", "ws://localhost:8081/api/ws")
 
 		scheme := scheme.Scheme
 		err := v1alpha1.AddToScheme(scheme)
@@ -146,7 +146,7 @@ var _ = Describe("AutogenClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(list).NotTo(BeNil())
 		Expect(len(list)).To(Equal(1))
-		Expect(list[0].ID).To(Equal(autogenTeam.ID))
+		Expect(list[0].Id).To(Equal(autogenTeam.Id))
 	})
 })
 

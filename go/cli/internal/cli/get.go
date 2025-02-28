@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"fmt"
+	"encoding/json"
 	"strconv"
 	"strings"
 
 	"github.com/abiosoft/ishell/v2"
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
 )
 
@@ -18,11 +18,11 @@ func GetCmd(c *ishell.Context) {
 
 	cfg, err := config.Get()
 	if err != nil {
-		fmt.Printf("Failed to get config: %v\n", err)
+		c.Printf("Failed to get config: %v\n", err)
 		return
 	}
 
-	client := api.NewClient(cfg.APIURL, cfg.WSURL)
+	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
 
 	resourceType := ""
 	resourceName := ""
@@ -55,7 +55,8 @@ func GetCmd(c *ishell.Context) {
 				c.Printf("Failed to get run %s: %v\n", resourceName, err)
 				return
 			}
-			c.Printf("Run %s: %v\n", resourceName, run)
+			byt, _ := json.MarshalIndent(run, "", "  ")
+			c.Println(string(byt))
 		}
 	case "agent":
 		if resourceName == "" {
@@ -74,7 +75,8 @@ func GetCmd(c *ishell.Context) {
 				c.Printf("Failed to get agent %s: %v\n", resourceName, err)
 				return
 			}
-			c.Printf("Agent %s: %v\n", resourceName, agent)
+			byt, _ := json.MarshalIndent(agent, "", "  ")
+			c.Println(string(byt))
 		}
 	default:
 		c.Printf("Unknown resource type: %s\n", resourceType)
@@ -82,7 +84,7 @@ func GetCmd(c *ishell.Context) {
 
 }
 
-func printRuns(runs []api.Run) error {
+func printRuns(runs []autogen_client.Run) error {
 	headers := []string{"ID", "CONTENT", "MESSAGES", "STATUS", "CREATED"}
 	rows := make([][]string, len(runs))
 	for i, run := range runs {
@@ -104,14 +106,14 @@ func printRuns(runs []api.Run) error {
 	return printOutput(runs, headers, rows)
 }
 
-func printTeams(teams []api.Team) error {
+func printTeams(teams []autogen_client.Team) error {
 	// Prepare table data
 	headers := []string{"NAME", "CREATED"}
 	rows := make([][]string, len(teams))
 	for i, team := range teams {
 		rows[i] = []string{
-			team.Component.Label,
-			team.CreatedAt,
+			*team.Component.Label,
+			*team.CreatedAt,
 		}
 	}
 

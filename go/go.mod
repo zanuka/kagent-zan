@@ -3,6 +3,8 @@ module github.com/kagent-dev/kagent/go
 go 1.23.5
 
 require (
+	github.com/abiosoft/ishell/v2 v2.0.2
+	github.com/fatih/color v1.18.0
 	github.com/go-logr/logr v1.4.2
 	github.com/gorilla/websocket v1.5.0
 	github.com/onsi/ginkgo v1.16.5
@@ -20,7 +22,7 @@ require (
 
 require (
 	cel.dev/expr v0.18.0 // indirect
-	github.com/abiosoft/ishell/v2 v2.0.2 // indirect
+	github.com/abiosoft/ishell v2.0.0+incompatible // indirect
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a // indirect
@@ -31,7 +33,6 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
-	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/flynn-archive/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
