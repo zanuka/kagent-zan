@@ -30,10 +30,10 @@ var _ = Describe("AutogenClient", func() {
 	It("should interact with autogen server", func() {
 		ctx := context.Background()
 
-		go func() {
-			// start autogen server
-			startAutogenServer(ctx)
-		}()
+		// go func() {
+		// 	// start autogen server
+		// 	startAutogenServer(ctx)
+		// }()
 
 		// sleep for a while to allow autogen server to start
 		<-time.After(3 * time.Second)
@@ -146,7 +146,7 @@ var _ = Describe("AutogenClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(list).NotTo(BeNil())
 		Expect(len(list)).To(Equal(1))
-		Expect(list[0].ID).To(Equal(autogenTeam.ID))
+		Expect(list[0].Id).To(Equal(autogenTeam.Id))
 	})
 })
 

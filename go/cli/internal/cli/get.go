@@ -112,8 +112,8 @@ func printTeams(teams []api.Team) error {
 	rows := make([][]string, len(teams))
 	for i, team := range teams {
 		rows[i] = []string{
-			team.Component.Label,
-			team.CreatedAt,
+			*team.Component.Label,
+			*team.CreatedAt,
 		}
 	}
 

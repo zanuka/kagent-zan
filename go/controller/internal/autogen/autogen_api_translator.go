@@ -76,27 +76,6 @@ func (a *apiTranslator) TranslateGroupChatForTeam(
 	magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
 	swarmTeamConfig := team.Spec.SwarmTeamConfig
 
-	var groupChatType string
-	var teamConfig api.TeamConfig
-	if roundRobinTeamConfig != nil {
-		groupChatType = "RoundRobinGroupChat"
-	} else if selectorTeamConfig != nil {
-		teamConfig.SelectorPrompt = selectorTeamConfig.SelectorPrompt
-		groupChatType = "SelectorGroupChat"
-	} else if magenticOneTeamConfig != nil {
-		groupChatType = "MagenticOneGroupChat"
-		teamConfig.MaxStalls = magenticOneTeamConfig.MaxStalls
-		if teamConfig.MaxStalls == 0 {
-			// default to 3
-			teamConfig.MaxStalls = 3
-		}
-		teamConfig.FinalAnswerPrompt = magenticOneTeamConfig.FinalAnswerPrompt
-	} else if swarmTeamConfig != nil {
-		groupChatType = "Swarm"
-	} else {
-		return nil, fmt.Errorf("no model config specified")
-	}
-
 	modelConfigRef := a.defaultModelConfig
 	if team.Spec.ModelConfig != "" {
 		modelConfigRef = types.NamespacedName{
@@ -138,18 +117,20 @@ func (a *apiTranslator) TranslateGroupChatForTeam(
 		return nil, fmt.Errorf("model api key not found")
 	}
 
-	teamConfig.ModelClient = &api.ModelComponent{
+	modelClient := &api.Component{
 		Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
 		ComponentType: "model",
 		Version:       makePtr(1),
 		//ComponentVersion: 1,
-		Config: api.ModelConfig{
-			Model:  modelConfig.Spec.Model,
-			APIKey: makePtr(string(modelApiKey)),
-		},
+		Config: api.MustToConfig(&api.OpenAIClientConfig{
+			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
+				Model:  modelConfig.Spec.Model,
+				APIKey: makePtr(string(modelApiKey)),
+			},
+		}),
 	}
 
-	var participants []api.TeamParticipant
+	var participants []*api.Component
 	for _, agentName := range team.Spec.Participants {
 		agent := &v1alpha1.Agent{}
 		err := fetchObjKube(
@@ -163,48 +144,47 @@ func (a *apiTranslator) TranslateGroupChatForTeam(
 			return nil, err
 		}
 
-		var tools []api.ToolComponent
+		var tools []*api.Component
 		for _, tool := range agent.Spec.Tools {
 			toolConfig, err := convertToolConfig(tool.Config)
 			if err != nil {
 				return nil, err
 			}
 
-			tools = append(tools, api.ToolComponent{
+			tool := &api.Component{
 				Provider:      tool.Provider,
 				ComponentType: "tool",
 				Version:       makePtr(1),
-				Config:        toolConfig,
-			})
+				Config:        api.GenericToolConfig(toolConfig),
+			}
+
+			tools = append(tools, tool)
 		}
 
 		sysMsgPtr := makePtr(agent.Spec.SystemMessage)
 		if agent.Spec.SystemMessage == "" {
 			sysMsgPtr = nil
 		}
-		participant := api.TeamParticipant{
-			//TODO: currently only supports assistant agents
+		participant := &api.Component{
 			Provider:      "autogen_agentchat.agents.AssistantAgent",
 			ComponentType: "agent",
 			Version:       makePtr(1),
 			Description:   makePtr(agent.Spec.Description),
-			//ComponentVersion: 1,
-			Config: api.AgentConfig{
+			Config: api.MustToConfig(&api.AssistantAgentConfig{
 				Name:        agent.Spec.Name,
-				ModelClient: teamConfig.ModelClient,
+				ModelClient: modelClient,
 				Tools:       tools,
-				ModelContext: &api.ChatCompletionContextComponent{
+				ModelContext: &api.Component{
 					Provider:      "autogen_core.model_context.UnboundedChatCompletionContext",
 					ComponentType: "chat_completion_context",
 					Version:       makePtr(1),
-					//ComponentVersion: 1,
 				},
 				Description: agent.Spec.Description,
 				// TODO(ilackarms): convert to non-ptr with omitempty?
 				SystemMessage:         sysMsgPtr,
 				ReflectOnToolUse:      false,
 				ToolCallSummaryFormat: "{result}",
-			},
+			}),
 		}
 		participants = append(participants, participant)
 	}
@@ -216,34 +196,77 @@ func (a *apiTranslator) TranslateGroupChatForTeam(
 		planningAgent := MakeBuiltinPlanningAgent(
 			"planning_agent",
 			participants,
-			teamConfig.ModelClient,
+			modelClient,
 		)
 		// prepend builtin planning agent when using swarm mode
 		participants = append(
-			[]api.TeamParticipant{planningAgent},
+			[]*api.Component{planningAgent},
 			participants...,
 		)
 	}
-	teamConfig.Participants = participants
 
 	terminationCondition, err := translateTerminationCondition(team.Spec.TerminationCondition)
 	if err != nil {
 		return nil, err
 	}
-	teamConfig.TerminationCondition = terminationCondition
+
+	commonTeamConfig := api.CommonTeamConfig{
+		Participants: participants,
+		Termination:  terminationCondition,
+	}
+
+	var teamConfig *api.Component
+	if roundRobinTeamConfig != nil {
+		teamConfig = &api.Component{
+			Provider:      "autogen_agentchat.teams.RoundRobinGroupChat",
+			ComponentType: "team",
+			Version:       makePtr(1),
+			Description:   makePtr(team.Spec.Description),
+			Config: api.MustToConfig(&api.RoundRobinGroupChatConfig{
+				CommonTeamConfig: commonTeamConfig,
+			}),
+		}
+	} else if selectorTeamConfig != nil {
+		teamConfig = &api.Component{
+			Provider:      "autogen_agentchat.teams.SelectorGroupChat",
+			ComponentType: "team",
+			Version:       makePtr(1),
+			Description:   makePtr(team.Spec.Description),
+			Config: api.MustToConfig(&api.SelectorGroupChatConfig{
+				CommonTeamConfig: commonTeamConfig,
+				SelectorPrompt:   makePtr(selectorTeamConfig.SelectorPrompt),
+			}),
+		}
+	} else if magenticOneTeamConfig != nil {
+		teamConfig = &api.Component{
+			Provider:      "autogen_agentchat.teams.MagenticOneGroupChat",
+			ComponentType: "team",
+			Version:       makePtr(1),
+			Description:   makePtr(team.Spec.Description),
+			Config: api.MustToConfig(&api.MagenticOneGroupChatConfig{
+				CommonTeamConfig:  commonTeamConfig,
+				MaxStalls:         makePtr(magenticOneTeamConfig.MaxStalls),
+				FinalAnswerPrompt: makePtr(magenticOneTeamConfig.FinalAnswerPrompt),
+			}),
+		}
+	} else if swarmTeamConfig != nil {
+		teamConfig = &api.Component{
+			Provider:      "autogen_agentchat.teams.SwarmTeam",
+			ComponentType: "team",
+			Version:       makePtr(1),
+			Description:   makePtr(team.Spec.Description),
+			Config: api.MustToConfig(&api.SwarmTeamConfig{
+				CommonTeamConfig: commonTeamConfig,
+			}),
+		}
+	} else {
+		return nil, fmt.Errorf("no team config specified")
+	}
 
 	return &api.Team{
-		ID:     generateIdFromString(team.Name + "-" + team.Namespace),
-		UserID: GlobalUserID, // always use global id
-		Component: api.TeamComponent{
-			Provider:         "autogen_agentchat.teams." + groupChatType,
-			ComponentType:    "team",
-			Version:          1,
-			ComponentVersion: 1,
-			Description:      makePtr(team.Spec.Description),
-			Label:            team.Name,
-			Config:           teamConfig,
-		},
+		Id:        generateIdFromString(team.Name + "-" + team.Namespace),
+		UserID:    GlobalUserID, // always use global id
+		Component: teamConfig,
 	}, nil
 }
 
@@ -277,7 +300,7 @@ func generateIdFromString(s string) int {
 	return number
 }
 
-func translateTerminationCondition(terminationCondition v1alpha1.TerminationCondition) (*api.TerminationComponent, error) {
+func translateTerminationCondition(terminationCondition v1alpha1.TerminationCondition) (*api.Component, error) {
 	// ensure only one termination condition is set
 	var conditionsSet int
 	if terminationCondition.MaxMessageTermination != nil {
@@ -298,27 +321,27 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 
 	switch {
 	case terminationCondition.MaxMessageTermination != nil:
-		return &api.TerminationComponent{
+		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.MaxMessageTermination",
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Config: api.TerminationConfig{
+			Config: api.MustToConfig(&api.MaxMessageTerminationConfig{
 				MaxMessages: makePtr(terminationCondition.MaxMessageTermination.MaxMessages),
-			},
+			}),
 		}, nil
 	case terminationCondition.TextMentionTermination != nil:
-		return &api.TerminationComponent{
+		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.TextMentionTermination",
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Config: api.TerminationConfig{
+			Config: api.MustToConfig(&api.TextMentionTerminationConfig{
 				Text: makePtr(terminationCondition.TextMentionTermination.Text),
-			},
+			}),
 		}, nil
 	case terminationCondition.OrTermination != nil:
-		var conditions []api.TerminationComponent
+		var conditions []*api.Component
 		for _, c := range terminationCondition.OrTermination.Conditions {
 			subConditon := v1alpha1.TerminationCondition{
 				MaxMessageTermination:  c.MaxMessageTermination,
@@ -329,25 +352,24 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 			if err != nil {
 				return nil, err
 			}
-			conditions = append(conditions, *condition)
+			conditions = append(conditions, condition)
 		}
-		return &api.TerminationComponent{
+		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.OrTerminationCondition",
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Config: api.TerminationConfig{
+			Config: api.MustToConfig(&api.OrTerminationConfig{
 				Conditions: conditions,
-			},
+			}),
 		}, nil
 	case terminationCondition.StopMessageTermination != nil:
-		return &api.TerminationComponent{
+		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.StopMessageTermination",
-			Description:   makePtr("Terminate the conversation if a StopMessage is received."),
 			ComponentType: "termination",
 			Version:       makePtr(1),
 			//ComponentVersion: 1,
-			Config: api.TerminationConfig{},
+			Config: api.MustToConfig(&api.StopMessageTerminationConfig{}),
 			Label:  makePtr("StopMessageTermination"),
 		}, nil
 	}

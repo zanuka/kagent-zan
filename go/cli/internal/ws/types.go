@@ -47,9 +47,9 @@ type BaseWebSocketMessage struct {
 
 // StartMessage represents the initial message sent to start a task
 type StartMessage struct {
-	Type       MessageType       `json:"type"`
-	Task       string            `json:"task"`
-	TeamConfig api.TeamComponent `json:"team_config"`
+	Type       MessageType    `json:"type"`
+	Task       string         `json:"task"`
+	TeamConfig *api.Component `json:"team_config"`
 }
 
 type TextMessage struct {
