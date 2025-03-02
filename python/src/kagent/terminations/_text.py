@@ -14,6 +14,7 @@ from typing_extensions import Self
 
 class TextMessageTerminationConfig(BaseModel):
     """Configuration for the TextMessageTermination termination condition."""
+
     source: str | None = None
     """The source of the text message to terminate the conversation."""
 

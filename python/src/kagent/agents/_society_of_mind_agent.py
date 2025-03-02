@@ -70,7 +70,9 @@ class SocietyOfMindAgent(BaseChatAgent, Component[SocietyOfMindAgentConfig]):
         async def main() -> None:
             model_client = OpenAIChatCompletionClient(model="gpt-4o")
 
-            agent1 = AssistantAgent("assistant1", model_client=model_client, system_message="You are a writer, write well.")
+            agent1 = AssistantAgent(
+                "assistant1", model_client=model_client, system_message="You are a writer, write well."
+            )
             agent2 = AssistantAgent(
                 "assistant2",
                 model_client=model_client,
@@ -217,7 +219,9 @@ class SocietyOfMindAgent(BaseChatAgent, Component[SocietyOfMindAgentConfig]):
                 assert isinstance(model_result.content, str)
                 self._context.append(TextMessage(source=self.name, content=model_result.content))
                 yield Response(
-                    chat_message=TextMessage(source=self.name, content=model_result.content, models_usage=model_result.usage),
+                    chat_message=TextMessage(
+                        source=self.name, content=model_result.content, models_usage=model_result.usage
+                    ),
                     inner_messages=inner_messages,
                 )
             else:
@@ -230,7 +234,9 @@ class SocietyOfMindAgent(BaseChatAgent, Component[SocietyOfMindAgentConfig]):
                 assert isinstance(completion.content, str)
                 self._context.append(TextMessage(source=self.name, content=completion.content))
                 yield Response(
-                    chat_message=TextMessage(source=self.name, content=completion.content, models_usage=completion.usage),
+                    chat_message=TextMessage(
+                        source=self.name, content=completion.content, models_usage=completion.usage
+                    ),
                     inner_messages=inner_messages,
                 )
 

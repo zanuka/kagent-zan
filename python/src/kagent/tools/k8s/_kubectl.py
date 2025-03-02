@@ -163,7 +163,8 @@ def _get_resources(
         "The name of the resource to get information about. If not provided, all resources of the given type will be returned.",
     ],
     resource_type: Annotated[
-        str, "The type of resource to get information about (deployment, service, pod, node, ...). 'all' is NOT an option, you must specify a resource type."
+        str,
+        "The type of resource to get information about (deployment, service, pod, node, ...). 'all' is NOT an option, you must specify a resource type.",
     ],
     all_namespaces: Annotated[Optional[bool], "Whether to get resources from all namespaces"],
     ns: Annotated[

@@ -81,7 +81,10 @@ Only items that match the filter will be returned.
     name="helm_list_releases",
 )
 
-ListReleases, ListReleasesConfig = create_typed_fn_tool(helm_list_releases, "kagent.tools.helm.ListReleases", "ListReleases")
+ListReleases, ListReleasesConfig = create_typed_fn_tool(
+    helm_list_releases, "kagent.tools.helm.ListReleases", "ListReleases"
+)
+
 
 def _helm_get_release(
     name: Annotated[str, "The name of the release"],
@@ -92,6 +95,7 @@ def _helm_get_release(
     ],
 ) -> str:
     return _run_helm_command(f"get {resource} {name} -n {namespace}")
+
 
 helm_get_release = FunctionTool(
     func=_helm_get_release,
@@ -119,6 +123,7 @@ Available specifiers:
 )
 
 GetRelease, GetReleaseConfig = create_typed_fn_tool(helm_get_release, "kagent.tools.helm.GetRelease", "GetRelease")
+
 
 def _upgrade_release(
     name: Annotated[str, "The name of the release"],
@@ -251,9 +256,7 @@ Usage:
 )
 
 
-Uninstall, UninstallConfig = create_typed_fn_tool(
-    helm_uninstall, "kagent.tools.helm.Uninstall", "Uninstall"
-)
+Uninstall, UninstallConfig = create_typed_fn_tool(helm_uninstall, "kagent.tools.helm.Uninstall", "Uninstall")
 
 
 def _run_helm_command(command: str) -> str:
