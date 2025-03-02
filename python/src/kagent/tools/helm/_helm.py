@@ -6,7 +6,7 @@ from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
-def _helm_list(
+def _helm_list_releases(
     namespace: Annotated[Optional[str], "The namespace to list the helm charts from"] = None,
     all_namespaces: Annotated[Optional[bool], "If true, list releases from all namespaces"] = False,
     all: Annotated[Optional[bool], "If true, show all releases without any filter applied"] = False,
@@ -58,8 +58,8 @@ def _helm_list(
     return _run_helm_command(f"list {' '.join(args)}")
 
 
-helm_list = FunctionTool(
-    _helm_list,
+helm_list_releases = FunctionTool(
+    _helm_list_releases,
     description="""
 This command lists all of the releases for a specified namespace (uses current namespace context if namespace not specified).
 
@@ -78,13 +78,49 @@ Only items that match the filter will be returned.
     NAME                UPDATED                                  CHART
     maudlin-arachnid    2020-06-18 14:17:46.125134977 +0000 UTC  alpine-0.1.0
     """,
-    name="helm_list",
+    name="helm_list_releases",
 )
 
-HelmList, HelmListConfig = create_typed_fn_tool(helm_list, "kagent.tools.helm.List", "HelmList")
+ListReleases, ListReleasesConfig = create_typed_fn_tool(helm_list_releases, "kagent.tools.helm.ListReleases", "ListReleases")
 
+def _helm_get_release(
+    name: Annotated[str, "The name of the release"],
+    namespace: Annotated[str, "The namespace to get the release from"],
+    resource: Annotated[
+        str,
+        "The resource to get information about. If not provided, all resources will be returned, can be one of: all, hooks, manifest, notes, values",
+    ],
+) -> str:
+    return _run_helm_command(f"get {resource} {name} -n {namespace}")
 
-def _helm_upgrade(
+helm_get_release = FunctionTool(
+    func=_helm_get_release,
+    description="""
+This command consists of multiple subcommands which can be used to
+get extended information about the release, including:
+
+- The values used to generate the release
+- The generated manifest file
+- The notes provided by the chart of the release
+- The hooks associated with the release
+
+Available specifiers:
+  all         download all information for a named release
+  hooks       download all hooks for a named release
+  manifest    download the manifest for a named release. The manifest is a YAML-formatted
+               file containing the complete state of the release.
+  notes       download the notes for a named release. The notes are a text
+               document that contains information about the release.
+  values      download the values file for a named release. The values are a
+               YAML-formatted file containing the values used to generate the
+               release.
+""",
+    name="helm_get_release",
+)
+
+GetRelease, GetReleaseConfig = create_typed_fn_tool(helm_get_release, "kagent.tools.helm.GetRelease", "GetRelease")
+
+def _upgrade_release(
     name: Annotated[str, "The name of the release"],
     chart: Annotated[str, "The chart to install"],
     namespace: Annotated[str, "The namespace to install the release in"],
@@ -123,8 +159,8 @@ def _helm_upgrade(
     return _run_helm_command(f"upgrade {' '.join(args)}")
 
 
-helm_upgrade = FunctionTool(
-    _helm_upgrade,
+upgrade_release = FunctionTool(
+    _upgrade_release,
     description="""
 This command upgrades a release to a new version of a chart.
 
@@ -174,10 +210,10 @@ supply a version number with the '--version' flag.
 To see the list of chart repositories, use 'helm repo list'. To search for
 charts in a repository, use 'helm search'.
 """,
-    name="helm_upgrade",
+    name="helm_upgrade_release",
 )
 
-HelmUpgrade, HelmUpgradeConfig = create_typed_fn_tool(helm_upgrade, "kagent.tools.helm.Upgrade", "HelmUpgrade")
+Upgrade, UpgradeConfig = create_typed_fn_tool(upgrade_release, "kagent.tools.helm.Upgrade", "Upgrade")
 
 
 def _helm_uninstall(
@@ -215,8 +251,8 @@ Usage:
 )
 
 
-HelmUninstall, HelmUninstallConfig = create_typed_fn_tool(
-    helm_uninstall, "kagent.tools.helm.Uninstall", "HelmUninstall"
+Uninstall, UninstallConfig = create_typed_fn_tool(
+    helm_uninstall, "kagent.tools.helm.Uninstall", "Uninstall"
 )
 
 
