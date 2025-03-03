@@ -1,7 +1,7 @@
 # Image configuration
 DOCKER_REGISTRY ?= ghcr.io
 DOCKER_REPO ?= kagent-dev/kagent
-IMAGE_NAME ?= autogenstudio-controller
+IMAGE_NAME ?= controller
 VERSION ?= $(shell git describe --tags --always --dirty)
 IMAGE_TAG ?= $(VERSION)
 IMG ?= $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)
