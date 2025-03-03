@@ -23,6 +23,11 @@ PRODUCT_DB_MAP = {
     "argo rollouts": "argo-rollouts.db",
     "helm": "helm.db",
     "prometheus": "prometheus.db",
+    "gateway-api": "gateway-api.db",
+    "gloo-gateway": "gloo-gateway.db",
+    "gloo-edge": "gloo-edge.db",
+    "otel": "otel.db",
+    "cilium": "cilium.db",
 }
 
 
@@ -36,7 +41,7 @@ class Config(BaseModel):
         default=DEFAULT_DB_URL,
         description="Base URL for downloading the documentation database. If empty, the default URL will be used.",
     )
-    openai_api_key: str = Field(
+    openai_api_key: Optional[str] = Field(
         default=None,
         description="API key for OpenAI services. If empty, the environment variable 'OPENAI_API_KEY' will be used.",
     )
@@ -105,7 +110,7 @@ class QueryInput(BaseModel):
         description="The search query to use for finding relevant documentation. Be specific and include relevant keywords."
     )
     product_name: str = Field(
-        description="The name of the product to search within. Examples include: 'istio', 'kubernetes', 'prometheus', 'argo cd', 'argo rollouts', 'helm'."
+        description="The name of the product to search within. Examples include: 'istio', 'kubernetes', 'prometheus', 'argo cd', 'argo rollouts', 'helm', 'gateway-api', 'gloo-gateway', 'gloo-edge', 'otel', 'cilium'."
     )
     version: Optional[str] = Field(
         default=None,

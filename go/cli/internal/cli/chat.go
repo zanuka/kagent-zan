@@ -42,6 +42,9 @@ func ChatCmd(c *ishell.Context) {
 
 	teamNames := make([]string, len(teams))
 	for i, team := range teams {
+		if team.Component.Label == nil {
+			continue
+		}
 		teamNames[i] = *team.Component.Label
 	}
 

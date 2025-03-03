@@ -1,3 +1,21 @@
-from ._helm import HelmList, HelmListConfig, HelmUninstall, HelmUninstallConfig, HelmUpgrade, HelmUpgradeConfig
+from ._helm import (
+    GetRelease,
+    GetReleaseConfig,
+    ListReleases,
+    ListReleasesConfig,
+    Uninstall,
+    UninstallConfig,
+    Upgrade,
+    UpgradeConfig,
+)
 
-__all__ = ["HelmUpgrade", "HelmUpgradeConfig", "HelmList", "HelmListConfig", "HelmUninstall", "HelmUninstallConfig"]
+__all__ = [
+    "GetRelease",
+    "GetReleaseConfig",
+    "ListReleases",
+    "ListReleasesConfig",
+    "Uninstall",
+    "UninstallConfig",
+    "Upgrade",
+    "UpgradeConfig",
+]

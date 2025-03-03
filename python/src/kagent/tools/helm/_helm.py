@@ -6,7 +6,7 @@ from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
-def _helm_list(
+def _helm_list_releases(
     namespace: Annotated[Optional[str], "The namespace to list the helm charts from"] = None,
     all_namespaces: Annotated[Optional[bool], "If true, list releases from all namespaces"] = False,
     all: Annotated[Optional[bool], "If true, show all releases without any filter applied"] = False,
@@ -58,17 +58,11 @@ def _helm_list(
     return _run_helm_command(f"list {' '.join(args)}")
 
 
-helm_list = FunctionTool(
-    _helm_list,
+helm_list_releases = FunctionTool(
+    _helm_list_releases,
     description="""
 This command lists all of the releases for a specified namespace (uses current namespace context if namespace not specified).
 
-By default, it lists only releases that are deployed or failed. Flags like
-'--uninstalled' and '--all' will alter this behavior. Such flags can be combined:
-'--uninstalled --failed'.
-
-By default, items are sorted alphabetically. Use the '-d' flag to sort by
-release date.
 
 If the --filter flag is provided, it will be treated as a filter. Filters are
 regular expressions (Perl compatible) that are applied to the list of releases.
@@ -78,24 +72,61 @@ Only items that match the filter will be returned.
     NAME                UPDATED                                  CHART
     maudlin-arachnid    2020-06-18 14:17:46.125134977 +0000 UTC  alpine-0.1.0
     """,
-    name="helm_list",
+    name="helm_list_releases",
 )
 
-HelmList, HelmListConfig = create_typed_fn_tool(helm_list, "kagent.tools.helm.List", "HelmList")
+ListReleases, ListReleasesConfig = create_typed_fn_tool(
+    helm_list_releases, "kagent.tools.helm.ListReleases", "ListReleases"
+)
 
 
-def _helm_upgrade(
+def _helm_get_release(
+    name: Annotated[str, "The name of the release"],
+    namespace: Annotated[str, "The namespace to get the release from"],
+    resource: Annotated[
+        str,
+        "The resource to get information about. If not provided, all resources will be returned, can be one of: all, hooks, manifest, notes, values",
+    ],
+) -> str:
+    return _run_helm_command(f"get {resource} {name} -n {namespace}")
+
+
+helm_get_release = FunctionTool(
+    func=_helm_get_release,
+    description="""
+This command consists of multiple subcommands which can be used to
+get extended information about the release, including:
+
+
+Available specifiers:
+  all         download all information for a named release
+  hooks       download all hooks for a named release
+  manifest    download the manifest for a named release. The manifest is a YAML-formatted
+               file containing the complete state of the release.
+  notes       download the notes for a named release. The notes are a text
+               document that contains information about the release.
+  values      download the values file for a named release. The values are a
+               YAML-formatted file containing the values used to generate the
+               release.
+""",
+    name="helm_get_release",
+)
+
+GetRelease, GetReleaseConfig = create_typed_fn_tool(helm_get_release, "kagent.tools.helm.GetRelease", "GetRelease")
+
+
+def _upgrade_release(
     name: Annotated[str, "The name of the release"],
     chart: Annotated[str, "The chart to install"],
     namespace: Annotated[str, "The namespace to install the release in"],
     create_namespace: Annotated[Optional[bool], "If true, create the namespace if it does not exist"] = False,
     set: Annotated[
         Optional[list[str]],
-        "A list of key-value pairs to set on the release. (can specify multiple or separate values with commas: key1=val1,key2=val2)",
+        "A list of key-value pairs to set on the release. (can specify multiple or separate values with commas: key1=val1,key2=val2). They will be merged in the order they are provided.",
     ] = None,
     values: Annotated[
         Optional[list[str]],
-        "A list of files to use as the value source. (can specify multiple or separate values with commas: myvalues.yaml,override.yaml)",
+        "A list of files to use as the value source. (can specify multiple or separate values with commas: myvalues.yaml,override.yaml). They will be merged in the order they are provided.",
     ] = None,
     version: Annotated[Optional[str], "The version of the chart to install"] = None,
     install: Annotated[Optional[bool], "If true, install the release if it does not exist"] = False,
@@ -123,8 +154,8 @@ def _helm_upgrade(
     return _run_helm_command(f"upgrade {' '.join(args)}")
 
 
-helm_upgrade = FunctionTool(
-    _helm_upgrade,
+upgrade_release = FunctionTool(
+    _upgrade_release,
     description="""
 This command upgrades a release to a new version of a chart.
 
@@ -132,25 +163,6 @@ The upgrade arguments must be a release and chart. The chart
 argument can be either: a chart reference('example/mariadb'), a path to a chart directory,
 a packaged chart, or a fully qualified URL. For chart references, the latest
 version will be specified unless the '--version' flag is set.
-
-To override values in a chart, use either the '--values' flag and pass in a file
-or use the '--set' flag and pass configuration from the command line, to force string
-values, use '--set-string'. You can use '--set-file' to set individual
-values from a file when the value itself is too long for the command line
-or is dynamically generated. You can also use '--set-json' to set json values
-(scalars/objects/arrays) from the command line.
-
-You can specify the '--values'/'-f' flag multiple times. The priority will be given to the
-last (right-most) file specified. For example, if both myvalues.yaml and override.yaml
-contained a key called 'Test', the value set in override.yaml would take precedence:
-
-    $ helm upgrade -f myvalues.yaml -f override.yaml redis ./redis
-
-You can specify the '--set' flag multiple times. The priority will be given to the
-last (right-most) set specified. For example, if both 'bar' and 'newbar' values are
-set for a key called 'foo', the 'newbar' value would take precedence:
-
-    $ helm upgrade --set foo=bar --set foo=newbar redis ./redis
 
 There are six different ways you can express the chart you want to install:
 
@@ -160,24 +172,11 @@ There are six different ways you can express the chart you want to install:
 4. By absolute URL: helm install mynginx https://example.com/charts/nginx-1.2.3.tgz
 5. By chart reference and repo url: helm install --repo https://example.com/charts/ mynginx nginx
 6. By OCI registries: helm install mynginx --version 1.2.3 oci://example.com/charts/nginx
-
-CHART REFERENCES
-
-A chart reference is a convenient way of referencing a chart in a chart repository.
-
-When you use a chart reference with a repo prefix ('example/mariadb'), Helm will look in the local
-configuration for a chart repository named 'example', and will then look for a
-chart in that repository whose name is 'mariadb'. It will install the latest stable version of that chart
-until you specify '--devel' flag to also include development version (alpha, beta, and release candidate releases), or
-supply a version number with the '--version' flag.
-
-To see the list of chart repositories, use 'helm repo list'. To search for
-charts in a repository, use 'helm search'.
 """,
-    name="helm_upgrade",
+    name="helm_upgrade_release",
 )
 
-HelmUpgrade, HelmUpgradeConfig = create_typed_fn_tool(helm_upgrade, "kagent.tools.helm.Upgrade", "HelmUpgrade")
+Upgrade, UpgradeConfig = create_typed_fn_tool(upgrade_release, "kagent.tools.helm.Upgrade", "Upgrade")
 
 
 def _helm_uninstall(
@@ -215,9 +214,7 @@ Usage:
 )
 
 
-HelmUninstall, HelmUninstallConfig = create_typed_fn_tool(
-    helm_uninstall, "kagent.tools.helm.Uninstall", "HelmUninstall"
-)
+Uninstall, UninstallConfig = create_typed_fn_tool(helm_uninstall, "kagent.tools.helm.Uninstall", "Uninstall")
 
 
 def _run_helm_command(command: str) -> str:
