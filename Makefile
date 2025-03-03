@@ -41,7 +41,10 @@ kind-load-docker-images: build
 	kind load docker-image --name autogen $(CONTROLLER_IMG)
 	kind load docker-image --name autogen $(APP_IMG)
 
-helm-install: check-openai-key kind-load-docker-images
+helm-version:
+	VERSION=$(VERSION) envsubst < helm/Chart-template.yaml > helm/Chart.yaml
+
+helm-install: helm-version check-openai-key kind-load-docker-images
 	helm upgrade --install kagent helm/ \
 		--namespace kagent \
 		--create-namespace \
@@ -49,7 +52,6 @@ helm-install: check-openai-key kind-load-docker-images
 		--set app.image.tag=$(APP_IMAGE_TAG) \
 		--set openai.apiKey=$(OPENAI_API_KEY)
 
-helm-publish:
-	VERSION=$(VERSION) envsubst < helm/Chart-template.yaml > helm/Chart.yaml
+helm-publish: helm-version
 	helm package helm/
 	helm push kagent-$(VERSION).tgz oci://ghcr.io/kagent-dev/kagent/helm
