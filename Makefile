@@ -1,8 +1,8 @@
 # Image configuration
 DOCKER_REGISTRY ?= ghcr.io
 DOCKER_REPO ?= kagent-dev/kagent
-CONTROLLER_IMAGE_NAME ?= autogenstudio-controller
-APP_IMAGE_NAME ?= kagent-app
+CONTROLLER_IMAGE_NAME ?= controller
+APP_IMAGE_NAME ?= app
 VERSION ?= $(shell git describe --tags --always --dirty)
 CONTROLLER_IMAGE_TAG ?= $(VERSION)
 APP_IMAGE_TAG ?= $(VERSION)
@@ -17,7 +17,7 @@ check-openai-key:
 	fi
 
 # Build targets
-.PHONY: create-kind-cluster build controller-manifests build-controller build-app kind-load-docker-images check-openai-key helm-install
+.PHONY: create-kind-cluster build controller-manifests build-controller build-app kind-load-docker-images check-openai-key helm-install helm-publish
 
 create-kind-cluster:
 	kind create cluster --name autogen
@@ -35,16 +35,23 @@ build-app:
 	# Build the combined UI and backend image
 	docker build -t $(APP_IMG) .
 	# Tag with latest for convenience
-	docker tag $(APP_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(APP_IMAGE_NAME):latest
+	docker tag $(APP_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(APP_IMAGE_NAME):$(VERSION)
 
 kind-load-docker-images: build
 	kind load docker-image --name autogen $(CONTROLLER_IMG)
 	kind load docker-image --name autogen $(APP_IMG)
 
-helm-install: check-openai-key kind-load-docker-images
+helm-version:
+	VERSION=$(VERSION) envsubst < helm/Chart-template.yaml > helm/Chart.yaml
+
+helm-install: helm-version check-openai-key kind-load-docker-images
 	helm upgrade --install kagent helm/ \
 		--namespace kagent \
 		--create-namespace \
 		--set controller.image.tag=$(CONTROLLER_IMAGE_TAG) \
 		--set app.image.tag=$(APP_IMAGE_TAG) \
 		--set openai.apiKey=$(OPENAI_API_KEY)
+
+helm-publish: helm-version
+	helm package helm/
+	helm push kagent-$(VERSION).tgz oci://ghcr.io/kagent-dev/kagent/helm
