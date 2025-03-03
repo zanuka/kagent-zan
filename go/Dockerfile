@@ -30,6 +30,6 @@ COPY --from=builder /workspace/manager .
 USER 65532:65532
 
 LABEL org.opencontainers.image.source=https://github.com/kagent-dev/kagent
-LABEL org.opencontainers.image.description="Kagent is a tool for managing Kubernetes clusters."
+LABEL org.opencontainers.image.description="Kagent controller is the controller for the Kagent app."
 
 ENTRYPOINT ["/manager"]
