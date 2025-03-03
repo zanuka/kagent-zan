@@ -63,12 +63,6 @@ helm_list_releases = FunctionTool(
     description="""
 This command lists all of the releases for a specified namespace (uses current namespace context if namespace not specified).
 
-By default, it lists only releases that are deployed or failed. Flags like
-'--uninstalled' and '--all' will alter this behavior. Such flags can be combined:
-'--uninstalled --failed'.
-
-By default, items are sorted alphabetically. Use the '-d' flag to sort by
-release date.
 
 If the --filter flag is provided, it will be treated as a filter. Filters are
 regular expressions (Perl compatible) that are applied to the list of releases.
@@ -103,10 +97,6 @@ helm_get_release = FunctionTool(
 This command consists of multiple subcommands which can be used to
 get extended information about the release, including:
 
-- The values used to generate the release
-- The generated manifest file
-- The notes provided by the chart of the release
-- The hooks associated with the release
 
 Available specifiers:
   all         download all information for a named release
@@ -132,11 +122,11 @@ def _upgrade_release(
     create_namespace: Annotated[Optional[bool], "If true, create the namespace if it does not exist"] = False,
     set: Annotated[
         Optional[list[str]],
-        "A list of key-value pairs to set on the release. (can specify multiple or separate values with commas: key1=val1,key2=val2)",
+        "A list of key-value pairs to set on the release. (can specify multiple or separate values with commas: key1=val1,key2=val2). They will be merged in the order they are provided.",
     ] = None,
     values: Annotated[
         Optional[list[str]],
-        "A list of files to use as the value source. (can specify multiple or separate values with commas: myvalues.yaml,override.yaml)",
+        "A list of files to use as the value source. (can specify multiple or separate values with commas: myvalues.yaml,override.yaml). They will be merged in the order they are provided.",
     ] = None,
     version: Annotated[Optional[str], "The version of the chart to install"] = None,
     install: Annotated[Optional[bool], "If true, install the release if it does not exist"] = False,
@@ -174,25 +164,6 @@ argument can be either: a chart reference('example/mariadb'), a path to a chart 
 a packaged chart, or a fully qualified URL. For chart references, the latest
 version will be specified unless the '--version' flag is set.
 
-To override values in a chart, use either the '--values' flag and pass in a file
-or use the '--set' flag and pass configuration from the command line, to force string
-values, use '--set-string'. You can use '--set-file' to set individual
-values from a file when the value itself is too long for the command line
-or is dynamically generated. You can also use '--set-json' to set json values
-(scalars/objects/arrays) from the command line.
-
-You can specify the '--values'/'-f' flag multiple times. The priority will be given to the
-last (right-most) file specified. For example, if both myvalues.yaml and override.yaml
-contained a key called 'Test', the value set in override.yaml would take precedence:
-
-    $ helm upgrade -f myvalues.yaml -f override.yaml redis ./redis
-
-You can specify the '--set' flag multiple times. The priority will be given to the
-last (right-most) set specified. For example, if both 'bar' and 'newbar' values are
-set for a key called 'foo', the 'newbar' value would take precedence:
-
-    $ helm upgrade --set foo=bar --set foo=newbar redis ./redis
-
 There are six different ways you can express the chart you want to install:
 
 1. By chart reference: helm install mymaria example/mariadb
@@ -201,19 +172,6 @@ There are six different ways you can express the chart you want to install:
 4. By absolute URL: helm install mynginx https://example.com/charts/nginx-1.2.3.tgz
 5. By chart reference and repo url: helm install --repo https://example.com/charts/ mynginx nginx
 6. By OCI registries: helm install mynginx --version 1.2.3 oci://example.com/charts/nginx
-
-CHART REFERENCES
-
-A chart reference is a convenient way of referencing a chart in a chart repository.
-
-When you use a chart reference with a repo prefix ('example/mariadb'), Helm will look in the local
-configuration for a chart repository named 'example', and will then look for a
-chart in that repository whose name is 'mariadb'. It will install the latest stable version of that chart
-until you specify '--devel' flag to also include development version (alpha, beta, and release candidate releases), or
-supply a version number with the '--version' flag.
-
-To see the list of chart repositories, use 'helm repo list'. To search for
-charts in a repository, use 'helm search'.
 """,
     name="helm_upgrade_release",
 )

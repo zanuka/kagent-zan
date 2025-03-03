@@ -156,7 +156,6 @@ class SocietyOfMindAgent(BaseChatAgent, Component[SocietyOfMindAgentConfig]):
         # Add the messages to the context.
         for message in messages:
             self._context.append(message)
-        # Run the team of agents.
         task = self._context
 
         # Run the team of agents.

@@ -131,7 +131,7 @@ def _describe_resource(
 def _delete_resource(
     resource_type: Annotated[str, "The type of resource to delete (deployment, service, pod, node, ...)"],
     name: Annotated[str, "The name of the resource to delete"],
-    ns: Annotated[Optional[str], "The namespace of the resource to delete"],
+    ns: Annotated[str, "The namespace of the resource to delete"],
 ) -> str:
     return _run_kubectl_command(f"delete {resource_type} {name} {f'-n {ns}' if ns else ''}")
 
