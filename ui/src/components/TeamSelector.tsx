@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Upload, Bot, User } from "lucide-react";
+import { Upload, User } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "./ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { AssistantAgentConfig, Team, UserProxyAgentConfig } from "@/types/datamodel";
 import { useUserStore } from "@/lib/userStore";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import KagentLogo from "@/components/kagent-logo";
 
 const renderAgentItem = (agent: AssistantAgentConfig | UserProxyAgentConfig, type: string, index: number) => {
   return (
     <div key={index} className="flex items-center justify-between py-1">
       <div className="flex items-center gap-2">
-        {type === "assistant" ? <Bot className="h-4 w-4 text-violet-500" /> : <User className="h-4 w-4 text-blue-500" />}
+        {type === "assistant" ? <KagentLogo className="h-4 w-4" /> : <User className="h-4 w-4 text-blue-500" />}
         <span className="text-white/70">{agent.name}</span>
       </div>
       {type === "assistant" && (

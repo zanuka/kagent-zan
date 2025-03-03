@@ -1,6 +1,6 @@
 import { AssistantAgentConfig, ChatCompletionContextConfig, Component, ModelConfig, OpenAIClientConfig, RoundRobinGroupChatConfig, Team, UserProxyAgentConfig } from "@/types/datamodel";
-import { CreateAgentFormData } from "./types";
 import { getCurrentUserId } from "@/app/actions/utils";
+import { AgentFormData } from "@/components/AgentsProvider";
 
 export const createTeamConfig = async (agentConfig: Component<AssistantAgentConfig>): Promise<Team> => {
   const userProxyConfig: Component<UserProxyAgentConfig> = {
@@ -49,12 +49,13 @@ export const createTeamConfig = async (agentConfig: Component<AssistantAgentConf
   return teamConfig;
 };
 
-export const transformToAgentConfig = (formData: CreateAgentFormData): Component<AssistantAgentConfig> => {
+export const transformToAgentConfig = (formData: AgentFormData): Component<AssistantAgentConfig> => {
   const modelClientMap: Record<
     string,
     {
       provider: string;
       model: string;
+      stream_options?: Record<string, unknown>;
     }
   > = {
     "gpt-4o": {
@@ -81,6 +82,9 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
     label: modelConfig.provider.split(".").pop(),
     config: {
       model: modelConfig.model,
+      stream_options: {
+        include_usage: true,
+      },
     } as OpenAIClientConfig,
   };
 
@@ -108,7 +112,7 @@ export const transformToAgentConfig = (formData: CreateAgentFormData): Component
       tools: formData.tools,
       handoffs: [],
       model_context: modelContext,
-      system_message: formData.system_prompt,
+      system_message: formData.systemPrompt,
       reflect_on_tool_use: true,
       tool_call_summary_format: "{result}",
       model_client_stream: true,
