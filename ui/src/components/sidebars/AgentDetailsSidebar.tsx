@@ -1,5 +1,5 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronRight, ChevronLeft, User, Bot, FunctionSquare } from "lucide-react";
+import { ChevronRight, ChevronLeft, User, FunctionSquare } from "lucide-react";
 import type { Team, AssistantAgentConfig, UserProxyAgentConfig, ToolConfig, Component } from "@/types/datamodel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
 import { useResponsiveSidebar } from "@/components/sidebars/useResponsiveSidebar";
 import { createTeam } from "@/app/actions/teams";
+import KagentLogo from "../kagent-logo";
 
 interface AgentDetailsSidebarProps {
   selectedTeam: Team | null;
@@ -144,7 +145,7 @@ export function AgentDetailsSidebar({ selectedTeam }: AgentDetailsSidebarProps) 
                             <div key={index} className="text-sm text-white/50">
                               <div className="flex items-center justify-between">
                                 <h5 className="text-white font-semibold text-lg flex items-center gap-2">
-                                  <Bot className="h-6 w-6 text-violet-500" />
+                                  <KagentLogo className="h-5 w-5" />
                                   {assistantAgent.name}
                                 </h5>
                                 <TooltipProvider>
