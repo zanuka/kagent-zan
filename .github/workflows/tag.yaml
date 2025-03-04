@@ -12,7 +12,7 @@ on:
 # GITHUB_SHA = Last commit in the tagged release
 # GITHUB_REF = Tag ref of release refs/tags/<tag_name>
 jobs:
-  push-helm-chart:
+  push-images:
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout GitHub Action'
