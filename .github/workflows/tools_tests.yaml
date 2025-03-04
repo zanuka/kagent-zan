@@ -37,7 +37,7 @@ jobs:
         NO_FAIL=1 uv run pytest -v | tee pytest_output.log
 
     - name: Upload pytest output
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pytest-output
         path: pytest_output.log
