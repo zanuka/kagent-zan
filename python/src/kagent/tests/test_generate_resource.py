@@ -1,13 +1,17 @@
+import logging
 import os
-import yaml
-from ._test_result import GenerateResourceTestResult
-from ._yaml_comparer import YAMLComparer
-import pytest
 import warnings
 from pathlib import Path
 
-from ..tools.k8s import GenerateResourceTool, GenerateResourceToolConfig, GenerateResourceToolInput, ResourceTypes
+import pytest
+import yaml
 from autogen_core import CancellationToken
+
+from ..tools.k8s import GenerateResourceTool, GenerateResourceToolConfig, GenerateResourceToolInput, ResourceTypes
+from ._test_result import GenerateResourceTestResult
+from ._yaml_comparer import YAMLComparer
+
+logger = logging.getLogger(__name__)
 
 TEST_CASES = str(Path(__file__).parent / "testcases")
 SIMILARITY_THRESHOLD = 0.6
@@ -51,7 +55,7 @@ def tool_config():
     api_key = os.environ.get("OPENAI_API_KEY")
 
     if not api_key:
-        warnings.warn("No OpenAI API key found. Tests will be skipped.")
+        logger.warning("No OpenAI API key found. Tests will be skipped.")
         pytest.skip("No OpenAI API key found")
 
     return GenerateResourceToolConfig(model="gpt-4o-mini", openai_api_key=api_key)
@@ -61,7 +65,7 @@ def tool_config():
 test_data = []
 
 for file in Path(TEST_CASES).rglob("*.yaml"):
-    print(f"Loading test cases from: {file}")
+    logger.info(f"Loading test cases from: {file}")
     test_data.extend([(case, file) for case in load_test_cases(file)])
 
 
@@ -107,7 +111,7 @@ async def test_generate_resource(test_case, source_file, tool_config) -> None:
         )
 
         # Print the summary
-        print(f"Similarity Score: {similarity_score:.2%}")
+        logger.info(f"Similarity Score: {similarity_score:.2%}")
 
         if not no_fail:
             assert similarity_score >= SIMILARITY_THRESHOLD, (
@@ -115,7 +119,9 @@ async def test_generate_resource(test_case, source_file, tool_config) -> None:
             )
         else:
             if similarity_score < SIMILARITY_THRESHOLD:
-                print(f"\033[93mWARNING: Test '{test_name}' has low similarity score: {similarity_score:.2%}\033[0m")
+                logger.warning(
+                    f"\033[93mWARNING: Test '{test_name}' has low similarity score: {similarity_score:.2%}\033[0m"
+                )
 
     except Exception as e:
         GenerateResourceTestResult.add_result(
@@ -130,6 +136,6 @@ async def test_generate_resource(test_case, source_file, tool_config) -> None:
 
         # but don't fail
         if no_fail:
-            print(f"\033[93mWARNING: Test '{test_name}' encountered an error: {str(e)}\033[0m")
+            logger.warning(f"\033[93mWARNING: Test '{test_name}' encountered an error: {str(e)}\033[0m")
         else:
             pytest.fail(f"Failed to parse result: {str(e)}\nRaw output: {result}")

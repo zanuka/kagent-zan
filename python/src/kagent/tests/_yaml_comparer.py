@@ -1,5 +1,6 @@
 import difflib
 from typing import Any, Dict, Tuple
+
 import yaml
 
 

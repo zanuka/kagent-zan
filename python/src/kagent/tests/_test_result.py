@@ -1,7 +1,10 @@
-from datetime import datetime
 import json
+import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
+
+logger = logging.getLogger(__name__)
 
 REPORT_DIR = Path(__file__).parent / "test_results"
 
@@ -40,7 +43,7 @@ class GenerateResourceTestResult:
     def generate_report(cls, similarity_threshold: float):
         """Generate a console-based report of test results."""
         if not cls.results:
-            print("No test results to report.")
+            logger.info("No test results to report.")
             return
 
         # Calculate overall metrics
@@ -64,13 +67,12 @@ class GenerateResourceTestResult:
         with open(json_path, "w") as f:
             json.dump(report_data, f, indent=2)
 
-        # Print console report
-        print("\n" + "=" * 80)
-        print(f"GENERATIVE RESOURCE TOOL - TEST RESULTS")
-        print("=" * 80)
-        print(f"Total Tests: {total_tests}")
-        print(f"Average Similarity Score: {avg_score:.2%}")
-        print("=" * 80)
+        logger.info("\n" + "=" * 80)
+        logger.info("GENERATIVE RESOURCE TOOL - TEST RESULTS")
+        logger.info("=" * 80)
+        logger.info(f"Total Tests: {total_tests}")
+        logger.info(f"Average Similarity Score: {avg_score:.2%}")
+        logger.info("=" * 80)
 
         # Group results by resource type
         results_by_type = {}
@@ -80,10 +82,9 @@ class GenerateResourceTestResult:
                 results_by_type[resource_type] = []
             results_by_type[resource_type].append(result)
 
-        # Print results grouped by resource type
         for resource_type, type_results in results_by_type.items():
-            print(f"\nResource Type: {resource_type}")
-            print("-" * 40)
+            logger.info(f"\nResource Type: {resource_type}")
+            logger.info("-" * 40)
 
             # Sort results by similarity score (descending)
             sorted_results = sorted(type_results, key=lambda x: x["similarity_score"], reverse=True)
@@ -97,35 +98,34 @@ class GenerateResourceTestResult:
                 else:
                     status = "✗"  # Cross
 
-                print(f"{status} {result['test_name']}: {result['similarity_score']:.2%} match")
-                print(f"   Input: {result['input_description']}")
+                logger.info(f"{status} {result['test_name']}: {result['similarity_score']:.2%} match")
+                logger.info(f"   Input: {result['input_description']}")
 
-                # Only print detailed diff if similarity is low
                 if result["similarity_score"] < 0.9:
-                    print("   Differences:")
+                    logger.info("   Differences:")
                     diff_lines = result["diff_details"].split("\n")
                     for line in diff_lines[:5]:  # Limit to first 5 lines of diff
-                        print(f"     {line}")
+                        logger.info(f"     {line}")
                     if len(diff_lines) > 5:
-                        print("     ...")
+                        logger.info("     ...")
 
-                print()
+                logger.info()
 
         # Identify and highlight failing tests
         failing_tests = [r for r in cls.results if r["similarity_score"] < similarity_threshold]
         if failing_tests:
-            print("\n" + "=" * 80)
-            print("FAILING TESTS")
-            print("=" * 80)
+            logger.info("\n" + "=" * 80)
+            logger.info("FAILING TESTS")
+            logger.info("=" * 80)
             for test in failing_tests:
-                print(f"Test: {test['test_name']}")
-                print(f"Resource Type: {test['resource_type']}")
-                print(f"Similarity Score: {test['similarity_score']:.2%}")
-                print(f"Input: {test['input_description']}")
-                print("Detailed Differences:")
-                print(test["diff_details"])
-                print("-" * 40)
+                logger.info(f"Test: {test['test_name']}")
+                logger.info(f"Resource Type: {test['resource_type']}")
+                logger.info(f"Similarity Score: {test['similarity_score']:.2%}")
+                logger.info(f"Input: {test['input_description']}")
+                logger.info("Detailed Differences:")
+                logger.info(test["diff_details"])
+                logger.info("-" * 40)
 
-        print(f"\nFull report saved to: {json_path}")
+        logger.info(f"\nFull report saved to: {json_path}")
 
         return report_data
