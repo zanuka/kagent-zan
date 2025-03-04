@@ -1,0 +1,62 @@
+name: Tag and Push 
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number'
+
+# https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#release
+# GITHUB_SHA = Last commit in the tagged release
+# GITHUB_REF = Tag ref of release refs/tags/<tag_name>
+jobs:
+  push-helm-chart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@main
+
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: 'Build Image'
+        run: |
+          # if workflow_dispatch is used, use the version input
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            export VERSION=${{ github.event.inputs.version }}
+          else
+            export VERSION=$(echo "$GITHUB_REF" | cut -c8-)
+          fi
+          make build
+          make push
+  push-helm-chart:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './Store'
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@main
+
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: 'Build Image'
+        run: |
+          # if workflow_dispatch is used, use the version input
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            export VERSION=${{ github.event.inputs.version }}
+          else
+            export VERSION=$(echo "$GITHUB_REF" | cut -c8-)
+          fi
+          make helm-publish

@@ -17,12 +17,16 @@ check-openai-key:
 	fi
 
 # Build targets
-.PHONY: create-kind-cluster build controller-manifests build-controller build-app kind-load-docker-images check-openai-key helm-install helm-publish
+.PHONY: create-kind-cluster build controller-manifests build-controller build-app kind-load-docker-images check-openai-key helm-install helm-publish push
 
 create-kind-cluster:
 	kind create cluster --name autogen
 
 build: build-controller build-app
+
+push:
+	docker push $(CONTROLLER_IMG)
+	docker push $(APP_IMG)
 
 controller-manifests:
 	make -C go manifests
@@ -35,7 +39,7 @@ build-app:
 	# Build the combined UI and backend image
 	docker build -t $(APP_IMG) .
 	# Tag with latest for convenience
-	docker tag $(APP_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(APP_IMAGE_NAME):$(VERSION)
+	docker tag $(APP_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(APP_IMAGE_NAME):latest
 
 kind-load-docker-images: build
 	kind load docker-image --name autogen $(CONTROLLER_IMG)
