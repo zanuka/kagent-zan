@@ -14,6 +14,9 @@ on:
 jobs:
   push-images:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@main
@@ -25,7 +28,7 @@ jobs:
           username: ${{github.actor}}
           password: ${{secrets.GITHUB_TOKEN}}
 
-      - name: 'Build Image'
+      - name: 'Build Images'
         run: |
           # if workflow_dispatch is used, use the version input
           if [ -n "${{ github.event.inputs.version }}" ]; then
@@ -37,6 +40,9 @@ jobs:
           make push
   push-helm-chart:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@main
