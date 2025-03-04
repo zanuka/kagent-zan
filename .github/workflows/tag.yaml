@@ -37,9 +37,6 @@ jobs:
           make push
   push-helm-chart:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: './Store'
     steps:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@main
