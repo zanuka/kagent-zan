@@ -27,7 +27,6 @@ import (
 
 // AgentSpec defines the desired state of Agent.
 type AgentSpec struct {
-	Name          string `json:"name,omitempty"`
 	Description   string `json:"description,omitempty"`
 	SystemMessage string `json:"systemMessage,omitempty"`
 	Tools         []Tool `json:"tools,omitempty"`
@@ -36,12 +35,12 @@ type AgentSpec struct {
 type Tool struct {
 	Provider string `json:"provider,omitempty"`
 	// note: this implementation is due to the kubebuilder limitation https://github.com/kubernetes-sigs/controller-tools/issues/636
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
 	Config map[string]AnyType `json:"config,omitempty"`
 }
 
 type AnyType struct {
-	// +kubebuilder:pruning:PreserveUnknownFields
-	// +kubebuilder:validation:Schemaless
 	json.RawMessage `json:",inline"`
 }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,80 +26,81 @@ var _ = Describe("E2e", func() {
 		// add a team
 		namespace := "team-ns"
 
-		apikeySecret := &v1.Secret{
+		kubeExpert := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
+				Name:      "kube-expert",
 				Namespace: namespace,
 			},
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "Secret",
-				APIVersion: "v1",
-			},
-			Data: map[string][]byte{
-				apikeySecretKey: []byte(openaiApiKey),
-			},
-		}
-
-		modelConfig := &v1alpha1.ModelConfig{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-model",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenModelConfig",
-				APIVersion: "kagent.dev/v1alpha1",
-			},
-			Spec: v1alpha1.ModelConfigSpec{
-				Model:            "gpt-4o",
-				APIKeySecretName: apikeySecret.Name,
-				APIKeySecretKey:  apikeySecretKey,
-			},
-		}
-
-		planningAgent := &v1alpha1.Agent{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "planning-agent",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenAgent",
+				Kind:       "Agent",
 				APIVersion: "kagent.dev/v1alpha1",
 			},
 			Spec: v1alpha1.AgentSpec{
-				Name:          "planning_agent",
-				Description:   "The Planning Agent is responsible for planning and scheduling tasks. The planning agent is also responsible for deciding when the user task has been accomplished and terminating the conversation.",
-				SystemMessage: readFileAsString("systemprompts/planning-agent-system-prompt.txt"),
-			},
-		}
-
-		kubectlUser := &v1alpha1.Agent{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kubectl-user",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenAgent",
-				APIVersion: "kagent.dev/v1alpha1",
-			},
-			Spec: v1alpha1.AgentSpec{
-				Name:          "kubectl_execution_agent",
-				Description:   "The Kubectl User is responsible for running kubectl commands corresponding to user requests.",
-				SystemMessage: readFileAsString("systemprompts/kubectl-user-system-prompt.txt"),
+				Description:   "The Kubernetes Expert AI Agent specializing in cluster operations, troubleshooting, and maintenance.",
+				SystemMessage: readFileAsString("systemprompts/kube-expert-system-prompt.txt"),
 				Tools: []v1alpha1.Tool{
 					{
-						Provider: string(v1alpha1.BuiltinTool_KubectlGetPods),
+						Provider: "kagent.tools.k8s.AnnotateResource",
 					},
 					{
-						Provider: string(v1alpha1.BuiltinTool_KubectlGetServices),
+						Provider: "kagent.tools.k8s.ApplyManifest",
 					},
 					{
-						Provider: string(v1alpha1.BuiltinTool_KubectlApplyManifest),
+						Provider: "kagent.tools.k8s.CheckServiceConnectivity",
 					},
 					{
-						Provider: string(v1alpha1.BuiltinTool_KubectlGetResources),
+						Provider: "kagent.tools.k8s.CreateResource",
 					},
 					{
-						Provider: string(v1alpha1.BuiltinTool_KubectlGetPodLogs),
+						Provider: "kagent.tools.k8s.DeleteResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.DescribeResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.ExecuteCommand",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetAvailableAPIResources",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetClusterConfiguration",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetEvents",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetPodLogs",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetResources",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetResourceYAML",
+					},
+					{
+						Provider: "kagent.tools.k8s.LabelResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.PatchResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.RemoveAnnotation",
+					},
+					{
+						Provider: "kagent.tools.k8s.RemoveLabel",
+					},
+					{
+						Provider: "kagent.tools.k8s.Rollout",
+					},
+					{
+						Provider: "kagent.tools.k8s.Scale",
+					},
+					{
+						Provider: "kagent.tools.k8s.GenerateResourceTool",
+					},
+					{
+						Provider: "kagent.tools.k8s.GenerateResourceToolConfig",
 					},
 					{
 						Provider: "kagent.tools.docs.QueryTool",
@@ -114,74 +114,10 @@ var _ = Describe("E2e", func() {
 			},
 		}
 
-		kubeExpert := &v1alpha1.Agent{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kube-expert",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenAgent",
-				APIVersion: "kagent.dev/v1alpha1",
-			},
-			Spec: v1alpha1.AgentSpec{
-				Name:          "kubernetes_expert_agent",
-				Description:   "The Kubernetes Expert AI Agent specializing in cluster operations, troubleshooting, and maintenance.",
-				SystemMessage: readFileAsString("systemprompts/kube-expert-system-prompt.txt"),
-			},
-		}
-
-		apiTeam := &v1alpha1.Team{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kube-team",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenTeam",
-				APIVersion: "kagent.dev/v1alpha1",
-			},
-			Spec: v1alpha1.TeamSpec{
-				Participants: []string{
-					planningAgent.Name,
-					kubectlUser.Name,
-					kubeExpert.Name,
-				},
-				Description: "A team that debugs kubernetes issues.",
-				//SelectorTeamConfig: &v1alpha1.SelectorTeamConfig{
-				//	ModelConfig:    modelConfig.Name,
-				//	SelectorPrompt: "Please select a team member to help you with your Kubernetes issue.",
-				//},
-				ModelConfig: modelConfig.Name,
-				MagenticOneTeamConfig: &v1alpha1.MagenticOneTeamConfig{
-					MaxStalls: 3,
-					FinalAnswerPrompt: `We are working on the following task:
-{task}
-
-We have completed the task.
-
-The above messages contain the conversation that took place to complete the task.
-
-Based on the information gathered, provide the final answer to the original request.
-The answer should be phrased as if you were speaking to the user.`,
-				},
-				TerminationCondition: v1alpha1.TerminationCondition{
-					MaxMessageTermination:  &v1alpha1.MaxMessageTermination{MaxMessages: 10},
-					TextMentionTermination: &v1alpha1.TextMentionTermination{Text: "TERMINATE"},
-				},
-				MaxTurns: 10,
-			},
-		}
-
 		writeKubeObjects(
 			"manifests/kubeobjects.yaml",
-			apikeySecret,
-			modelConfig,
-			planningAgent,
 			kubeExpert,
-			kubectlUser,
-			apiTeam,
 		)
-
-		Expect(true).To(BeTrue())
 	})
 })
 
