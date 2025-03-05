@@ -58,6 +58,19 @@ func GetCmd(c *ishell.Context) {
 			byt, _ := json.MarshalIndent(run, "", "  ")
 			c.Println(string(byt))
 		}
+	case "session":
+		if resourceName == "" {
+			sessionList, err := client.ListSessions(cfg.UserID)
+			if err != nil {
+				c.Printf("Failed to get sessions: %v\n", err)
+				return
+			}
+			if err := printSessions(sessionList); err != nil {
+				c.Printf("Failed to print sessions: %v\n", err)
+				return
+			}
+		}
+
 	case "agent":
 		if resourceName == "" {
 			agentList, err := client.ListTeams(cfg.UserID)
@@ -84,10 +97,11 @@ func GetCmd(c *ishell.Context) {
 
 }
 
-func printRuns(runs []autogen_client.Run) error {
+func printRuns(runs []*autogen_client.Run) error {
 	headers := []string{"#", "ID", "CONTENT", "MESSAGES", "STATUS", "CREATED"}
 	rows := make([][]string, len(runs))
 	for i, run := range runs {
+
 		// Truncate task content to first 10 characters if possible
 		content := run.Task.Content
 		if len(content) > 10 {
@@ -96,7 +110,7 @@ func printRuns(runs []autogen_client.Run) error {
 
 		rows[i] = []string{
 			strconv.Itoa(i),
-			run.ID,
+			run.ID.String(),
 			content,
 			strconv.Itoa(len(run.Messages)),
 			run.Status,
@@ -107,7 +121,7 @@ func printRuns(runs []autogen_client.Run) error {
 	return printOutput(runs, headers, rows)
 }
 
-func printTeams(teams []autogen_client.Team) error {
+func printTeams(teams []*autogen_client.Team) error {
 	// Prepare table data
 	headers := []string{"#", "NAME", "ID", "CREATED"}
 	rows := make([][]string, len(teams))
@@ -121,4 +135,19 @@ func printTeams(teams []autogen_client.Team) error {
 	}
 
 	return printOutput(teams, headers, rows)
+}
+
+func printSessions(sessions []autogen_client.Session) error {
+	headers := []string{"#", "ID", "NAME", "TEAM"}
+	rows := make([][]string, len(sessions))
+	for i, session := range sessions {
+		rows[i] = []string{
+			strconv.Itoa(i),
+			strconv.Itoa(session.ID),
+			session.Name,
+			strconv.Itoa(session.TeamID),
+		}
+	}
+
+	return printOutput(sessions, headers, rows)
 }

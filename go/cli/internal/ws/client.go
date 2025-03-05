@@ -73,7 +73,7 @@ type Shell interface {
 }
 
 // StartInteractive initiates the interactive session with the server
-func (c *Client) StartInteractive(ctx context.Context, shell Shell, team autogen_client.Team, task string) error {
+func (c *Client) StartInteractive(ctx context.Context, shell Shell, team *autogen_client.Team, task string) error {
 	defer c.conn.Close()
 
 	interrupt := make(chan os.Signal, 1)
@@ -262,9 +262,19 @@ func (c *Client) handleMessages(shell Shell) {
 				}
 				streaming[modelStreaming.Source] = true
 				shell.Printf(modelStreaming.Content)
+			case ContentTypeLLMCallEventMessage:
+				var llmCallEvent LLMCallEvent
+				if err := json.Unmarshal(msg.Data, &llmCallEvent); err != nil {
+					shell.Printf("Error parsing message data: %v\n", err)
+					continue
+				}
+				shell.Printf(llmCallEvent.Content)
 			}
 
 		case MessageTypeInputRequest:
+			if s.Active() {
+				s.Stop()
+			}
 			go func() {
 				// TODO: properly handle this error
 				if err := c.handleUserInput(shell, msg.Data); err != nil {
@@ -281,7 +291,6 @@ func (c *Client) handleMessages(shell Shell) {
 			}
 
 			shell.Printf("Closing session, thank you :)")
-			// shell.Printf("\n(%s) Task completed:\n%s", msgResult.Status, msgResult.Data)
 			return
 		}
 
