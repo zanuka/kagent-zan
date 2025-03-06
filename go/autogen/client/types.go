@@ -11,7 +11,7 @@ type Team struct {
 	UpdatedAt *string        `json:"updated_at,omitempty"`
 	UserID    string         `json:"user_id"`
 	Version   *string        `json:"version,omitempty"`
-	Id        int            `json:"id"`
+	Id        int            `json:"id,omitempty"`
 }
 
 type ModelsUsage struct {
@@ -32,7 +32,7 @@ type RunMessage struct {
 	Version     *string                `json:"version,omitempty"`
 	SessionID   int                    `json:"session_id"`
 	MessageMeta map[string]interface{} `json:"message_meta"`
-	ID          uuid.UUID              `json:"id"`
+	ID          int                    `json:"id"`
 	UserID      *string                `json:"user_id"`
 	Config      map[string]interface{} `json:"config"`
 	RunID       uuid.UUID              `json:"run_id"`
@@ -52,12 +52,14 @@ type SessionRuns struct {
 }
 
 type Run struct {
-	ID         uuid.UUID     `json:"id"`
-	CreatedAt  string        `json:"created_at"`
-	Status     string        `json:"status"`
-	Task       Task          `json:"task"`
-	TeamResult TeamResult    `json:"team_result"`
-	Messages   []*RunMessage `json:"messages"`
+	ID           uuid.UUID     `json:"id"`
+	SessionID    int           `json:"session_id"`
+	CreatedAt    string        `json:"created_at"`
+	Status       string        `json:"status"`
+	Task         Task          `json:"task"`
+	TeamResult   TeamResult    `json:"team_result"`
+	Messages     []*RunMessage `json:"messages"`
+	ErrorMessage string        `json:"error_message"`
 }
 
 type Task struct {

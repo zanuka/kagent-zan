@@ -19,6 +19,7 @@ type MessageType string
 const (
 	MessageTypeStart         MessageType = "start"
 	MessageTypeMessage       MessageType = "message"
+	MessageTypeMessageChunk  MessageType = "message_chunk"
 	MessageTypeInputRequest  MessageType = "input_request"
 	MessageTypeResult        MessageType = "result"
 	MessageTypeCompletion    MessageType = "completion"

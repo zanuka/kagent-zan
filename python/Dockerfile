@@ -1,16 +1,3 @@
-FROM node:18-alpine AS ui-builder
-
-WORKDIR /app/ui
-
-COPY ui/package*.json ./
-RUN mkdir -p /app/ui/public
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN npm ci
-
-COPY ui/ .
-RUN npm run build
-
 FROM ghcr.io/astral-sh/uv:debian-slim AS final
 
 ENV PYTHONUNBUFFERED=1 \
@@ -58,46 +45,28 @@ RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/s
     && rm get_helm.sh
 
 # Create groups and users
-RUN groupadd -g 1001 nodejs \
-    && groupadd -g 1002 pythongroup \
-    && useradd -u 1001 -g nodejs -s /bin/bash -m nextjs \
+RUN groupadd -g 1002 pythongroup \
     && useradd -u 1002 -g pythongroup -s /bin/bash -m python \
     && mkdir -p /app/python /app/ui /run/nginx \
-    && chown -R python:pythongroup /app/python \
-    && chown -R nextjs:nodejs /app/ui
+    && chown -R python:pythongroup /app/python
 
 # Set up Python backend
 WORKDIR /app/python
-COPY python/pyproject.toml .
-COPY python/.python-version .
-COPY python/uv.lock .
-COPY python/src src
-COPY python/README.md .
+COPY pyproject.toml .
+COPY .python-version .
+COPY uv.lock .
+COPY src src
+COPY README.md .
 RUN uv sync --all-extras && \
     chown -R python:pythongroup /app/python
 
 # Generate tools and agents
 RUN mkdir -p /root/.autogenstudio/configs
 RUN uv run tool_gen -o /root/.autogenstudio/configs
-COPY python/agents/*.json /root/.autogenstudio/configs
-
-# Set up Next.js UI
-WORKDIR /app/ui
-
-COPY --from=ui-builder /app/ui/next.config.ts ./
-COPY --from=ui-builder /app/ui/public ./public
-COPY --from=ui-builder /app/ui/package.json ./package.json
-COPY --from=ui-builder --chown=nextjs:nodejs /app/ui/.next/standalone ./
-COPY --from=ui-builder --chown=nextjs:nodejs /app/ui/.next/static ./.next/static
-
-# Set up Nginx and Supervisor
-WORKDIR /app
-COPY conf/nginx.conf /etc/nginx/nginx.conf
-COPY conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY agents/*.json /root/.autogenstudio/configs
 
 # Ensure correct permissions
-RUN chown -R nextjs:nodejs /app/ui && \
-    chown -R python:pythongroup /app/python && \
+RUN chown -R python:pythongroup /app/python && \
     chmod -R 755 /app
 
 RUN mkdir -p /app/python/.cache/uv && \
@@ -108,4 +77,4 @@ EXPOSE 80
 LABEL org.opencontainers.image.source=https://github.com/kagent-dev/kagent
 LABEL org.opencontainers.image.description="Kagent app is the UI and apiserver for running agents."
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["uv", "run", "autogenstudio", "ui", "--host", "0.0.0.0", "--port", "8081"]

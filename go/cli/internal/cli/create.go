@@ -41,6 +41,26 @@ func CreateCmd(c *ishell.Context) {
 			return
 		}
 
+		req := autogen_client.ValidationRequest{
+			Component: &cmp,
+		}
+		// call client validate
+		resp, err := client.Validate(&req)
+		if err != nil {
+			c.Printf("Error validating component: %v\n", err)
+			return
+		}
+
+		if !resp.IsValid {
+			c.Println("Component is invalid")
+			for _, err := range resp.Errors {
+				c.Printf("Error: %s\n", err.Error)
+			}
+			for _, err := range resp.Warnings {
+				c.Printf("Warning: %s\n", err.Error)
+			}
+			return
+		}
 		team := autogen_client.Team{
 			Component: &cmp,
 			UserID:    cfg.UserID,
@@ -52,4 +72,6 @@ func CreateCmd(c *ishell.Context) {
 	default:
 		c.Println("Invalid resource type. Valid resource types are: team")
 	}
+
+	c.Println("Successfully created resource")
 }

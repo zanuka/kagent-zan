@@ -2,8 +2,6 @@ package autogen
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -17,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const GlobalUserID = "admin@kagent.io"
+const GlobalUserID = "admin@kagent.dev"
 
 type ApiTranslator interface {
 	TranslateGroupChatForTeam(
@@ -263,7 +261,6 @@ func (a *apiTranslator) translateGroupChatForTeam(
 	teamConfig.Label = makePtr(team.Name)
 
 	return &autogen_client.Team{
-		Id:        generateIdFromString(team.Name + "-" + team.Namespace),
 		UserID:    GlobalUserID, // always use global id
 		Component: teamConfig,
 	}, nil
@@ -390,13 +387,6 @@ func convertToolConfig(config map[string]v1alpha1.AnyType) (map[string]interface
 
 func makePtr[T any](v T) *T {
 	return &v
-}
-
-func generateIdFromString(s string) int {
-	hash := sha256.Sum256([]byte(s))
-	// Uses first 8 bytes
-	number := int(binary.BigEndian.Uint64(hash[:8]))
-	return number
 }
 
 func translateTerminationCondition(terminationCondition v1alpha1.TerminationCondition) (*api.Component, error) {

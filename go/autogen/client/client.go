@@ -87,26 +87,30 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 		return fmt.Errorf("error reading response: %w", err)
 	}
 
-	// Decode into APIResponse first
+	// Try decoding into APIResponse first
 	var apiResp APIResponse
-	if err := json.Unmarshal(b, &apiResp); err != nil {
-		return fmt.Errorf("error decoding response [%s]: %w", b, err)
-	}
 
-	// Check response status
-	if !apiResp.Status {
-		return fmt.Errorf("api error: [%+v]", apiResp)
-	}
-
-	// If caller wants the result, marshal the Data field into their result type
-	if result != nil {
-		dataBytes, err := json.Marshal(apiResp.Data)
-		if err != nil {
-			return fmt.Errorf("error re-marshaling data: %w", err)
+	decoder := json.NewDecoder(bytes.NewReader(b))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&apiResp); err != nil {
+		// Trying the base value
+		return json.Unmarshal(b, result)
+	} else {
+		// Check response status
+		if !apiResp.Status {
+			return fmt.Errorf("api error: [%+v]", apiResp)
 		}
 
-		if err := json.Unmarshal(dataBytes, result); err != nil {
-			return fmt.Errorf("error unmarshaling into result: %w", err)
+		// If caller wants the result, marshal the Data field into their result type
+		if result != nil {
+			dataBytes, err := json.Marshal(apiResp.Data)
+			if err != nil {
+				return fmt.Errorf("error re-marshaling data: %w", err)
+			}
+
+			if err := json.Unmarshal(dataBytes, result); err != nil {
+				return fmt.Errorf("error unmarshaling into result: %w", err)
+			}
 		}
 	}
 

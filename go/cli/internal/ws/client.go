@@ -159,6 +159,9 @@ func (c *Client) handleMessages(shell Shell) {
 			shell.Printf("Error: %s\n", msg.Error)
 			return
 
+		case MessageTypeMessageChunk:
+			// Treat this the same as a full message
+			fallthrough
 		case MessageTypeMessage:
 			mapStructure := &map[string]string{}
 			_ = json.Unmarshal(msg.Data, mapStructure)

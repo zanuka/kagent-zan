@@ -4,8 +4,8 @@ __pycache__
 *.pyd
 .Python
 env/
-venv/
-python/.env
+.venv/
+.env
 *.log
 .git/
 .gitignore

@@ -37,10 +37,30 @@ app:
       cpu: 1000m
       memory: 1Gi
 
+ui:
+  image:
+    registry: ghcr.io
+    repository: kagent-dev/kagent/ui
+    tag: ""  # Will default to global, then Chart version
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  
+
 service:
   type: ClusterIP
-  port: 80
-  targetPort: 80
+  ports:
+    ui:
+      port: 80
+      targetPort: 80
+    app:
+      port: 8081
+      targetPort: 8081
 
 imagePullSecrets: []
 nameOverride: ""

@@ -29,19 +29,11 @@ func (c *Client) ListRuns(userID string) ([]*Run, error) {
 	// For each session, get the run information
 	var runs []*Run
 	for _, session := range sessions {
-		var sessionRuns SessionRuns
-		err := c.doRequest("GET", fmt.Sprintf("/sessions/%d/runs/?user_id=%s", session.ID, userID), nil, &sessionRuns)
+		sessionRuns, err := c.ListSessionRuns(session.ID, userID)
 		if err != nil {
-			fmt.Println("Error getting runs for session")
 			return nil, err
 		}
-		for _, run := range sessionRuns.Runs {
-			run.Messages, err = c.GetRunMessages(run.ID)
-			if err != nil {
-				return nil, err
-			}
-			runs = append(runs, &run)
-		}
+		runs = append(runs, sessionRuns...)
 	}
 	return runs, nil
 }

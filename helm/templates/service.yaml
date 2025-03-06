@@ -7,9 +7,13 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
+    - port: {{ .Values.service.ports.ui.port }}
+      targetPort: {{ .Values.service.ports.ui.targetPort }}
       protocol: TCP
-      name: http
+      name: ui
+    - port: {{ .Values.service.ports.app.port }}
+      targetPort: {{ .Values.service.ports.app.targetPort }}
+      protocol: TCP
+      name: app
   selector:
     {{- include "kagent.selectorLabels" . | nindent 4 }}
