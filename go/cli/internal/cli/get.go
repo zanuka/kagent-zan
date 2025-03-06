@@ -3,98 +3,100 @@ package cli
 import (
 	"encoding/json"
 	"strconv"
-	"strings"
 
 	"github.com/abiosoft/ishell/v2"
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
-	"github.com/kagent-dev/kagent/go/cli/internal/config"
 )
 
-func GetCmd(c *ishell.Context) {
-	if len(c.Args) == 0 {
-		c.Printf("Usage: get [resource_type] [resource_name]\n")
-		return
+func GetAgentCmd(c *ishell.Context) {
+	var resourceName string
+	if len(c.Args) > 0 {
+		resourceName = c.Args[0]
 	}
+	client := GetClient(c)
+	cfg := GetCfg(c)
 
-	cfg, err := config.Get()
-	if err != nil {
-		c.Printf("Failed to get config: %v\n", err)
-		return
-	}
-
-	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
-
-	resourceType := ""
-	resourceName := ""
-	for idx, arg := range c.Args {
-		if idx == 0 {
-			resourceType = arg
-		} else if idx == 1 {
-			resourceName = arg
+	if resourceName == "" {
+		agentList, err := client.ListTeams(cfg.UserID)
+		if err != nil {
+			c.Printf("Failed to get agents: %v\n", err)
+			return
 		}
-	}
-
-	// Lowercase the resource type and remove the plural "s" if it exists
-	resourceType = strings.TrimSuffix(strings.ToLower(resourceType), "s")
-	switch resourceType {
-	case "run":
-		if resourceName == "" {
-			runList, err := client.ListRuns(cfg.UserID)
-			if err != nil {
-				c.Printf("Failed to get runs: %v\n", err)
-				return
-			}
-
-			if err := printRuns(runList); err != nil {
-				c.Printf("Failed to print runs: %v\n", err)
-				return
-			}
-		} else {
-			run, err := client.GetRun(resourceName)
-			if err != nil {
-				c.Printf("Failed to get run %s: %v\n", resourceName, err)
-				return
-			}
-			byt, _ := json.MarshalIndent(run, "", "  ")
-			c.Println(string(byt))
+		if err := printTeams(agentList); err != nil {
+			c.Printf("Failed to print agents: %v\n", err)
+			return
 		}
-	case "session":
-		if resourceName == "" {
-			sessionList, err := client.ListSessions(cfg.UserID)
-			if err != nil {
-				c.Printf("Failed to get sessions: %v\n", err)
-				return
-			}
-			if err := printSessions(sessionList); err != nil {
-				c.Printf("Failed to print sessions: %v\n", err)
-				return
-			}
+	} else {
+		agent, err := client.GetTeam(resourceName, cfg.UserID)
+		if err != nil {
+			c.Printf("Failed to get agent %s: %v\n", resourceName, err)
+			return
+		}
+		byt, _ := json.MarshalIndent(agent, "", "  ")
+		c.Println(string(byt))
+	}
+}
+
+func GetRunCmd(c *ishell.Context) {
+	var resourceName string
+	if len(c.Args) > 0 {
+		resourceName = c.Args[0]
+	}
+	client := GetClient(c)
+	cfg := GetCfg(c)
+	if resourceName == "" {
+		runList, err := client.ListRuns(cfg.UserID)
+		if err != nil {
+			c.Printf("Failed to get runs: %v\n", err)
+			return
 		}
 
-	case "agent":
-		if resourceName == "" {
-			agentList, err := client.ListTeams(cfg.UserID)
-			if err != nil {
-				c.Printf("Failed to get agents: %v\n", err)
-				return
-			}
-			if err := printTeams(agentList); err != nil {
-				c.Printf("Failed to print agents: %v\n", err)
-				return
-			}
-		} else {
-			agent, err := client.GetTeam(resourceName, cfg.UserID)
-			if err != nil {
-				c.Printf("Failed to get agent %s: %v\n", resourceName, err)
-				return
-			}
-			byt, _ := json.MarshalIndent(agent, "", "  ")
-			c.Println(string(byt))
+		if err := printRuns(runList); err != nil {
+			c.Printf("Failed to print runs: %v\n", err)
+			return
 		}
-	default:
-		c.Printf("Unknown resource type: %s\n", resourceType)
+	} else {
+		run, err := client.GetRun(resourceName)
+		if err != nil {
+			c.Printf("Failed to get run %s: %v\n", resourceName, err)
+			return
+		}
+		byt, _ := json.MarshalIndent(run, "", "  ")
+		c.Println(string(byt))
 	}
+}
 
+func GetSessionCmd(c *ishell.Context) {
+	var resourceName string
+	if len(c.Args) > 0 {
+		resourceName = c.Args[0]
+	}
+	client := GetClient(c)
+	cfg := GetCfg(c)
+	if resourceName == "" {
+		sessionList, err := client.ListSessions(cfg.UserID)
+		if err != nil {
+			c.Printf("Failed to get sessions: %v\n", err)
+			return
+		}
+		if err := printSessions(sessionList); err != nil {
+			c.Printf("Failed to print sessions: %v\n", err)
+			return
+		}
+	} else {
+		sessionID, err := strconv.Atoi(resourceName)
+		if err != nil {
+			c.Printf("Failed to convert session name to ID: %v\n", err)
+			return
+		}
+		session, err := client.GetSession(sessionID, cfg.UserID)
+		if err != nil {
+			c.Printf("Failed to get session %s: %v\n", resourceName, err)
+			return
+		}
+		byt, _ := json.MarshalIndent(session, "", "  ")
+		c.Println(string(byt))
+	}
 }
 
 func printRuns(runs []*autogen_client.Run) error {
@@ -137,7 +139,7 @@ func printTeams(teams []*autogen_client.Team) error {
 	return printOutput(teams, headers, rows)
 }
 
-func printSessions(sessions []autogen_client.Session) error {
+func printSessions(sessions []*autogen_client.Session) error {
 	headers := []string{"#", "ID", "NAME", "TEAM"}
 	rows := make([][]string, len(sessions))
 	for i, session := range sessions {

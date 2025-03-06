@@ -28,7 +28,16 @@ func Map[E any, F any](s iter.Seq[E], f func(E) F) iter.Seq[F] {
 	}
 }
 
-// printOutput handles the output formatting based on the configured output format
+func Filter[E any](s iter.Seq[E], f func(E) bool) iter.Seq[E] {
+	return func(yield func(E) bool) {
+		for v := range s {
+			if f(v) && !yield(v) {
+				return
+			}
+		}
+	}
+}
+
 func printOutput(data interface{}, tableHeaders []string, tableRows [][]string) error {
 	format := OutputFormat(viper.GetString("output_format"))
 

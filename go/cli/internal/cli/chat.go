@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/abiosoft/ishell/v2"
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
@@ -10,6 +11,10 @@ import (
 	"github.com/kagent-dev/kagent/go/cli/internal/ws"
 	"github.com/spf13/pflag"
 	"golang.org/x/exp/rand"
+)
+
+const (
+	sessionCreateNew = "[New Session]"
 )
 
 func generateRandomString(prefix string, length int) (string, error) {
@@ -61,6 +66,11 @@ func ChatCmd(c *ishell.Context) {
 			return
 		}
 
+		if len(teams) == 0 {
+			c.Println("No teams found, please create one via the web UI or CRD before chatting.")
+			return
+		}
+
 		teamNames := make([]string, len(teams))
 		for i, team := range teams {
 			if team.Component.Label == nil {
@@ -73,22 +83,46 @@ func ChatCmd(c *ishell.Context) {
 		team = teams[selectedTeamIdx]
 	}
 
-	// Create a random session name
-	sessionName, err := generateRandomString("session-", 5)
+	sessions, err := client.ListSessions(cfg.UserID)
 	if err != nil {
 		c.Println(err)
 		return
 	}
 
-	session, err := client.CreateSession(&autogen_client.CreateSession{
-		UserID: cfg.UserID,
-		// This will probably be created on the apiserver side in the future
-		Name:   sessionName,
-		TeamID: team.Id,
-	})
-	if err != nil {
-		c.Println(err)
-		return
+	existingSessions := slices.Collect(Filter(slices.Values(sessions), func(session *autogen_client.Session) bool {
+		return session.TeamID == team.Id
+	}))
+
+	existingSessionNames := slices.Collect(Map(slices.Values(existingSessions), func(session *autogen_client.Session) string {
+		return session.Name
+	}))
+
+	// Add the new session option to the beginning of the list
+	existingSessionNames = append([]string{sessionCreateNew}, existingSessionNames...)
+	selectedSessionIdx := c.MultiChoice(existingSessionNames, "Select a session:")
+
+	var session *autogen_client.Session
+	if selectedSessionIdx == 0 {
+		c.ShowPrompt(false)
+		c.Print("Enter a session name: ")
+		sessionName, err := c.ReadLineErr()
+		if err != nil {
+			c.Println(err)
+			c.ShowPrompt(true)
+			return
+		}
+		c.ShowPrompt(true)
+		session, err = client.CreateSession(&autogen_client.CreateSession{
+			UserID: cfg.UserID,
+			Name:   sessionName,
+			TeamID: team.Id,
+		})
+		if err != nil {
+			c.Println(err)
+			return
+		}
+	} else {
+		session = existingSessions[selectedSessionIdx-1]
 	}
 
 	promptStr := BoldGreen(fmt.Sprintf("%s--%s> ", *team.Component.Label, session.Name))
@@ -112,8 +146,12 @@ func ChatCmd(c *ishell.Context) {
 	}
 	c.ShowPrompt(false)
 	c.Print("Enter a task: ")
-	task := c.ReadLine()
+	task, err := c.ReadLineErr()
+	if err != nil {
+		c.Println(err)
+		c.ShowPrompt(true)
+		return
+	}
 	c.ShowPrompt(true)
-
 	wsClient.StartInteractive(context.Background(), c, team, task)
 }
