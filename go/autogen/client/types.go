@@ -11,7 +11,7 @@ type Team struct {
 	UpdatedAt *string        `json:"updated_at,omitempty"`
 	UserID    string         `json:"user_id"`
 	Version   *string        `json:"version,omitempty"`
-	Id        int            `json:"id"`
+	Id        int            `json:"id,omitempty"`
 }
 
 type ModelsUsage struct {

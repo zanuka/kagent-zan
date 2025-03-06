@@ -154,7 +154,7 @@ func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
 		return fmt.Errorf("failed to get existing team %s: %v", *team.Component.Label, err)
 	}
 	if existingTeam != nil {
-		err = a.autogenClient.DeleteTeam(team.Id, GlobalUserID)
+		err = a.autogenClient.DeleteTeam(existingTeam.Id, GlobalUserID)
 		if err != nil {
 			return fmt.Errorf("failed to delete existing team %s: %v", *team.Component.Label, err)
 		}
