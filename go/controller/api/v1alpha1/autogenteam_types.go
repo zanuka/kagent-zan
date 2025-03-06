@@ -20,8 +20,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const (
+	TeamConditionTypeAccepted = "Accepted"
+
+	TeamConditionStatusTrue  = "True"
+	TeamConditionStatusFalse = "False"
+)
 
 // TeamSpec defines the desired state of Team.
 type TeamSpec struct {
@@ -87,7 +91,17 @@ type OrTerminationCondition struct {
 }
 
 // TeamStatus defines the observed state of Team.
-type TeamStatus struct{}
+type TeamStatus struct {
+	Conditions         []TeamCondition `json:"conditions"`
+	ObservedGeneration int64           `json:"observedGeneration"`
+}
+
+type TeamCondition struct {
+	Type               string      `json:"type"`
+	Status             string      `json:"status"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+	Reason             string      `json:"reason"`
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

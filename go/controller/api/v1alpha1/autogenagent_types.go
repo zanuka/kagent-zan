@@ -22,8 +22,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const (
+	AgentConditionTypeAccepted = "Accepted"
+
+	AgentConditionStatusTrue  = "True"
+	AgentConditionStatusFalse = "False"
+)
 
 // AgentSpec defines the desired state of Agent.
 type AgentSpec struct {
@@ -45,7 +49,17 @@ type AnyType struct {
 }
 
 // AgentStatus defines the observed state of Agent.
-type AgentStatus struct{}
+type AgentStatus struct {
+	ObservedGeneration int64            `json:"observedGeneration,omitempty"`
+	Conditions         []AgentCondition `json:"conditions,omitempty"`
+}
+
+type AgentCondition struct {
+	Type               string      `json:"type"`
+	Status             string      `json:"status"`
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
+	Reason             string      `json:"reason"`
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
