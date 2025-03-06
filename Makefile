@@ -34,10 +34,7 @@ build-cli:
 	make -C go build
 
 .PHONY: push
-push:
-	docker push $(CONTROLLER_IMG)
-	docker push $(UI_IMG)
-	docker push $(APP_IMG)
+push: push-controller push-ui push-app
 
 .PHONY: controller-manifests
 controller-manifests:
@@ -48,6 +45,10 @@ controller-manifests:
 build-controller: controller-manifests
 	make -C go docker-build
 
+.PHONY: push-controller
+push-controller:
+	docker push $(CONTROLLER_IMG)
+
 .PHONY: build-ui
 build-ui:
 	# Build the combined UI and backend image
@@ -55,10 +56,18 @@ build-ui:
 	# Tag with latest for convenience
 	docker tag $(UI_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(UI_IMAGE_NAME):latest
 
+.PHONY: push-ui
+push-ui:
+	docker push $(UI_IMG)
+
 .PHONY: build-app
 build-app:
 	docker build -t $(APP_IMG) -f python/Dockerfile ./python
 	docker tag $(APP_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(APP_IMAGE_NAME):latest
+
+.PHONY: push-app
+push-app:
+	docker push $(APP_IMG)
 
 .PHONY: kind-load-docker-images
 kind-load-docker-images: build

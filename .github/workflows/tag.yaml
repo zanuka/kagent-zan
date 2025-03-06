@@ -14,6 +14,13 @@ on:
 # GITHUB_REF = Tag ref of release refs/tags/<tag_name>
 jobs:
   push-images:
+    strategy:
+      matrix:
+        image:
+          - controller
+          - ui
+          - app
+          - cli
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -37,8 +44,8 @@ jobs:
         else
           export VERSION=$(echo "$GITHUB_REF" | cut -c12-)
         fi
-        make build
-        make push
+        make build-${{ matrix.image }}
+        make push-${{ matrix.image }}
   push-helm-chart:
     runs-on: ubuntu-latest
     permissions:
