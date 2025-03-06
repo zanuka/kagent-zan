@@ -36,8 +36,9 @@ build-cli:
 .PHONY: push
 push:
 	docker push $(CONTROLLER_IMG)
+	docker push $(UI_IMG)
 	docker push $(APP_IMG)
-	docker push $(APP_IMG)
+
 .PHONY: controller-manifests
 controller-manifests:
 	make -C go manifests
@@ -50,9 +51,9 @@ build-controller: controller-manifests
 .PHONY: build-ui
 build-ui:
 	# Build the combined UI and backend image
-	docker build -t $(APP_IMG) -f ui/Dockerfile ./ui
+	docker build -t $(UI_IMG) -f ui/Dockerfile ./ui
 	# Tag with latest for convenience
-	docker tag $(APP_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(UI_IMAGE_NAME):latest
+	docker tag $(UI_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(UI_IMAGE_NAME):latest
 
 .PHONY: build-app
 build-app:
