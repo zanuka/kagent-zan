@@ -2,11 +2,14 @@
 DOCKER_REGISTRY ?= ghcr.io
 DOCKER_REPO ?= kagent-dev/kagent
 CONTROLLER_IMAGE_NAME ?= controller
+UI_IMAGE_NAME ?= ui
 APP_IMAGE_NAME ?= app
 VERSION ?= $(shell git describe --tags --always --dirty)
 CONTROLLER_IMAGE_TAG ?= $(VERSION)
+UI_IMAGE_TAG ?= $(VERSION)
 APP_IMAGE_TAG ?= $(VERSION)
 CONTROLLER_IMG ?= $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(CONTROLLER_IMAGE_NAME):$(CONTROLLER_IMAGE_TAG)
+UI_IMG ?= $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(UI_IMAGE_NAME):$(UI_IMAGE_TAG)
 APP_IMG ?= $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(APP_IMAGE_NAME):$(APP_IMAGE_TAG)
 
 # Check if OPENAI_API_KEY is set
@@ -24,7 +27,7 @@ create-kind-cluster:
 	kind create cluster --name autogen
 
 .PHONY: build
-build: build-controller build-app
+build: build-controller build-ui build-app
 
 .PHONY: build-cli
 build-cli:
@@ -34,7 +37,7 @@ build-cli:
 push:
 	docker push $(CONTROLLER_IMG)
 	docker push $(APP_IMG)
-
+	docker push $(APP_IMG)
 .PHONY: controller-manifests
 controller-manifests:
 	make -C go manifests
@@ -44,16 +47,22 @@ controller-manifests:
 build-controller: controller-manifests
 	make -C go docker-build
 
+.PHONY: build-ui
+build-ui:
+	# Build the combined UI and backend image
+	docker build -t $(APP_IMG) -f ui/Dockerfile ./ui
+	# Tag with latest for convenience
+	docker tag $(APP_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(UI_IMAGE_NAME):latest
+
 .PHONY: build-app
 build-app:
-	# Build the combined UI and backend image
-	docker build -t $(APP_IMG) .
-	# Tag with latest for convenience
+	docker build -t $(APP_IMG) -f python/Dockerfile ./python
 	docker tag $(APP_IMG) $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(APP_IMAGE_NAME):latest
 
 .PHONY: kind-load-docker-images
 kind-load-docker-images: build
 	kind load docker-image --name autogen $(CONTROLLER_IMG)
+	kind load docker-image --name autogen $(UI_IMG)
 	kind load docker-image --name autogen $(APP_IMG)
 
 .PHONY: helm-version
@@ -67,6 +76,7 @@ helm-install: helm-version check-openai-key kind-load-docker-images
 		--namespace kagent \
 		--create-namespace \
 		--set controller.image.tag=$(CONTROLLER_IMAGE_TAG) \
+		--set ui.image.tag=$(UI_IMAGE_TAG) \
 		--set app.image.tag=$(APP_IMAGE_TAG) \
 		--set openai.apiKey=$(OPENAI_API_KEY)
 

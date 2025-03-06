@@ -2,7 +2,7 @@ import { getBackendUrl } from "@/lib/utils";
 
 export async function getCurrentUserId() {
   // TODO: this should come from login state
-  return "kagent.dev";
+  return "admin@kagent.dev";
 }
 
 type ApiOptions = RequestInit & {

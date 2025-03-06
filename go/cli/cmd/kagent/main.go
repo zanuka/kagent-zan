@@ -65,6 +65,7 @@ Examples:
 `,
 		Func: func(c *ishell.Context) {
 			cli.ChatCmd(c)
+			c.SetPrompt(cli.BoldBlue("kagent >> "))
 		},
 	})
 
