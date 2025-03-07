@@ -26,7 +26,7 @@
             "config": {
               "participants": [
                 {
-                  "provider": "autogen_agentchat.agents.AssistantAgeGnt",
+                  "provider": "autogen_agentchat.agents.AssistantAgent",
                   "component_type": "agent",
                   "version": 1,
                   "component_version": 1,
