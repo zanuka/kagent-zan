@@ -162,6 +162,7 @@ spec:
   - provider: kagent.tools.k8s.ApplyManifest
   - provider: kagent.tools.k8s.CheckServiceConnectivity
   - provider: kagent.tools.k8s.CreateResource
+  - provider: kagent.tools.k8s.CreateResourceFromUrl
   - provider: kagent.tools.k8s.DeleteResource
   - provider: kagent.tools.k8s.DescribeResource
   - provider: kagent.tools.k8s.ExecuteCommand
