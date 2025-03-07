@@ -21,11 +21,11 @@ export function AgentCard({ team }: AgentCardProps) {
 
   return (
     <Card 
-      className={`bg-[#2A2A2A] border-[#3A3A3A] transition-colors cursor-pointer hover:border-violet-500`}
+      className={`transition-colors cursor-pointer hover:border-violet-500`}
       onClick={handleCardClick}
     >
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-        <CardTitle className="flex items-center gap-2 text-white">
+        <CardTitle className="flex items-center gap-2">
           <KagentLogo className="h-5 w-5" />
           {agent.label}
         </CardTitle>
@@ -34,8 +34,8 @@ export function AgentCard({ team }: AgentCardProps) {
         />
       </CardHeader>
       <CardContent>
-        <p className="text-white/70 text-sm">{agent.description}</p>
-        <div className="mt-4 flex items-center text-xs text-white/50">
+        <p className="text-sm text-muted-foreground">{agent.description}</p>
+        <div className="mt-4 flex items-center text-xs text-muted-foreground">
           <span>Model: {agent.config.model_client.config.model}</span>
         </div>
       </CardContent>

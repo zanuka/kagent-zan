@@ -1,26 +1,26 @@
 import { SessionWithRuns } from "@/types/datamodel";
 import RunItem from "./RunItem";
+import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from "../ui/sidebar";
 
 interface SessionGroupProps {
   title: string;
   sessions: SessionWithRuns[];
-  onViewRun: (sessionId: number, runId: string) => Promise<void>;
   onDeleteSession: (sessionId: number) => Promise<void>;
+  agentId?: number;
 }
-const SessionGroup = ({ title, sessions, onViewRun, onDeleteSession }: SessionGroupProps) => (
-  <div>
-    <div className="px-2 py-1 text-xs font-semibold text-white/50 uppercase">{title}</div>
-    <div className="space-y-4">
+const SessionGroup = ({ title, sessions, onDeleteSession, agentId }: SessionGroupProps) => (
+  <SidebarGroup>
+    <SidebarGroupLabel>{title}</SidebarGroupLabel>
+    <SidebarGroupContent>
       {sessions.map((sessionWithRuns) => (
-        <div key={sessionWithRuns.session.id} className="space-y-1">
-          <div className="px-2 text-xs text-white/30">{sessionWithRuns.session.name || `Chat ${sessionWithRuns.session.id}`}</div>
+        <div key={sessionWithRuns.session.id} className="py-2.5">
           {sessionWithRuns.runs.map((run) => (
-            <RunItem key={run.id} sessionId={sessionWithRuns.session.id!} run={run} onClick={onViewRun} onDelete={onDeleteSession} />
+            <RunItem key={run.id} sessionId={sessionWithRuns.session.id!} agentId={agentId} run={run} onDelete={onDeleteSession} />
           ))}
         </div>
       ))}
-    </div>
-  </div>
+    </SidebarGroupContent>
+  </SidebarGroup>
 );
 
 export default SessionGroup;

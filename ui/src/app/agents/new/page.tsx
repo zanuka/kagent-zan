@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Loader2, FunctionSquare } from "lucide-react";
+import { Loader2, FunctionSquare } from "lucide-react";
 import { Model } from "@/lib/types";
 import { SystemPromptSection } from "@/components/create/SystemPromptSection";
 import { ModelSelectionSection } from "@/components/create/ModelSelectionSection";
@@ -97,13 +97,8 @@ export default function NewAgentPage() {
     }
 
     return (
-      <div className="min-h-screen bg-[#1A1A1A] text-white p-8">
-        <Button variant="ghost" className="mb-8" onClick={() => window.history.back()} disabled={isSubmitting}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen p-8">
+        <div className="max-w-6xl mx-auto">
           <h1 className="text-2xl font-bold mb-8">Create New Agent</h1>
 
           {generalError && (
@@ -113,20 +108,20 @@ export default function NewAgentPage() {
           )}
 
           <div className="space-y-6">
-            <Card className="bg-[#2A2A2A] border-[#3A3A3A]">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className="flex items-center gap-2">
                   <KagentLogo className="h-5 w-5" />
                   Basic Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm text-white/70 mb-2 block">Agent Name</label>
+                  <label className="text-sm mb-2 block">Agent Name</label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className={`bg-[#1A1A1A] border-[#3A3A3A] text-white ${errors.name ? "border-red-500" : ""}`}
+                    className={`${errors.name ? "border-red-500" : ""}`}
                     placeholder="Enter agent name..."
                     disabled={isSubmitting}
                   />
@@ -134,12 +129,12 @@ export default function NewAgentPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm text-white/70 mb-2 block">Description</label>
+                  <label className="text-sm mb-2 block">Description</label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className={`bg-[#1A1A1A] border-[#3A3A3A] text-white min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
-                    placeholder="Describe your agent's purpose..."
+                    className={`min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
+                    placeholder="Describe your agent. This is for your reference only and it's not going to be used by the agent."
                     disabled={isSubmitting}
                   />
                   {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
@@ -151,9 +146,9 @@ export default function NewAgentPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-[#2A2A2A] border-[#3A3A3A]">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className="flex items-center gap-2">
                   <FunctionSquare className="h-5 w-5 text-yellow-500" />
                   Tools
                 </CardTitle>
@@ -164,7 +159,7 @@ export default function NewAgentPage() {
             </Card>
 
             <div className="flex justify-end">
-              <Button className="bg-violet-500 hover:bg-violet-600 text-white" onClick={handleCreateAgent} disabled={isSubmitting}>
+              <Button className="bg-violet-500 hover:bg-violet-600" onClick={handleCreateAgent} disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -183,8 +178,8 @@ export default function NewAgentPage() {
 
   return (
     <>
+      {(loading || isSubmitting) && <LoadingState />}
       {renderPageContent()}
-      {loading || (isSubmitting && <LoadingState />)}
     </>
   );
 }

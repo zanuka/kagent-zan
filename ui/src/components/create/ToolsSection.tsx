@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Plus, FunctionSquare, X, Settings2, Download } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,14 +59,20 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
 
   const renderConfigDialog = () => {
     if (!configTool) return null;
+    const configObj = configTool?.config;;
 
-    const configObj = configTool.config;
+    if (Object.keys(configObj).length === 0) {
+      return null;
+    }
 
     return (
       <Dialog open={showConfig} onOpenChange={setShowConfig}>
-        <DialogContent className="bg-[#2A2A2A] border-[#3A3A3A] text-white">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Configure {getToolDisplayName(configTool)}</DialogTitle>
+            <DialogDescription>
+              Confingure the settings for <span className="text-primary">{getToolDisplayName(configTool)}</span>. These settings will be used when the tool is executed.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
@@ -93,7 +99,6 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
                           config: newConfig,
                         });
                       }}
-                      className={`bg-[#1A1A1A] border-[#3A3A3A]`}
                     />
                   </div>
                 ))}
@@ -126,16 +131,17 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
       {selectedTools.map((tool: Component<ToolConfig>) => {
         const displayName = getToolDisplayName(tool);
         const displayDescription = getToolDescription(tool);
+        const toolIdentifier = getToolIdentifier(tool);
         return (
-          <Card key={`${getToolIdentifier(tool)}`} className="bg-[#1A1A1A] border-[#3A3A3A]">
+          <Card key={toolIdentifier}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center text-xs spac">
+                <div className="flex items-center text-xs">
                   <div className="inline-flex space-x-2 items-center">
                     <FunctionSquare className={`h-4 w-4 ${isMcpTool(tool) ? "text-blue-400" : "text-yellow-500"}`} />
                     <div className="inline-flex flex-col space-y-1">
-                      <span className="text-white">{displayName}</span>
-                      <span className="text-white/50 max-w-2xl">{displayDescription}</span>
+                      <span className="">{displayName}</span>
+                      <span className="text-muted-foreground max-w-2xl">{displayDescription}</span>
                       {isMcpTool(tool) && <span className="text-blue-400/70 text-xs">MCP Tool</span>}
                     </div>
                   </div>
@@ -150,12 +156,12 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
                         setConfigTool(tool);
                         setShowConfig(true);
                       }}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !tool.config || Object.keys(tool.config).length === 0}
                     >
                       <Settings2 className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm" onClick={() => handleRemoveTool(tool.provider)} disabled={isSubmitting} className="text-white/50">
+                  <Button variant="ghost" size="sm" onClick={() => handleRemoveTool(tool.provider)} disabled={isSubmitting}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -175,13 +181,13 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
     <div className="space-y-4">
       {selectedTools.length > 0 && (
         <div className="flex justify-between items-center">
-          <h3 className="text-sm font-medium text-white/70">Selected Tools</h3>
+          <h3 className="text-sm font-medium">Selected Tools</h3>
           <div className="flex gap-2">
             <Button
               onClick={() => setShowDiscoverTools(true)}
               disabled={isSubmitting}
               variant="outline"
-              className="text-white/70 border bg-transparent hover:bg-text-white/90 hover:text-white/90 border-white/70 hover:border-white/90"
+              className="border bg-transparent "
             >
               <Download className="h-4 w-4 mr-2" />
               Discover MCP Tools
@@ -193,7 +199,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
               }}
               disabled={isSubmitting}
               variant="outline"
-              className="text-white/70 border bg-transparent hover:bg-text-white/90 hover:text-white/90 border-white/70 hover:border-white/90"
+              className="border bg-transparent"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Tools
@@ -204,27 +210,27 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
 
       <ScrollArea>
         {selectedTools.length === 0 ? (
-          <Card className="bg-[#1A1A1A] border-[#3A3A3A]">
+          <Card className="">
             <CardContent className="p-8 flex flex-col items-center justify-center text-center">
-              <FunctionSquare className="h-12 w-12 text-white/20 mb-4" />
-              <h4 className="text-lg font-medium text-white mb-2">No tools selected</h4>
-              <p className="text-white/50 text-sm mb-4">Add tools to enhance your agent</p>
+              <FunctionSquare className="h-12 w-12  mb-4" />
+              <h4 className="text-lg font-medium  mb-2">No tools selected</h4>
+              <p className="text-muted-foreground text-sm mb-4">Add tools to enhance your agent</p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button onClick={() => setShowDiscoverTools(true)} disabled={isSubmitting} variant="secondary" className="flex items-center">
-                  <Download className="h-4 w-4 mr-2" />
-                  Discover MCP Tools
-                </Button>
                 <Button
                   onClick={() => {
                     setDiscoveredToolsForSelection([]);
                     setShowToolSelector(true);
                   }}
                   disabled={isSubmitting}
-                  variant="secondary"
+                  variant="default"
                   className="flex items-center"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Tools
+                </Button>
+                <Button onClick={() => setShowDiscoverTools(true)} disabled={isSubmitting} variant="secondary" className="flex items-center">
+                  <Download className="h-4 w-4 mr-2" />
+                  Discover MCP Tools
                 </Button>
               </div>
             </CardContent>
@@ -233,6 +239,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
           renderSelectedTools()
         )}
       </ScrollArea>
+
 
       {renderConfigDialog()}
       <DiscoverToolsDialog open={showDiscoverTools} onOpenChange={setShowDiscoverTools} onShowSelectTools={handleShowSelectTools} />

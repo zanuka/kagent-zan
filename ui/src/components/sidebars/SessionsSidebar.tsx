@@ -1,25 +1,51 @@
-import React, { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
+"use client";
+import React, { useEffect, useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { isToday, isYesterday } from "date-fns";
 import { SessionWithRuns, Team } from "@/types/datamodel";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ActionButtons, EmptyState } from "@/components/sidebars/EmptyState";
 import SessionGroup from "@/components/sidebars/SessionGroup";
-import { useResponsiveSidebar } from "@/components/sidebars/useResponsiveSidebar";
-import KagentLogo from "@/components/kagent-logo";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarRail } from "../ui/sidebar";
+import { getChatData } from "@/app/actions/chat";
+import { LoadingState } from "../LoadingState";
+import { deleteSession } from "@/app/actions/sessions";
 
 interface SessionsSidebarProps {
-  sessions?: SessionWithRuns[];
-  onDeleteSession: (sessionId: number) => Promise<void>;
-  onViewRun: (sessionId: number, runId: string) => Promise<void>;
-  selectedTeam: Team | null;
+  agentId: string;
 }
 
-export default function SessionsSidebar({ sessions = [], selectedTeam, onDeleteSession, onViewRun }: SessionsSidebarProps) {
+export default function SessionsSidebar({ agentId }: SessionsSidebarProps) {
+  const [sessions, setSessions] = useState<SessionWithRuns[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const { isOpen, toggle } = useResponsiveSidebar({ breakpoint: 1024, side: "left" });
+
+  useEffect(() => {
+    const fetchSessions = async () => {
+      const data = await getChatData(agentId, null);
+      if (data.sessions) {
+        setSessions(data.sessions);
+      }
+
+      if (data.agent) {
+        setSelectedTeam(data.agent);
+      }
+    };
+    fetchSessions();
+  }, [agentId]);
+
+  const onDeleteClick = async (sessionId: number) => {
+    try {
+      await deleteSession(sessionId);
+    } catch (error) {
+      console.error("Error deleting session:", error);
+    } finally {
+      const data = await getChatData(agentId, null);
+      if (data.sessions) {
+        setSessions(data.sessions);
+      }
+    }
+  };
 
   const groupedSessions = useMemo(() => {
     const groups: {
@@ -67,28 +93,20 @@ export default function SessionsSidebar({ sessions = [], selectedTeam, onDeleteS
   const hasNoSessions = !groupedSessions.today.length && !groupedSessions.yesterday.length && !groupedSessions.older.length;
   const totalSessions = sessions.length;
 
-  return (
-    <div
-      className={`fixed top-0 z-50 left-0 h-screen transition-all duration-300 ease-in-out 
-        bg-[#2A2A2A] border-r border-t border-b border-[#3A3A3A] ${isOpen ? "w-96" : "w-12"}`}
-    >
-      <div className="h-full flex flex-col text-white">
-        {/* Header */}
-        <div className="p-4 flex items-center gap-2 border-b border-[#3A3A3A] shrink-0">
-          {isOpen && (
-            <>
-              <h1 className="text-sm font-semibold flex-1">Chat History</h1>
-              <span className="text-xs text-white/50">{totalSessions} chats</span>
-            </>
-          )}
-          <Button variant="ghost" size="icon" onClick={toggle} className="h-8 w-8 hover:bg-[#3A3A3A] text-white hover:text-white transition-colors">
-            {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
-        </div>
+  if (!selectedTeam) {
+    return <LoadingState />;
+  }
 
-        <div className={`flex-1 flex flex-col min-h-0 ${isOpen ? "opacity-100" : "opacity-0"} transition-opacity duration-200`}>
+  return (
+    <Sidebar side="left" collapsible="offcanvas">
+      <SidebarHeader>
+        <h3>Chat History </h3>
+        <span className="text-xs">{totalSessions} chats</span>
+      </SidebarHeader>
+      <SidebarContent>
+        <div className={`flex-1 flex flex-col min-h-0`}>
           {!hasNoSessions && (
-            <div className="px-4 pt-4 pb-6 shrink-0 border-b border-[#3A3A3A]">
+            <div className="px-4 pt-4 pb-6 shrink-0 ">
               <ActionButtons hasSessions={!hasNoSessions} currentAgentId={selectedTeam?.id} />
             </div>
           )}
@@ -97,40 +115,25 @@ export default function SessionsSidebar({ sessions = [], selectedTeam, onDeleteS
             {hasNoSessions ? (
               <EmptyState />
             ) : (
-              <div className="space-y-8 p-2">
-                {groupedSessions.today.length > 0 && <SessionGroup title="Today" sessions={groupedSessions.today} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
-                {groupedSessions.yesterday.length > 0 && <SessionGroup title="Yesterday" sessions={groupedSessions.yesterday} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
-                {groupedSessions.older.length > 0 && <SessionGroup title="Older" sessions={groupedSessions.older} onViewRun={onViewRun} onDeleteSession={onDeleteSession} />}
-              </div>
+              <>
+                {groupedSessions.today.length > 0 && (
+                  <SessionGroup title="Today" sessions={groupedSessions.today} agentId={selectedTeam?.id} onDeleteSession={(sessionId) => onDeleteClick(sessionId)} />
+                )}
+                {groupedSessions.yesterday.length > 0 && (
+                  <SessionGroup title="Yesterday" sessions={groupedSessions.yesterday} agentId={selectedTeam?.id} onDeleteSession={(sessionId) => onDeleteClick(sessionId)} />
+                )}
+                {groupedSessions.older.length > 0 && (
+                  <SessionGroup title="Older" sessions={groupedSessions.older} agentId={selectedTeam?.id} onDeleteSession={(sessionId) => onDeleteClick(sessionId)} />
+                )}
+              </>
             )}
           </ScrollArea>
-
-          {/* Footer */}
-          {isOpen && (
-            <>
-              {/* <div className="border-t border-[#3A3A3A] p-4 space-y-2 shrink-0">
-                <Button variant="ghost" className="w-full justify-start text-white/70 hover:text-white hover:bg-[#3A3A3A] gap-2" onClick={() => setShowSettings(true)}>
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </Button>
-                <div className="w-full flex items-center text-sm justify-start text-white/70 hover:text-white gap-2 px-3">
-                  <User className="h-4 w-4" />
-                  {userId}
-                </div>
-              </div> */}
-
-              <div className="p-4 border-t border-[#3A3A3A] shrink-0">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <KagentLogo className="h-5 w-5" animate={true} />
-                  <span className="font-semibold text-white">kagent.dev</span>
-                </div>
-                <div className="text-xs text-center text-white/50">© {new Date().getFullYear()} Solo.io. All rights reserved.</div>
-              </div>
-            </>
-          )}
         </div>
-        <SettingsModal open={showSettings} onOpenChange={setShowSettings} />
-      </div>
-    </div>
+      </SidebarContent>
+
+      <SidebarRail />
+
+      <SettingsModal open={showSettings} onOpenChange={setShowSettings} />
+    </Sidebar>
   );
 }

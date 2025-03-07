@@ -22,7 +22,7 @@
                   "version": 1,
                   "component_version": 1,
                   "description": "An agent that provides assistance with tool use.",
-                  "label": "Helm Agent",
+                  "label": "Sample Helm Agent",
                   "config": {
                     "name": "helm_agent",
                     "model_client": {

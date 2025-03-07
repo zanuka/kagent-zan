@@ -1,6 +1,6 @@
 "use server";
 
-import { AgentMessageConfig, GetSessionRunsResponse, Message } from "@/types/datamodel";
+import { AgentMessageConfig, GetSessionRunsResponse, Message, Run, Session, Team } from "@/types/datamodel";
 import { getTeam } from "./teams";
 import { getSession, getSessionRuns, getSessions } from "./sessions";
 import { fetchApi, getCurrentUserId } from "./utils";
@@ -58,7 +58,8 @@ export async function loadExistingChat(chatId: string) {
   };
 }
 
-export async function getChatData(agentId: string, chatId: string | null) {
+
+export async function getChatData(agentId: string, chatId: string | null): Promise<{ notFound?: boolean; agent?: Team; sessions?: { session: Session; runs: Run[] }[]; viewState?: { session: Session; run: Run } | null }> {
   try {
     // Fetch agent details
     const agentData = await getTeam(agentId);
