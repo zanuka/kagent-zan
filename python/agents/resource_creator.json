@@ -3,8 +3,8 @@
   "component_type": "team",
   "version": 1,
   "component_version": 1,
-  "description": "A team containing ResourceCreator Agent",
-  "label": "A team containing ResourceCreator Agent",
+  "description": "ResourceCreator Agent",
+  "label": "ResourceCreator Agent",
   "config": {
     "participants": [
       {
@@ -21,12 +21,12 @@
             "component_type": "team",
             "version": 1,
             "component_version": 1,
-            "description": "A team containing ResourceCreator Agent",
+            "description": "ResourceCreator Agent",
             "label": "RoundRobinGroupChat",
             "config": {
               "participants": [
                 {
-                  "provider": "autogen_agentchat.agents.AssistantAgent",
+                  "provider": "autogen_agentchat.agents.AssistantAgeGnt",
                   "component_type": "agent",
                   "version": 1,
                   "component_version": 1,

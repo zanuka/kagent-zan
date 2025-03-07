@@ -3,8 +3,8 @@
   "component_type": "team",
   "version": 1,
   "component_version": 1,
-  "description": "A team containing Observability Agent",
-  "label": "A team containing Observability Agent",
+  "description": "Observability Agent",
+  "label": "Observability Agent",
   "config": {
     "participants": [
       {
@@ -21,7 +21,7 @@
             "component_type": "team",
             "version": 1,
             "component_version": 1,
-            "description": "A team containing Observability Agent",
+            "description": "Observability Agent",
             "label": "RoundRobinGroupChat",
             "config": {
               "participants": [
