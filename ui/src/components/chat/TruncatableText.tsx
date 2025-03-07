@@ -48,13 +48,13 @@ export const TruncatableText = memo(({ content, isJson = false, className = "", 
 
     return (
       <div className="relative">
-        <ReactMarkdown className={`prose-md prose prose-invert max-w-none ${isStreaming ? "streaming-content" : ""}`} components={components}>
+        <ReactMarkdown className={`prose-md prose max-w-none dark:prose-invert dark:text-primary-foreground ${isStreaming ? "streaming-content" : ""}`} components={components}>
           {displayContent.trim()}
         </ReactMarkdown>
 
         {isStreaming && (
           <div className="inline-flex items-center ml-2">
-            <div className="text-sm text-white/60 mt-1 animate-pulse">...</div>
+            <div className="text-sm mt-1 animate-pulse">...</div>
           </div>
         )}
       </div>
@@ -76,24 +76,24 @@ export const TruncatableText = memo(({ content, isJson = false, className = "", 
 
       {shouldTruncate && !isStreaming && (
         <div className="mt-2 flex items-center justify-end gap-2">
-          <button type="button" onClick={toggleExpand} className="inline-flex items-center justify-center p-2 hover:text-white/90 rounded z-10" aria-label={isExpanded ? "Show less" : "Show more"}>
+          <button type="button" onClick={toggleExpand} className="inline-flex items-center justify-center p-2 rounded z-10" aria-label={isExpanded ? "Show less" : "Show more"}>
             {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
 
           {showFullscreen && (
             <Dialog>
               <DialogTrigger asChild>
-                <button type="button" className="inline-flex items-center justify-center p-2 rounded hover:text-white/90 z-10" aria-label="Toggle fullscreen">
+                <button type="button" className="inline-flex items-center justify-center p-2 rounded z-10" aria-label="Toggle fullscreen">
                   <Maximize2 size={18} />
                 </button>
               </DialogTrigger>
-              <DialogContent className="bg-neutral-900 text-white border border-neutral-700 max-w-3xl max-h-[80vh]">
+              <DialogContent className="max-w-3xl max-h-[80vh]">
                 <DialogHeader>
                   <DialogTitle className="text-lg font-semibold">Details</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="mt-4 w-full max-h-[60vh] overflow-y-auto">
                   <div className="px-6 pb-6">
-                    <ReactMarkdown className="prose-md prose prose-invert max-w-none">{content}</ReactMarkdown>
+                    <ReactMarkdown className="prose-md prose max-w-none">{content}</ReactMarkdown>
                   </div>
                 </ScrollArea>
               </DialogContent>

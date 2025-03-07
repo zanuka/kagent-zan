@@ -9,6 +9,8 @@ import { Loader2, Terminal, Globe } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { discoverMCPTools } from "@/app/actions/tools";
 import { Component, Tool, ToolConfig } from "@/types/datamodel";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Textarea } from "../ui/textarea";
 
 interface DiscoverToolsDialogProps {
   open: boolean;
@@ -176,19 +178,19 @@ export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: D
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#2A2A2A] border-[#3A3A3A] text-white max-w-4xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Discover MCP Tools</DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
           <Tabs defaultValue="command" value={activeTab} onValueChange={(value) => setActiveTab(value as "command" | "url")} className="w-full">
-            <TabsList className="w-full bg-[#1A1A1A]">
-              <TabsTrigger value="command" className="flex-1 data-[state=active]:bg-violet-500">
+            <TabsList className="w-full">
+              <TabsTrigger value="command" className="flex-1 data-[state=active]:text-primary">
                 <Terminal className="h-4 w-4 mr-2" />
                 Command
               </TabsTrigger>
-              <TabsTrigger value="url" className="flex-1 data-[state=active]:bg-violet-500">
+              <TabsTrigger value="url" className="flex-1 data-[state=active]:text-primary">
                 <Globe className="h-4 w-4 mr-2" />
                 URL
               </TabsTrigger>
@@ -199,12 +201,12 @@ export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: D
                 <Label htmlFor="command">
                   Command <span className="text-red-500">*</span>
                 </Label>
-                <Input id="command" placeholder="e.g. npx, uvx, uv" value={command} onChange={(e) => setCommand(e.target.value)} className="bg-[#1A1A1A] border-[#3A3A3A]" />
+                <Input id="command" placeholder="e.g. npx, uvx, uv" value={command} onChange={(e) => setCommand(e.target.value)} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="args">Arguments (one per line or as JSON array)</Label>
-                <Input id="args" placeholder="e.g. mcp-server-kubernetes" value={args} onChange={(e) => setArgs(e.target.value)} className="bg-[#1A1A1A] border-[#3A3A3A]" />
+                <Input id="args" placeholder="e.g. mcp-server-kubernetes" value={args} onChange={(e) => setArgs(e.target.value)} />
               </div>
 
               <div className="space-y-2">
@@ -214,22 +216,27 @@ export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: D
                   placeholder="API_KEY=your_key_here&#10;DEBUG=true"
                   value={envVars}
                   onChange={(e) => setEnvVars(e.target.value)}
-                  className="w-full min-h-[100px] rounded-md bg-[#1A1A1A] border border-[#3A3A3A] px-3 py-2 text-sm"
+                  className="w-full min-h-[100px] rounded-md border px-3 py-2 text-sm"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="stderr">Stderr Handling</Label>
-                <select id="stderr" value={stderrType} onChange={(e) => setStderrType(e.target.value)} className="w-full bg-[#1A1A1A] border-[#3A3A3A] rounded-md px-3 py-2 text-sm">
-                  <option value="inherit">inherit</option>
-                  <option value="pipe">pipe</option>
-                  <option value="ignore">ignore</option>
-                </select>
+                <Select value={stderrType} onValueChange={(value) => setStderrType(value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selected stderr handling" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inherit">inherit</SelectItem>
+                    <SelectItem value="pipe">pipe</SelectItem>
+                    <SelectItem value="ignore">ignore</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="cwd">Working Directory (optional)</Label>
-                <Input id="cwd" placeholder="e.g. /path/to/working/directory" value={cwd} onChange={(e) => setCwd(e.target.value)} className="bg-[#1A1A1A] border-[#3A3A3A]" />
+                <Input id="cwd" placeholder="e.g. /path/to/working/directory" value={cwd} onChange={(e) => setCwd(e.target.value)} />
               </div>
             </TabsContent>
 
@@ -238,38 +245,29 @@ export const DiscoverToolsDialog = ({ open, onOpenChange, onShowSelectTools }: D
                 <Label htmlFor="url">
                   URL <span className="text-red-500">*</span>
                 </Label>
-                <Input id="url" placeholder="https://example.com/mcp-tools" value={url} onChange={(e) => setUrl(e.target.value)} className="bg-[#1A1A1A] border-[#3A3A3A]" />
+                <Input id="url" placeholder="https://example.com/mcp-tools" value={url} onChange={(e) => setUrl(e.target.value)} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="headers">Headers (KEY=VALUE format or JSON)</Label>
-                <textarea
+                <Textarea
                   id="headers"
                   placeholder="Authorization=Bearer token&#10;Content-Type=application/json"
                   value={headers}
                   onChange={(e) => setHeaders(e.target.value)}
-                  className="w-full min-h-[100px] rounded-md bg-[#1A1A1A] border border-[#3A3A3A] px-3 py-2 text-sm"
+                  className="w-full min-h-[100px] rounded-md px-3 py-2 text-sm"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="timeout">Timeout (seconds)</Label>
-                  <Input id="timeout" type="number" min="1" step="1" placeholder="5" value={timeout} onChange={(e) => setTimeout(e.target.value)} className="bg-[#1A1A1A] border-[#3A3A3A]" />
+                  <Input id="timeout" type="number" min="1" step="1" placeholder="5" value={timeout} onChange={(e) => setTimeout(e.target.value)} />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="sse_read_timeout">SSE Read Timeout (seconds)</Label>
-                  <Input
-                    id="sse_read_timeout"
-                    type="number"
-                    min="1"
-                    step="1"
-                    placeholder="300"
-                    value={sseReadTimeout}
-                    onChange={(e) => setSseReadTimeout(e.target.value)}
-                    className="bg-[#1A1A1A] border-[#3A3A3A]"
-                  />
+                  <Input id="sse_read_timeout" type="number" min="1" step="1" placeholder="300" value={sseReadTimeout} onChange={(e) => setSseReadTimeout(e.target.value)} />
                 </div>
               </div>
             </TabsContent>

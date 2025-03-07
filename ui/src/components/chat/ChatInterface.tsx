@@ -11,6 +11,8 @@ import ChatMessage from "@/components/chat/ChatMessage";
 import useChatStore from "@/lib/useChatStore";
 import { ChatStatus } from "@/lib/ws";
 import StreamingMessage from "./StreamingMessage";
+import { SidebarTrigger } from "../ui/sidebar";
+import { findAllAssistantAgents } from "@/lib/agents";
 
 interface TokenStats {
   total: number;
@@ -66,7 +68,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
   }, [messages, currentStreamingContent]);
 
   useEffect(() => {
-    const msgs = selectedRun ? selectedRun.messages : messages
+    const msgs = selectedRun ? selectedRun.messages : messages;
     if (msgs.length > 0) {
       const newStats = calculateTokenStats(msgs);
       setTokenStats(newStats);
@@ -101,7 +103,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
     switch (chatStatus) {
       case "error":
         return (
-          <div className="text-white/50 text-xs justify-center items-center flex">
+          <div className=" text-xs justify-center items-center flex">
             <AlertTriangle size={16} className="mr-2 text-red-500" />
             {run?.error_message || "An error occurred"}
           </div>
@@ -114,7 +116,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
           switch (runStatus) {
             case "complete":
               return (
-                <div className="text-white/50 text-xs justify-center items-center flex">
+                <div className=" text-xs justify-center items-center flex">
                   <CheckCircle size={16} className="mr-2 text-green-500" />
                   Task completed
                 </div>
@@ -122,22 +124,22 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
             case "error":
             case "timeout":
               return (
-                <div className="text-white/50 text-xs justify-center items-center flex">
+                <div className=" text-xs justify-center items-center flex">
                   <AlertTriangle size={16} className="mr-2 text-red-500" />
                   {run?.error_message || "An error occurred"}
                 </div>
               );
             case "stopped":
               return (
-                <div className="text-white/50 text-xs justify-center items-center flex">
+                <div className=" text-xs justify-center items-center flex">
                   <StopCircle size={16} className="mr-2 text-orange-500" />
                   Task was stopped
                 </div>
               );
             default:
               return (
-                <div className="text-white/50 text-xs justify-center items-center flex">
-                  <MessageSquare size={16} className="mr-2 text-white" />
+                <div className=" text-xs justify-center items-center flex">
+                  <MessageSquare size={16} className="mr-2" />
                   Ready
                 </div>
               );
@@ -145,7 +147,7 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
         }
 
         return (
-          <div className="text-white/50 text-xs justify-center items-center flex">
+          <div className=" text-xs justify-center items-center flex">
             <MessageSquare size={16} className="mr-2 text-white" />
             Ready
           </div>
@@ -171,20 +173,26 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
   // Should we show the streaming message?
   const showStreamingMessage = !selectedRun && currentStreamingContent && currentStreamingMessage;
 
+    const assistantAgents = findAllAssistantAgents(selectedAgentTeam?.component);
+  
+
   return (
-    <div className="w-full h-screen flex flex-col justify-center transition-all duration-300 ease-in-out pt-[1.5rem]">
-      <div ref={containerRef} className="flex-1 overflow-y-auto my-8 transition-all duration-300 p-4 -translate-y-[1.5rem]">
-        <ScrollArea>
+    <div className="w-full h-screen flex flex-col justify-center min-w-full items-center transition-all duration-300 ease-in-out">
+      <div className="flex-1 w-full overflow-hidden relative">
+        <div>
+          <SidebarTrigger />
+        </div>
+        <ScrollArea ref={containerRef} className="w-full h-full py-12">
           <div className="flex flex-col space-y-5">
             {displayMessages.length === 0 && !showStreamingMessage && (
               <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
                 <MessageSquarePlus className="mb-4 h-8 w-8 text-violet-500" />
-                <h3 className="mb-2 text-xl font-medium text-white/90">Ready to start chatting?</h3>
-                <p className="text-base text-white/60">
-                  Begin a new conversation with <span className="font-medium text-white/90">{selectedAgentTeam?.component.label}</span>
+                <h3 className="mb-2 text-xl font-medium">Ready to start chatting?</h3>
+                <p className="text-base">
+                  Begin a new conversation with <span className="font-medium text-primary">{assistantAgents[0].label}</span>
                 </p>
                 {onNewSession && (
-                  <Button onClick={onNewSession} className="mt-4 bg-violet-500 hover:bg-violet-600">
+                  <Button onClick={onNewSession} className="mt-4">
                     Start New Chat
                   </Button>
                 )}
@@ -210,61 +218,57 @@ export default function ChatInterface({ selectedAgentTeam, selectedRun, onNewSes
         </ScrollArea>
       </div>
 
-      <div className="rounded-lg bg-[#2A2A2A] border border-[#3A3A3A] overflow-hidden transition-all duration-300 ease-in-out -translate-y-[1.5rem]">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            {getStatusDisplay(status, runStatus)}
-            <div className="flex items-center gap-2 text-xs text-white/50">
-              <span>Usage: </span>
-              <span>{tokenStats.total}</span>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  <ArrowLeft className="h-3 w-3" />
-                  <span>{tokenStats.input}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <ArrowRightFromLine className="h-3 w-3" />
-                  <span>{tokenStats.output}</span>
-                </div>
+      <div className="w-full sticky bg-secondary bottom-0 md:bottom-2 rounded-none md:rounded-lg p-4 border  overflow-hidden transition-all duration-300 ease-in-out">
+        <div className="flex items-center justify-between mb-4">
+          {getStatusDisplay(status, runStatus)}
+          <div className="flex items-center gap-2 text-xs">
+            <span>Usage: </span>
+            <span>{tokenStats.total}</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <ArrowLeft className="h-3 w-3" />
+                <span>{tokenStats.input}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <ArrowRightFromLine className="h-3 w-3" />
+                <span>{tokenStats.output}</span>
               </div>
             </div>
           </div>
-
-          <form onSubmit={handleSendMessage}>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={"Send a message..."}
-              onKeyDown={handleKeyDown}
-              disabled={!canSendMessage}
-              className={`min-h-[100px] bg-transparent border-0 p-0 focus-visible:ring-0 resize-none ${
-                canSendMessage ? "text-white placeholder:text-white/40" : "text-white/40 placeholder:text-white/40"
-              }`}
-            />
-
-            <div className="flex items-center justify-end gap-2 mt-4">
-              {canSendMessage && (
-                <Button type="submit" className={"bg-white hover:bg-white/60 text-black"} disabled={!selectedAgentTeam || !message.trim()}>
-                  Send
-                  <ArrowBigUp className="h-4 w-4 ml-2" />
-                </Button>
-              )}
-
-              {(runStatus === "complete" || runStatus === "error" || runStatus === "stopped") && onNewSession && (
-                <Button onClick={onNewSession} className="bg-violet-500 hover:bg-violet-600" type="button">
-                  Start New Chat
-                </Button>
-              )}
-
-              {status === "thinking" && (
-                <Button onClick={handleCancel} className="bg-white/60 hover:bg-white/90 text-black" type="button">
-                  Cancel
-                  <X className="h-4 w-4 ml-2" />
-                </Button>
-              )}
-            </div>
-          </form>
         </div>
+
+        <form onSubmit={handleSendMessage}>
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={"Send a message..."}
+            onKeyDown={handleKeyDown}
+            disabled={!canSendMessage}
+            className={`min-h-[100px] border-0 shadow-none p-0 focus-visible:ring-0 resize-none`}
+          />
+
+          <div className="flex items-center justify-end gap-2 mt-4">
+            {canSendMessage && (
+              <Button type="submit" className={""} disabled={!selectedAgentTeam || !message.trim()}>
+                Send
+                <ArrowBigUp className="h-4 w-4 ml-2" />
+              </Button>
+            )}
+
+            {(runStatus === "complete" || runStatus === "error" || runStatus === "stopped") && onNewSession && (
+              <Button onClick={onNewSession} className="bg-violet-500 hover:bg-violet-600" type="button">
+                Start New Chat
+              </Button>
+            )}
+
+            {status === "thinking" && (
+              <Button onClick={handleCancel} className="" variant={"destructive"} type="button">
+                Cancel
+                <X className="h-4 w-4 ml-2" />
+              </Button>
+            )}
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -94,7 +94,7 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
     return (
       <div
         key={toolId}
-        className={`p-3 rounded-md cursor-pointer ${isSelected ? "bg-violet-500/20" : isNewlyDiscovered ? "bg-blue-500/10 hover:bg-blue-500/20" : "hover:bg-[#3A3A3A]"}`}
+        className={`p-3 rounded-md cursor-pointer ${isSelected ? "bg-primary/20" : isNewlyDiscovered ? "bg-blue-500/10 hover:bg-blue-500/20" : "hover:bg-secondary"}`}
         onClick={() => handleToggleTool(tool)}
       >
         <div className="flex items-center justify-between">
@@ -109,8 +109,8 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
                 </span>
               )}
             </div>
-            <div className="text-sm text-white/70">{displayDescription}</div>
-            <div className="text-xs text-white/50 mt-1">{getToolIdentifier(tool)}</div>
+            <div className="text-muted-foreground">{displayDescription}</div>
+            <div className="text-xs text-muted-foreground mt-1">{getToolIdentifier(tool)}</div>
           </div>
           {isSelected && <Check className="w-4 h-4" />}
         </div>
@@ -130,14 +130,14 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
         onOpenChange(isOpen);
       }}
     >
-      <DialogContent className="bg-[#2A2A2A] border-[#3A3A3A] text-white max-w-4xl max-h-[80vh] h-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] h-auto">
         <DialogHeader>
           <DialogTitle>{newlyDiscoveredTools.length > 0 ? "Select Discovered Tools" : "Select Tools"}</DialogTitle>
         </DialogHeader>
 
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-white/50" />
-          <Input placeholder="Search tools by name, description or provider..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-[#1A1A1A] border-[#3A3A3A] pl-10" />
+          <Search className="absolute left-3 top-3 h-4 w-4" />
+          <Input placeholder="Search tools by name, description or provider..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
         </div>
 
         <ScrollArea className="h-[400px] pr-4">
@@ -147,7 +147,7 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
                 <Download className="h-4 w-4 mr-2 text-blue-400" />
                 Newly Discovered Tools
               </h3>
-              <p className="text-sm text-white/70">
+              <p className="text-sm">
                 {newlyDiscoveredTools.length} MCP tool{newlyDiscoveredTools.length !== 1 ? "s" : ""} discovered. These tools are pre-selected and sorted to the top of the list.
               </p>
             </div>
@@ -157,7 +157,7 @@ export const SelectToolsDialog = ({ open, onOpenChange, availableTools, selected
 
         <DialogFooter className="mt-4">
           <div className="flex justify-between w-full">
-            <div className="text-sm text-white/70">
+            <div className="text-sm">
               {localSelectedTools.length} tools selected
               {newlyDiscoveredTools.length > 0 && (
                 <span className="ml-2 text-green-400">

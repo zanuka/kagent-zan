@@ -6,7 +6,6 @@ import { Team, Component, ToolConfig } from "@/types/datamodel";
 import { getBuiltInTools } from "@/app/actions/tools";
 import { BaseResponse, Model } from "@/lib/types";
 import { createTeamConfig } from "@/lib/agents";
-import { isIdentifier } from "@/lib/utils";
 
 interface ValidationErrors {
   name?: string;
@@ -96,11 +95,7 @@ export function AgentsProvider({ children }: AgentsProviderProps) {
     if (data.name !== undefined) {
       if (!data.name.trim()) {
         errors.name = "Agent name is required";
-      } else if (!isIdentifier(data.name)) {
-        errors.name = "Agent name can't contain spaces or special characters";
-      } else if (data.name.length > 50) {
-        errors.name = "Agent name must be less than 50 characters";
-      }
+      } // we only check that it's required as this will be the label -- the name is created from the label
     }
 
     if (data.description !== undefined && !data.description.trim()) {

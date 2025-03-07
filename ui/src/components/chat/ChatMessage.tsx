@@ -9,6 +9,17 @@ interface ChatMessageProps {
   run: Run | null;
 }
 
+function SingleMessage({ source, message, isStreaming }: { source: string; message: string; isStreaming: boolean }) {
+  return (
+    <div className={`flex items-center gap-2 text-sm border-l-2 py-2 px-4 ${source === "user" ? "border-l-blue-500" : "border-l-violet-500"}`}>
+      <div className="flex flex-col gap-1 w-full">
+        <div className="text-xs font-bold">{source}</div>
+        <TruncatableText content={message} isStreaming={isStreaming} className="break-all text-primary-foreground" />
+      </div>
+    </div>
+  );
+}
+
 export default function ChatMessage({ message, run }: ChatMessageProps) {
   if (!message?.config) {
     return null;
@@ -17,28 +28,17 @@ export default function ChatMessage({ message, run }: ChatMessageProps) {
   const { content: messageContent, source } = message.config;
 
   // Filter out system messages
-  if (source === "system" || source === "kagent_user") {
+  // TODO: Decide whether we want to filter out som agent
+  if (source === "system" || source === "kagent_user" || source === "society_of_mind_agent") {
     return null;
-  }
-
-  // Handle user messages
-  if (source === "user") {
-    return (
-      <div className="flex items-center gap-2 text-sm text-white/50 border-l-blue-500 bg-neutral-800 border border-[#3A3A3A] border-l-2 py-2 px-4">
-        <div className="flex flex-col gap-1 w-full">
-          <div className="text-xs font-bold text-white/80">User</div>
-          <TruncatableText content={String(messageContent)} isStreaming={false} className="break-all" />
-        </div>
-      </div>
-    );
   }
 
   // Handle special message types
   if (messageUtils.isTeamResult(message.config)) {
     return (
-      <div className="text-sm text-white/80 bg-neutral-800 border border-white/50 p-4">
+      <div className="text-sm p-4">
         <span className="font-semibold">Task completed</span>
-        <ul className="mt-2 text-white/60">
+        <ul className="mt-2">
           <li>Duration: {Math.floor(message.config.duration)} seconds</li>
           <li>Messages sent: {message.config.task_result.messages.length}</li>
         </ul>
@@ -54,12 +54,5 @@ export default function ChatMessage({ message, run }: ChatMessageProps) {
     return <LLMCallModal content={String(messageContent)} />;
   }
 
-  return (
-    <div className="flex items-center gap-2 text-sm text-white/50 border-l-violet-500 bg-transparent border-l-2 py-2 px-4">
-      <div className="flex flex-col gap-1 w-full">
-        <div className="text-xs font-bold text-white/80">{source}</div>
-        <TruncatableText content={String(messageContent)} isStreaming={false} className="break-all" />
-      </div>
-    </div>
-  );
+  return <SingleMessage source={source} message={String(messageContent)} isStreaming={false} />;
 }

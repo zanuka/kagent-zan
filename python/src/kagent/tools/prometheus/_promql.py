@@ -224,3 +224,10 @@ class GeneratePromQLTool(BaseTool, Component[GeneratePromQLToolConfig]):
            cancellation_token: Token to signal cancellation.
         """
         return await self._generate_query(input.query_description, cancellation_token=cancellation_token)
+
+    def _to_config(self) -> GeneratePromQLToolConfig:
+        return self.config
+
+    @classmethod
+    def _from_config(cls, config: GeneratePromQLToolConfig) -> "GeneratePromQLTool":
+        return cls(config)
