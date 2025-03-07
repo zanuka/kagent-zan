@@ -269,7 +269,7 @@ func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
 		return fmt.Errorf("failed to validate team %s: %v", *team.Component.Label, err)
 	}
 	if !resp.IsValid {
-		return fmt.Errorf("team %s is invalid: %v", *team.Component.Label, resp.Errors)
+		return fmt.Errorf("team %s is invalid: %v", *team.Component.Label, resp.ErrorMsg())
 	}
 
 	return a.autogenClient.CreateTeam(team)

@@ -178,6 +178,18 @@ spec:
   - provider: kagent.tools.k8s.Rollout
   - provider: kagent.tools.k8s.Scale
   - provider: kagent.tools.k8s.GenerateResourceTool
+  - provider: kagent.tools.istio.ZTunnelConfig
+  - provider: kagent.tools.istio.WaypointStatus
+  - provider: kagent.tools.istio.ListWaypoints
+  - provider: kagent.tools.istio.GenerateWaypoint
+  - provider: kagent.tools.istio.DeleteWaypoint
+  - provider: kagent.tools.istio.ApplyWaypoint
+  - provider: kagent.tools.istio.RemoteClusters
+  - provider: kagent.tools.istio.ProxyStatus
+  - provider: kagent.tools.istio.GenerateManifest
+  - provider: kagent.tools.istio.InstallIstio
+  - provider: kagent.tools.istio.AnalyzeClusterConfig
+  - provider: kagent.tools.istio.ProxyConfig
   - config:
       docs_download_url: https://doc-sqlite-db.s3.sa-east-1.amazonaws.com
     provider: kagent.tools.docs.QueryTool

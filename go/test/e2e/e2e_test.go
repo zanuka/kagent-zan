@@ -39,71 +39,41 @@ var _ = Describe("E2e", func() {
 				Description:   "The Kubernetes Expert AI Agent specializing in cluster operations, troubleshooting, and maintenance.",
 				SystemMessage: readFileAsString("systemprompts/kube-expert-system-prompt.txt"),
 				Tools: []v1alpha1.Tool{
-					{
-						Provider: "kagent.tools.k8s.AnnotateResource",
-					},
-					{
-						Provider: "kagent.tools.k8s.ApplyManifest",
-					},
-					{
-						Provider: "kagent.tools.k8s.CheckServiceConnectivity",
-					},
-					{
-						Provider: "kagent.tools.k8s.CreateResource",
-					},
-					{
-						Provider: "kagent.tools.k8s.DeleteResource",
-					},
-					{
-						Provider: "kagent.tools.k8s.DescribeResource",
-					},
-					{
-						Provider: "kagent.tools.k8s.ExecuteCommand",
-					},
-					{
-						Provider: "kagent.tools.k8s.GetAvailableAPIResources",
-					},
-					{
-						Provider: "kagent.tools.k8s.GetClusterConfiguration",
-					},
-					{
-						Provider: "kagent.tools.k8s.GetEvents",
-					},
-					{
-						Provider: "kagent.tools.k8s.GetPodLogs",
-					},
-					{
-						Provider: "kagent.tools.k8s.GetResources",
-					},
-					{
-						Provider: "kagent.tools.k8s.GetResourceYAML",
-					},
-					{
-						Provider: "kagent.tools.k8s.LabelResource",
-					},
-					{
-						Provider: "kagent.tools.k8s.PatchResource",
-					},
-					{
-						Provider: "kagent.tools.k8s.RemoveAnnotation",
-					},
-					{
-						Provider: "kagent.tools.k8s.RemoveLabel",
-					},
-					{
-						Provider: "kagent.tools.k8s.Rollout",
-					},
-					{
-						Provider: "kagent.tools.k8s.Scale",
-					},
-					{
-						Provider: "kagent.tools.k8s.GenerateResourceTool",
-					},
-					{
-						Provider: "kagent.tools.k8s.GenerateResourceToolConfig",
-					},
-					{
-						Provider: "kagent.tools.docs.QueryTool",
+					{Provider: "kagent.tools.k8s.AnnotateResource"},
+					{Provider: "kagent.tools.k8s.ApplyManifest"},
+					{Provider: "kagent.tools.k8s.CheckServiceConnectivity"},
+					{Provider: "kagent.tools.k8s.CreateResource"},
+					{Provider: "kagent.tools.k8s.DeleteResource"},
+					{Provider: "kagent.tools.k8s.DescribeResource"},
+					{Provider: "kagent.tools.k8s.ExecuteCommand"},
+					{Provider: "kagent.tools.k8s.GetAvailableAPIResources"},
+					{Provider: "kagent.tools.k8s.GetClusterConfiguration"},
+					{Provider: "kagent.tools.k8s.GetEvents"},
+					{Provider: "kagent.tools.k8s.GetPodLogs"},
+					{Provider: "kagent.tools.k8s.GetResources"},
+					{Provider: "kagent.tools.k8s.GetResourceYAML"},
+					{Provider: "kagent.tools.k8s.LabelResource"},
+					{Provider: "kagent.tools.k8s.PatchResource"},
+					{Provider: "kagent.tools.k8s.RemoveAnnotation"},
+					{Provider: "kagent.tools.k8s.RemoveLabel"},
+					{Provider: "kagent.tools.k8s.Rollout"},
+					{Provider: "kagent.tools.k8s.Scale"},
+					{Provider: "kagent.tools.k8s.GenerateResourceTool"},
+					{Provider: "kagent.tools.k8s.GenerateResourceToolConfig"},
+					{Provider: "kagent.tools.istio.ZTunnelConfig"},
+					{Provider: "kagent.tools.istio.WaypointStatus"},
+					{Provider: "kagent.tools.istio.ListWaypoints"},
+					{Provider: "kagent.tools.istio.GenerateWaypoint"},
+					{Provider: "kagent.tools.istio.DeleteWaypoint"},
+					{Provider: "kagent.tools.istio.ApplyWaypoint"},
+					{Provider: "kagent.tools.istio.RemoteClusters"},
+					{Provider: "kagent.tools.istio.ProxyStatus"},
+					{Provider: "kagent.tools.istio.GenerateManifest"},
+					{Provider: "kagent.tools.istio.Install"},
+					{Provider: "kagent.tools.istio.AnalyzeClusterConfig"},
+					{Provider: "kagent.tools.istio.ProxyConfig"},
+					// tools with config
+					{Provider: "kagent.tools.docs.QueryTool",
 						Config: map[string]v1alpha1.AnyType{
 							"docs_download_url": {
 								RawMessage: makeRawMsg("https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"),

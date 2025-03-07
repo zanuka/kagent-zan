@@ -1,6 +1,9 @@
 package client
 
-import "github.com/kagent-dev/kagent/go/autogen/api"
+import (
+	"fmt"
+	"github.com/kagent-dev/kagent/go/autogen/api"
+)
 
 type ValidationRequest struct {
 	Component *api.Component `json:"component"`
@@ -16,6 +19,24 @@ type ValidationResponse struct {
 	IsValid  bool               `json:"is_valid"`
 	Errors   []*ValidationError `json:"errors"`
 	Warnings []*ValidationError `json:"warnings"`
+}
+
+func (r ValidationResponse) ErrorMsg() string {
+	var msg string
+	for _, e := range r.Errors {
+		msg += fmt.Sprintf("Error: %s\n [%s]\n", e.Error, e.Field)
+		if e.Suggestion != nil {
+			msg += fmt.Sprintf("Suggestion: %s\n", *e.Suggestion)
+		}
+	}
+	for _, w := range r.Warnings {
+		msg += fmt.Sprintf("Warning: %s\n [%s]\n", w.Error, w.Field)
+		if w.Suggestion != nil {
+			msg += fmt.Sprintf("Suggestion: %s\n", *w.Suggestion)
+		}
+	}
+
+	return msg
 }
 
 func (c *Client) Validate(req *ValidationRequest) (*ValidationResponse, error) {
