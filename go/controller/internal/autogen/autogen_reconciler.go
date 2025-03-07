@@ -248,18 +248,6 @@ func (a *autogenReconciler) reconcileAgents(ctx context.Context, agents ...*v1al
 }
 
 func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
-	// delete if team exists
-	existingTeam, err := a.autogenClient.GetTeam(*team.Component.Label, GlobalUserID)
-	if err != nil {
-		return fmt.Errorf("failed to get existing team %s: %v", *team.Component.Label, err)
-	}
-	if existingTeam != nil {
-		err = a.autogenClient.DeleteTeam(existingTeam.Id, GlobalUserID)
-		if err != nil {
-			return fmt.Errorf("failed to delete existing team %s: %v", *team.Component.Label, err)
-		}
-	}
-
 	// validate the team
 	req := autogen_client.ValidationRequest{
 		Component: team.Component,
@@ -270,6 +258,18 @@ func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
 	}
 	if !resp.IsValid {
 		return fmt.Errorf("team %s is invalid: %v", *team.Component.Label, resp.ErrorMsg())
+	}
+
+	// delete if team exists
+	existingTeam, err := a.autogenClient.GetTeam(*team.Component.Label, GlobalUserID)
+	if err != nil {
+		return fmt.Errorf("failed to get existing team %s: %v", *team.Component.Label, err)
+	}
+	if existingTeam != nil {
+		err = a.autogenClient.DeleteTeam(existingTeam.Id, GlobalUserID)
+		if err != nil {
+			return fmt.Errorf("failed to delete existing team %s: %v", *team.Component.Label, err)
+		}
 	}
 
 	return a.autogenClient.CreateTeam(team)
