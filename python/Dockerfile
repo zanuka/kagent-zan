@@ -55,10 +55,13 @@ WORKDIR /app/python
 COPY pyproject.toml .
 COPY .python-version .
 COPY uv.lock .
-COPY src src
 COPY README.md .
 RUN uv sync --all-extras && \
     chown -R python:pythongroup /app/python
+
+COPY src src
+COPY README.md .
+RUN uv sync --all-extras
 
 # Generate tools and agents
 RUN mkdir -p /root/.autogenstudio/configs
