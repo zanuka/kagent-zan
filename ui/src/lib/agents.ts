@@ -8,7 +8,7 @@ import {
   ModelConfig,
   OpenAIClientConfig,
   RoundRobinGroupChatConfig,
-  SocietyOfMindAgentConfig,
+  TaskAgentConfig,
   Team,
   TeamConfig,
   TextMentionTerminationConfig,
@@ -169,11 +169,11 @@ export const createInnerTeam = (assistantAgent: Component<AssistantAgentConfig>,
 };
 
 /**
- * Creates a SocietyOfMindAgent that wraps the inner team
+ * Creates a TaskAgent that wraps the inner team
  */
-export const createSocietyOfMindAgent = (innerTeam: Component<TeamConfig>, modelClient: Component<ModelConfig>): Component<SocietyOfMindAgentConfig> => {
+export const createTaskAgent = (innerTeam: Component<TeamConfig>): Component<TaskAgentConfig> => {
   return {
-    provider: "kagent.agents.SocietyOfMindAgent",
+    provider: "kagent.agents.TaskAgent",
     component_type: "agent",
     version: 1,
     component_version: 1,
@@ -182,17 +182,15 @@ export const createSocietyOfMindAgent = (innerTeam: Component<TeamConfig>, model
     config: {
       name: "society_of_mind_agent",
       team: innerTeam,
-      model_client: modelClient,
       model_context: createModelContext(),
-      model_client_stream: true,
     },
   };
 };
 
 /**
- * Creates the outer team with the SocietyOfMindAgent and the user proxy
+ * Creates the outer team with the TaskAgent and the user proxy
  */
-export const createOuterTeam = (label: string, societyOfMindAgent: Component<SocietyOfMindAgentConfig>, modelClient: Component<ModelConfig>): Component<RoundRobinGroupChatConfig> => {
+export const createOuterTeam = (label: string, taskAgent: Component<TaskAgentConfig>, modelClient: Component<ModelConfig>): Component<RoundRobinGroupChatConfig> => {
   const userProxyAgent = createUserProxyAgent();
 
   return {
@@ -200,10 +198,10 @@ export const createOuterTeam = (label: string, societyOfMindAgent: Component<Soc
     component_type: "team",
     version: 1,
     component_version: 1,
-    description: societyOfMindAgent.config.team.description,
+    description: taskAgent.config.team.description,
     label: label,
     config: {
-      participants: [societyOfMindAgent, userProxyAgent],
+      participants: [taskAgent, userProxyAgent],
       termination_condition: createTextTerminationCondition("TERMINATE"),
       model_client: modelClient,
     },
@@ -223,10 +221,10 @@ export const createAgentStructure = async (formData: AgentFormData): Promise<Com
   // Create the inner team that contains the assistant agent
   const innerTeam = createInnerTeam(innerAgent, modelClient);
 
-  // Create the SocietyOfMindAgent that wraps the inner team
-  const societyOfMindAgent = createSocietyOfMindAgent(innerTeam, modelClient);
+  // Create the TaskAgent that wraps the inner team
+  const societyOfMindAgent = createTaskAgent(innerTeam);
 
-  // Create the outer team with the SocietyOfMindAgent and user proxy
+  // Create the outer team with the TaskAgent and user proxy
   const outerTeam = createOuterTeam(formData.name, societyOfMindAgent, modelClient);
 
   return outerTeam;
@@ -288,8 +286,8 @@ function traverseComponentTree<R extends ComponentConfig>(components: Component<
       results.push(component as Component<R>);
     }
 
-    // Check SocietyOfMindAgent with nested team
-    if (component.provider === "kagent.agents.SocietyOfMindAgent" && component.config?.team?.config?.participants) {
+    // Check TaskAgent with nested team
+    if (component.provider === "kagent.agents.TaskAgent" && component.config?.team?.config?.participants) {
       const nestedResults = traverseComponentTree<R>(component.config.team.config.participants, predicate);
       results.push(...nestedResults);
     }
