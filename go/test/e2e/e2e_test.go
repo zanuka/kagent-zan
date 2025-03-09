@@ -85,7 +85,7 @@ var _ = Describe("E2e", func() {
 		}
 
 		writeKubeObjects(
-			"manifests/kubeobjects.yaml",
+			"manifests/kube-expert-agent.yaml",
 			kubeExpert,
 		)
 	})
