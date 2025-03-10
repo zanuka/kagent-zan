@@ -22,8 +22,8 @@ export function AgentCard({ team }: AgentCardProps) {
           </CardTitle>
           <DeleteButton teamId={String(team.id)} />
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">{agent.description}</p>
+        <CardContent className="flex flex-col justify-between h-32">
+          <p className="text-sm text-muted-foreground line-clamp-3 overflow-hidden">{agent.description}</p>
           <div className="mt-4 flex items-center text-xs text-muted-foreground">
             <span>Model: {agent.config.model_client.config.model}</span>
           </div>

@@ -57,13 +57,13 @@ export function DeleteButton({ teamId }: DeleteButtonProps) {
       </Button>
 
       <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
-        <AlertDialogContent className="bg-[#2A2A2A] border-[#3A3A3A] text-white" onClick={(e) => e.stopPropagation()}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Agent</AlertDialogTitle>
-            <AlertDialogDescription className="text-white/70">Are you sure you want to delete this agent? This action cannot be undone.</AlertDialogDescription>
+            <AlertDialogDescription>Are you sure you want to delete this agent? This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-[#3A3A3A] text-white hover:bg-[#4A4A4A]" disabled={isDeleting} onClick={(e) => e.stopPropagation()}>
+            <AlertDialogCancel disabled={isDeleting} onClick={(e) => e.stopPropagation()}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={(e) => handleDelete(e)} disabled={isDeleting}>
