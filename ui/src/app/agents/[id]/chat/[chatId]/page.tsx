@@ -1,29 +1,44 @@
-import { Suspense } from "react";
-import { getChatData } from "@/app/actions/chat";
+"use client";
+import { use, useEffect, useState } from "react";
 import { LoadingState } from "@/components/LoadingState";
-import { ErrorState } from "@/components/ErrorState";
-import { redirect } from "next/navigation";
-import ChatDetailClient from "./ChatDetailClient";
+import ChatInterface from "@/components/chat/ChatInterface";
+import { AgentDetailsSidebar } from "@/components/sidebars/AgentDetailsSidebar";
+import SessionsSidebar from "@/components/sidebars/SessionsSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import useChatStore from "@/lib/useChatStore";
 
-export default async function ChatDetailPage({ params }: { params: Promise<{ id: string; chatId: string }>}) {
-  const { id, chatId } = await params;
-  try {
-    const data = await getChatData(id, chatId);
+export default function ChatPageView({ params }: { params: Promise<{ id: string; chatId: string }> }) {
+  const { id, chatId } = use(params);
+  const { loadChat, run, session } = useChatStore();
+  const [loading, setLoading] = useState(true);
 
-    if (data.notFound) {
-      redirect(`/agents/${id}/chat`);
+  useEffect(() => {
+    const loadData = async (chatId: string) => {
+      try {
+        await loadChat(chatId);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (chatId) {
+      loadData(chatId);
     }
+  }, [chatId, loadChat]);
 
-    if (!data.agent || !data.sessions || !data.viewState) {
-      throw new Error("Incomplete data received");
-    }
-
-    return (
-      <Suspense fallback={<LoadingState />}>
-        <ChatDetailClient initialData={data} agentId={id} chatId={chatId} />
-      </Suspense>
-    );
-  } catch (error) {
-    return <ErrorState message={error instanceof Error ? error.message : "An unexpected error occurred"} />;
+  if (loading) {
+    return <LoadingState />;
   }
+
+  return (
+    <SidebarProvider>
+      <SessionsSidebar agentId={id} />
+      <main className="w-full max-w-6xl mx-auto">
+        <ChatInterface selectedTeamId={id} selectedRun={run} selectedSession={session} />;
+      </main>
+      <AgentDetailsSidebar selectedTeamId={id} />
+    </SidebarProvider>
+  );
 }

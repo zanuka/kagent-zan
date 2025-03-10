@@ -1,40 +1,23 @@
-FROM ghcr.io/astral-sh/uv:debian-slim AS final
+FROM ghcr.io/astral-sh/uv:0.6.5-debian-slim AS builder 
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    UV_SYSTEM_PYTHON=1 \
-    PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/sbin:/bin:/root/.cargo/bin"
+ARG TARGETARCH
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
     curl \
     ca-certificates \
-    nginx \
-    supervisor \
-    gnupg \
-    python3 \
-    python3-pip \
-    python3-venv \
-    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
     && apt-get update \
-    && apt-get install -y nodejs \
     && update-ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/bin/python3 /usr/bin/python
-
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    uv --version
+    && rm -rf /var/lib/apt/lists/*
 
 # Install kubectl
-RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/$TARGETARCH/kubectl" \
     && chmod +x kubectl \
     && mv kubectl /usr/local/bin/
 
 # Install Istio
-RUN curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.25.0 TARGET_ARCH=x86_64 sh - \
+RUN curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.25.0 TARGET_ARCH=$TARGETARCH sh - \
     && mv istio-1.25.0/bin/istioctl /usr/local/bin/istioctl \
     && rm -rf istio-1.25.0
 
@@ -44,10 +27,31 @@ RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/s
     && ./get_helm.sh \
     && rm get_helm.sh
 
+FROM ghcr.io/astral-sh/uv:0.6.5-debian-slim AS final
+
+ARG TARGETARCH
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    ca-certificates \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/local/bin/kubectl /usr/local/bin/kubectl
+COPY --from=builder /usr/local/bin/istioctl /usr/local/bin/istioctl
+COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/sbin:/bin:/root/.cargo/bin"
+
+RUN uv python install 3.12
+
 # Create groups and users
 RUN groupadd -g 1002 pythongroup \
     && useradd -u 1002 -g pythongroup -s /bin/bash -m python \
-    && mkdir -p /app/python /app/ui /run/nginx \
+    && mkdir -p /app/python \
     && chown -R python:pythongroup /app/python
 
 # Set up Python backend
@@ -55,13 +59,10 @@ WORKDIR /app/python
 COPY pyproject.toml .
 COPY .python-version .
 COPY uv.lock .
-COPY README.md .
-RUN uv sync --all-extras && \
-    chown -R python:pythongroup /app/python
-
 COPY src src
 COPY README.md .
-RUN uv sync --all-extras
+RUN uv sync --frozen && \
+    chown -R python:pythongroup /app/python
 
 # Generate tools and agents
 RUN mkdir -p /root/.autogenstudio/configs
@@ -75,9 +76,9 @@ RUN chown -R python:pythongroup /app/python && \
 RUN mkdir -p /app/python/.cache/uv && \
     chown -R python:pythongroup /app/python/.cache
 
-EXPOSE 80
+EXPOSE 8081
 
 LABEL org.opencontainers.image.source=https://github.com/kagent-dev/kagent
-LABEL org.opencontainers.image.description="Kagent app is the UI and apiserver for running agents."
+LABEL org.opencontainers.image.description="Kagent app is the apiserver for running agents."
 
 CMD ["uv", "run", "autogenstudio", "ui", "--host", "0.0.0.0", "--port", "8081"]

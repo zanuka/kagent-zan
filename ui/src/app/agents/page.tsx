@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-
+import AgentList from "@/components/AgentList";
 export default function AgentListPage() {
-  redirect("/");
+  return <AgentList />;
 }

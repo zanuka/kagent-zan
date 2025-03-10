@@ -206,7 +206,7 @@ class GeneratePromQLTool(BaseTool, Component[GeneratePromQLToolConfig]):
            query_description: The description of the query to be generated.
            cancellation_token: Token to signal cancellation.
         """
-        return await self._llm_tool.call(
+        return await self._llm_tool.run(
             LLMToolInput(
                 system_prompt=PROMQL_PROMPT,
                 user_message=query_description,
@@ -224,3 +224,10 @@ class GeneratePromQLTool(BaseTool, Component[GeneratePromQLToolConfig]):
            cancellation_token: Token to signal cancellation.
         """
         return await self._generate_query(input.query_description, cancellation_token=cancellation_token)
+
+    def _to_config(self) -> GeneratePromQLToolConfig:
+        return self.config
+
+    @classmethod
+    def _from_config(cls, config: GeneratePromQLToolConfig) -> "GeneratePromQLTool":
+        return cls(config)

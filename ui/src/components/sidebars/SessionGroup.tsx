@@ -1,26 +1,47 @@
 import { SessionWithRuns } from "@/types/datamodel";
 import RunItem from "./RunItem";
+import { SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub } from "../ui/sidebar";
+import { Collapsible } from "@radix-ui/react-collapsible";
+import { ChevronRight } from "lucide-react";
+import { CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
 
 interface SessionGroupProps {
   title: string;
   sessions: SessionWithRuns[];
-  onViewRun: (sessionId: number, runId: string) => Promise<void>;
   onDeleteSession: (sessionId: number) => Promise<void>;
+  agentId?: number;
 }
-const SessionGroup = ({ title, sessions, onViewRun, onDeleteSession }: SessionGroupProps) => (
-  <div>
-    <div className="px-2 py-1 text-xs font-semibold text-white/50 uppercase">{title}</div>
-    <div className="space-y-4">
-      {sessions.map((sessionWithRuns) => (
-        <div key={sessionWithRuns.session.id} className="space-y-1">
-          <div className="px-2 text-xs text-white/30">{sessionWithRuns.session.name || `Chat ${sessionWithRuns.session.id}`}</div>
-          {sessionWithRuns.runs.map((run) => (
-            <RunItem key={run.id} sessionId={sessionWithRuns.session.id!} run={run} onClick={onViewRun} onDelete={onDeleteSession} />
-          ))}
-        </div>
-      ))}
-    </div>
-  </div>
-);
+
+// The sessions are grouped by today, yesterday, and older
+const SessionGroup = ({ title, sessions, onDeleteSession, agentId }: SessionGroupProps) => {
+  console.log("title", title);
+  return (
+    <SidebarGroup>
+      <SidebarMenu>
+        <Collapsible key={title} defaultOpen={title.toLocaleLowerCase() === "today"} asChild className="group/collapsible">
+          <SidebarMenuItem>
+            <CollapsibleTrigger asChild>
+              <SidebarMenuButton tooltip={title}>
+                <span>{title}</span>
+                <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <SidebarMenuSub>
+                {sessions.map((sessionWithRuns) => (
+                  <div key={sessionWithRuns.session.id} className="py-2.5">
+                    {sessionWithRuns.runs.map((run) => (
+                      <RunItem key={run.id} sessionId={sessionWithRuns.session.id!} agentId={agentId} run={run} onDelete={onDeleteSession} />
+                    ))}
+                  </div>
+                ))}
+              </SidebarMenuSub>
+            </CollapsibleContent>
+          </SidebarMenuItem>
+        </Collapsible>
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+};
 
 export default SessionGroup;

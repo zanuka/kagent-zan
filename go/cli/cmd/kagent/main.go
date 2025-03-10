@@ -29,10 +29,10 @@ func main() {
 	// create new shell.
 	// by default, new shell includes 'exit', 'help' and 'clear' commands.
 	shell := ishell.New()
-	cli.SetCfg(shell, cfg)
-	cli.SetClient(shell, client)
+	config.SetCfg(shell, cfg)
+	config.SetClient(shell, client)
 
-	shell.SetPrompt(cli.BoldBlue("kagent >> "))
+	shell.SetPrompt(config.BoldBlue("kagent >> "))
 
 	runCmd := &ishell.Cmd{
 		Name:    "run",
@@ -65,7 +65,7 @@ Examples:
 `,
 		Func: func(c *ishell.Context) {
 			cli.ChatCmd(c)
-			c.SetPrompt(cli.BoldBlue("kagent >> "))
+			c.SetPrompt(config.BoldBlue("kagent >> "))
 		},
 	})
 
@@ -87,7 +87,7 @@ Examples:
 
 	getCmd.AddCmd(&ishell.Cmd{
 		Name:    "session",
-		Aliases: []string{"s"},
+		Aliases: []string{"s", "sessions"},
 		Help:    "get a session.",
 		LongHelp: `get a session.
 
@@ -101,7 +101,7 @@ Examples:
 
 	getCmd.AddCmd(&ishell.Cmd{
 		Name:    "run",
-		Aliases: []string{"r"},
+		Aliases: []string{"r", "runs"},
 		Help:    "get a run.",
 		LongHelp: `get a run.
 
@@ -115,7 +115,7 @@ Examples:
 
 	getCmd.AddCmd(&ishell.Cmd{
 		Name:    "agent",
-		Aliases: []string{"a"},
+		Aliases: []string{"a", "agents"},
 		Help:    "get an agent.",
 		LongHelp: `get an agent.
 
@@ -134,11 +134,11 @@ Examples:
 		if len(c.Args) > 0 && c.Args[0] == "create" {
 			c.Args = c.Args[1:]
 			cli.CreateCmd(c)
-			c.SetPrompt(cli.BoldBlue("kagent >> "))
+			c.SetPrompt(config.BoldBlue("kagent >> "))
 		} else if len(c.Args) > 0 && c.Args[0] == "delete" {
 			c.Args = c.Args[1:]
 			cli.DeleteCmd(c)
-			c.SetPrompt(cli.BoldBlue("kagent >> "))
+			c.SetPrompt(config.BoldBlue("kagent >> "))
 		} else {
 			c.Println("Command not found. Type 'help' to see available commands.")
 		}
@@ -150,7 +150,7 @@ Examples:
 		Help:    "Print the kagent version.",
 		Func: func(c *ishell.Context) {
 			cli.VersionCmd(c)
-			c.SetPrompt(cli.BoldBlue("kagent >> "))
+			c.SetPrompt(config.BoldBlue("kagent >> "))
 		},
 	})
 

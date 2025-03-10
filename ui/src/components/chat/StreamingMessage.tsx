@@ -12,14 +12,15 @@ export default function StreamingMessage({ message }: StreamingMessageProps) {
 
   const { content: messageContent, source } = message.config;
 
-  if (source === "system" || source === "kagent_user") {
+  // TODO: Decide at some point what we want to filter out
+  if (source === "system" || source === "kagent_user" || source === "society_of_mind_agent") {
     return null;
   }
 
   return (
-    <div className="flex items-center gap-2 text-sm text-white/50 border-l-violet-500 bg-neutral-900 border-l-2 py-2 px-4">
+    <div className="flex items-center gap-2 text-sm animate-pulse  border-l-violet-500 border-l-2 py-2 px-4">
       <div className="flex flex-col gap-1 w-full">
-        <div className="text-xs font-bold text-white/80">{source}</div>
+        <div className="text-xs font-bold">{source}</div>
         <TruncatableText content={String(messageContent)} isStreaming={true} className="break-all" />
       </div>
     </div>

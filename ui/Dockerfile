@@ -1,4 +1,4 @@
-FROM node:18-alpine AS ui-builder
+FROM --platform=$BUILDPLATFORM node:18-bullseye AS ui-builder
 
 WORKDIR /app/ui
 
@@ -11,7 +11,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM ghcr.io/astral-sh/uv:debian-slim AS final
+FROM ghcr.io/astral-sh/uv:0.6.5-debian-slim AS final
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \

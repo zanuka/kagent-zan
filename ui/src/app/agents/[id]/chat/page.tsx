@@ -1,30 +1,20 @@
-import { Suspense } from "react";
-import { getChatData } from "@/app/actions/chat";
-import { LoadingState } from "@/components/LoadingState";
-import { ErrorState } from "@/components/ErrorState";
-import ChatPageClient from "./ChatPageClient";
+import SessionsSidebar from "@/components/sidebars/SessionsSidebar";
+import { AgentDetailsSidebar } from "@/components/sidebars/AgentDetailsSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import ChatInterface from "@/components/chat/ChatInterface";
 
-export default async function ChatPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ChatLayout({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  try {
-    const data = await getChatData(id, null);
-    if (data.notFound || !data.agent) {
-      return <ErrorState message="Agent not found" />;
-    }
 
-    return (
-      <Suspense fallback={<LoadingState />}>
-        <ChatPageClient 
-          initialData={data}
-          agentId={id}
+  return (
+    <SidebarProvider>
+      <SessionsSidebar agentId={id} />
+      <main className="w-full max-w-6xl mx-auto">
+        <ChatInterface
+          selectedTeamId={id}
         />
-      </Suspense>
-    );
-  } catch (error) {
-    return <ErrorState message={error instanceof Error ? error.message : "An unexpected error occurred"} />;
-  }
+      </main>
+      <AgentDetailsSidebar selectedTeamId={id} />
+    </SidebarProvider>
+  );
 }
