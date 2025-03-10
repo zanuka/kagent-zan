@@ -78,3 +78,7 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+
+permissions:
+  istioInstaller:
+    enabled: false

@@ -14,6 +14,8 @@ APP_IMG ?= $(DOCKER_REGISTRY)/$(DOCKER_REPO)/$(APP_IMAGE_NAME):$(APP_IMAGE_TAG)
 DOCKER_BUILDER ?= docker
 DOCKER_BUILD_ARGS ?=
 
+ISTIO_INSTALLER_ENABLED ?= true
+
 # Check if OPENAI_API_KEY is set
 check-openai-key:
 	@if [ -z "$(OPENAI_API_KEY)" ]; then \
@@ -90,7 +92,8 @@ helm-install: helm-version check-openai-key kind-load-docker-images
 		--set controller.image.tag=$(CONTROLLER_IMAGE_TAG) \
 		--set ui.image.tag=$(UI_IMAGE_TAG) \
 		--set app.image.tag=$(APP_IMAGE_TAG) \
-		--set openai.apiKey=$(OPENAI_API_KEY)
+		--set openai.apiKey=$(OPENAI_API_KEY) \
+		--set permissions.istioInstaller.enabled=$(ISTIO_INSTALLER_ENABLED)
 
 .PHONY: helm-publish
 helm-publish: helm-version
