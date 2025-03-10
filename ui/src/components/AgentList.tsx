@@ -4,35 +4,15 @@ import { Plus } from "lucide-react";
 import KagentLogo from "@/components/kagent-logo";
 import Link from "next/link";
 import { ErrorState } from "./ErrorState";
-import { getTeams } from "@/app/actions/teams";
 import { Button } from "./ui/button";
-import { useEffect, useState } from "react";
-import { Team } from "@/types/datamodel";
 import { LoadingState } from "./LoadingState";
+import { useAgents } from "./AgentsProvider";
 
 export default function AgentList() {
-  const [hasError, setHasError] = useState(false);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { teams, loading, error } = useAgents();
 
-  useEffect(() => {
-    const fetchTeams = async () => {
-      setLoading(true);
-      const teamsResult = await getTeams();
-      if (teamsResult.error) {
-        setHasError(true);
-      }
-
-      if (teamsResult.data) {
-        setTeams(teamsResult.data);
-      }
-      setLoading(false);
-    };
-    fetchTeams();
-  }, []);
-
-  if (hasError) {
-    return <ErrorState message="Failed to load agents" />;
+  if (error) {
+    return <ErrorState message={error} />;
   }
 
   if (loading) {
