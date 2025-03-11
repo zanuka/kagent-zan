@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import type { Team, AssistantAgentConfig, ToolConfig, Component } from "@/types/datamodel";
 import { SystemPromptEditor } from "./SystemPromptEditor";
-import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
+import { getToolDescription, getToolDisplayName, getToolIdentifier } from "@/lib/data";
 import { createTeam, getTeam } from "@/app/actions/teams";
 import { findAllAssistantAgents, updateUsersAgent } from "@/lib/agents";
 import { SidebarHeader, Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "../ui/sidebar";
@@ -67,7 +67,6 @@ export function AgentDetailsSidebar({ selectedTeamId }: AgentDetailsSidebarProps
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton tooltip={displayName}>
-                    {isMcpTool(tool) && <span className="ml-2 text-xs bg-blue-400/20 text-blue-400 px-2 py-0.5 rounded">MCP</span>}
                     <span>{displayName}</span>
                     <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                   </SidebarMenuButton>

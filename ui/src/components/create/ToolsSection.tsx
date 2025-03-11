@@ -42,8 +42,8 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
     setDiscoveredToolsForSelection([]);
   };
 
-  const handleRemoveTool = (toolProvider: string) => {
-    const updatedTools = selectedTools.filter((tool) => getToolIdentifier(tool) !== toolProvider);
+  const handleRemoveTool = (tool: Component<ToolConfig>) => {
+    const updatedTools = selectedTools.filter((t) => getToolIdentifier(t) !== getToolIdentifier(tool));
     setSelectedTools(updatedTools);
   };
 
@@ -142,7 +142,6 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
                     <div className="inline-flex flex-col space-y-1">
                       <span className="">{displayName}</span>
                       <span className="text-muted-foreground max-w-2xl">{displayDescription}</span>
-                      {isMcpTool(tool) && <span className="text-blue-400/70 text-xs">MCP Tool</span>}
                     </div>
                   </div>
                 </div>
@@ -161,7 +160,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
                       <Settings2 className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm" onClick={() => handleRemoveTool(tool.provider)} disabled={isSubmitting}>
+                  <Button variant="ghost" size="sm" onClick={() => handleRemoveTool(tool)} disabled={isSubmitting}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
