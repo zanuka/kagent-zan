@@ -36,6 +36,27 @@ Kagent has 3 core components:
 2. Install the helm chart: `helm install kagent oci://ghcr.io/kagent-dev/kagent/helm/kagent`
 3. Port-forward the UI: `kubectl port-forward svc/kagent-ui 8080:80`
 
+## Roadmap
+
+`kagent` is currently in active development. The following is a list of features that are planned for the next few releases.
+
+- [ ] Observability improvements: #130
+  - [ ] More powerful Tracing capabilities
+  - [ ] Tighter oTEL integration
+  - [ ] Metrics
+- [ ] Feedback/Testing: #131
+  - [ ] Eval framework/integrations
+  - [ ] Debugging/Time travel
+  - [ ] Guided Learning
+- [ ] Runtime/Engine improvements: #132 
+  - [ ] Mutli-Agent support
+  - [ ] True Graph Execution
+  - [ ] Workflows
+  - [ ] Multiple LLM Provider support
+- [ ] Tools #133
+  - [ ] Tool Discovery
+  - [ ] Expose built-in tools as MCP server
+
 
 ## Local development
 
