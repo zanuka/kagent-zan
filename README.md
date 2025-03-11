@@ -40,20 +40,20 @@ Kagent has 3 core components:
 
 `kagent` is currently in active development. The following is a list of features that are planned for the next few releases.
 
-- [ ] Observability improvements: #130
+- [ ] [Observability improvements:](https://github.com/kagent-dev/kagent/issues/130)
   - [ ] More powerful Tracing capabilities
   - [ ] Tighter oTEL integration
   - [ ] Metrics
-- [ ] Feedback/Testing: #131
+- [ ] [Feedback/Testing:](https://github.com/kagent-dev/kagent/issues/131)
   - [ ] Eval framework/integrations
   - [ ] Debugging/Time travel
   - [ ] Guided Learning
-- [ ] Runtime/Engine improvements: #132 
+- [ ] [Runtime/Engine improvements:](https://github.com/kagent-dev/kagent/issues/132)
   - [ ] Mutli-Agent support
   - [ ] True Graph Execution
   - [ ] Workflows
   - [ ] Multiple LLM Provider support
-- [ ] Tools #133
+- [ ] [Tools:](https://github.com/kagent-dev/kagent/issues/133)
   - [ ] Tool Discovery
   - [ ] Expose built-in tools as MCP server
 
