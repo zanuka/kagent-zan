@@ -27,9 +27,11 @@ import (
 
 // AgentSpec defines the desired state of Agent.
 type AgentSpec struct {
-	Description   string `json:"description,omitempty"`
+	Description string `json:"description,omitempty"`
+	// +kubebuilder:validation:MinLength=1
 	SystemMessage string `json:"systemMessage,omitempty"`
-	Tools         []Tool `json:"tools,omitempty"`
+	// +kubebuilder:validation:MaxItems=15
+	Tools []Tool `json:"tools,omitempty"`
 }
 
 type Tool struct {
