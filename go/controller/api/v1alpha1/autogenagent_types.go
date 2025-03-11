@@ -30,7 +30,7 @@ type AgentSpec struct {
 	Description string `json:"description,omitempty"`
 	// +kubebuilder:validation:MinLength=1
 	SystemMessage string `json:"systemMessage,omitempty"`
-	// +kubebuilder:validation:MaxItems=15
+	// +kubebuilder:validation:MaxItems=20
 	Tools []Tool `json:"tools,omitempty"`
 }
 

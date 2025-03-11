@@ -54,7 +54,7 @@ spec:
                     provider:
                       type: string
                   type: object
-                maxItems: 15
+                maxItems: 20
                 type: array
             type: object
           status:
