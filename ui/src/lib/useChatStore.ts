@@ -181,6 +181,11 @@ const useChatStore = create<ChatState>((set, get) => ({
             message_meta: {},
           };
 
+          // Check the finalMessage is not included in the messages array (avoid duplicates)
+          if (state.messages.find((m) => m.config.source === finalMessage.config.source && m.config.content === finalMessage.config.content)) {
+            return state;
+          }
+
           const finalMessages = [...state.messages, finalMessage];
 
           const updatedRun = {
