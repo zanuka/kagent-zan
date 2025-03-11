@@ -1,5 +1,5 @@
 To open kagent UI:
 
-kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }}-app 8001:80
+kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }} 8001:80
 
 Then visit http://127.0.0.1:8001 to use the application.

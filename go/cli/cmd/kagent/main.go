@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/abiosoft/ishell/v2"
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
@@ -25,6 +28,34 @@ func main() {
 	}
 
 	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
+
+	// Attempt to connect to the server
+	_, err = client.GetVersion()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8081:8081")
+	if err != nil {
+		// Error connecting to server, port-forward the server
+		go func() {
+
+			if err := cmd.Start(); err != nil {
+				fmt.Fprintf(os.Stderr, "Error starting port-forward: %v\n", err)
+				os.Exit(1)
+			}
+		}()
+	}
+
+	// Ensure the context is cancelled when the shell is closed
+	defer func() {
+		cancel()
+		// cmd.Wait()
+		if err := cmd.Wait(); err != nil {
+			// These 2 errors are expected
+			if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "exec: not started") {
+				fmt.Fprintf(os.Stderr, "Error waiting for port-forward to exit: %v\n", err)
+			}
+		}
+	}()
 
 	// create new shell.
 	// by default, new shell includes 'exit', 'help' and 'clear' commands.
