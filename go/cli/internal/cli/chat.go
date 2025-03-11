@@ -42,17 +42,13 @@ func ChatCmd(c *ishell.Context) {
 		return
 	}
 
-	cfg, err := config.Get()
-	if err != nil {
-		fmt.Printf("Failed to get config: %v\n", err)
-		return
-	}
-
-	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
+	cfg := config.GetCfg(c)
+	client := config.GetClient(c)
 
 	var team *autogen_client.Team
 	if len(flagSet.Args()) > 0 {
 		teamName := flagSet.Args()[0]
+		var err error
 		team, err = client.GetTeam(cfg.UserID, teamName)
 		if err != nil {
 			c.Println(err)

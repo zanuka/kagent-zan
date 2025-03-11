@@ -25,7 +25,6 @@ rules:
   - get
   - patch
   - update
-# get list watch core resources
 - apiGroups:
   - ""
   resources:
@@ -60,6 +59,14 @@ rules:
   - watch
 - apiGroups:
   - "apiextensions.k8s.io"
+  resources:
+  - "*"
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - gateway.networking.k8s.io/v1
   resources:
   - "*"
   verbs:
@@ -103,7 +110,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - "rbac.authorization.k8s.io"
+  - "apiextensions.k8s.io"
   resources:
   - "*"
   verbs:
@@ -112,7 +119,7 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - "apiextensions.k8s.io"
+  - gateway.networking.k8s.io/v1
   resources:
   - "*"
   verbs:
