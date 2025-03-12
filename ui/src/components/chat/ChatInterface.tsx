@@ -90,7 +90,7 @@ export default function ChatInterface({ selectedTeamId, selectedRun }: ChatInter
   const displayMessages = selectedRun ? selectedRun.messages : messages;
   const actualRun = selectedRun || run || null;
   const runStatus = actualRun?.status;
-  const canSendMessage = status !== "thinking" && runStatus !== "complete" && runStatus !== "error" && runStatus !== "stopped";
+  const canSendMessage = status !== "thinking" && status !== "error" && runStatus !== "complete" && runStatus !== "error" && runStatus !== "stopped";
 
   // Should we show the streaming message?
   const showStreamingMessage = !selectedRun && currentStreamingContent && currentStreamingMessage;
@@ -145,7 +145,7 @@ export default function ChatInterface({ selectedTeamId, selectedRun }: ChatInter
               </Button>
             )}
 
-            {(runStatus === "complete" || runStatus === "error" || runStatus === "stopped") && (
+            {(runStatus === "complete" || runStatus === "error" || runStatus === "stopped" || status === 'error') && (
               <Button className="bg-violet-500 hover:bg-violet-600" asChild>
                 <Link href={`/agents/${selectedTeamId}/chat`}>
                 Start New Chat

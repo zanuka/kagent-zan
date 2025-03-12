@@ -14,7 +14,6 @@ interface SessionGroupProps {
 
 // The sessions are grouped by today, yesterday, and older
 const SessionGroup = ({ title, sessions, onDeleteSession, agentId }: SessionGroupProps) => {
-  console.log("title", title);
   return (
     <SidebarGroup>
       <SidebarMenu>
