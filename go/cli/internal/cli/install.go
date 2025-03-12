@@ -14,6 +14,11 @@ import (
 func InstallCmd(ctx context.Context, c *ishell.Context) {
 	cfg := config.GetCfg(c)
 
+	if Version == "dev" {
+		c.Println("Installation requires released version of kagent")
+		return
+	}
+
 	if os.Getenv("OPENAI_API_KEY") == "" {
 		c.Println("OPENAI_API_KEY is not set")
 		c.Println("Please set the OPENAI_API_KEY environment variable")
@@ -24,7 +29,7 @@ func InstallCmd(ctx context.Context, c *ishell.Context) {
 		"upgrade",
 		"--install",
 		"kagent",
-		"oci://ghcr.io/kagent-dev/kagent/helm",
+		"oci://ghcr.io/kagent-dev/kagent/helm/kagent",
 		"--version",
 		Version,
 		"--namespace",
@@ -38,9 +43,9 @@ func InstallCmd(ctx context.Context, c *ishell.Context) {
 	s.Suffix = " Installing kagent"
 	s.Start()
 
-	if err := cmd.Run(); err != nil {
+	if byt, err := cmd.CombinedOutput(); err != nil {
 		s.Stop()
-		c.Println("Error installing kagent:", err)
+		c.Println("Error installing kagent: ", string(byt))
 		return
 	}
 	s.Stop()
