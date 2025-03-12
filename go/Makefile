@@ -101,22 +101,35 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 bin/kagent-linux-amd64:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o bin/kagent-linux-amd64 ./cli/cmd/kagent
 
+bin/kagent-linux-amd64-sha256: bin/kagent-linux-amd64
+	sha256sum bin/kagent-linux-amd64 > bin/kagent-linux-amd64.sha256
+
 bin/kagent-linux-arm64:
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o bin/kagent-linux-arm64 ./cli/cmd/kagent
+
+bin/kagent-linux-arm64-sha256: bin/kagent-linux-arm64
+	sha256sum bin/kagent-linux-arm64 > bin/kagent-linux-arm64.sha256
 
 bin/kagent-darwin-amd64:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o bin/kagent-darwin-amd64 ./cli/cmd/kagent
 
+bin/kagent-darwin-amd64-sha256: bin/kagent-darwin-amd64
+	sha256sum bin/kagent-darwin-amd64 > bin/kagent-darwin-amd64.sha256
+
 bin/kagent-darwin-arm64:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o bin/kagent-darwin-arm64 ./cli/cmd/kagent
+
+bin/kagent-darwin-arm64-sha256: bin/kagent-darwin-arm64
+	sha256sum bin/kagent-darwin-arm64 > bin/kagent-darwin-arm64.sha256
 
 bin/kagent-windows-amd64:
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o bin/kagent-windows-amd64.exe ./cli/cmd/kagent
 
-
+bin/kagent-windows-amd64-sha256: bin/kagent-windows-amd64
+	sha256sum bin/kagent-windows-amd64.exe > bin/kagent-windows-amd64.sha256
 
 .PHONY: build
-build: bin/kagent-linux-amd64 bin/kagent-linux-arm64 bin/kagent-darwin-amd64 bin/kagent-darwin-arm64 bin/kagent-windows-amd64
+build: bin/kagent-linux-amd64-sha256 bin/kagent-linux-arm64-sha256 bin/kagent-darwin-amd64-sha256 bin/kagent-darwin-arm64-sha256 bin/kagent-windows-amd64-sha256
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
