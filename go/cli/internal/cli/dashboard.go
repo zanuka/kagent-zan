@@ -41,7 +41,10 @@ func DashboardCmd(ctx context.Context, c *ishell.Context) {
 	c.Println("kagent dashboard is available at http://localhost:8082")
 
 	// This waits for user input to stop the port-forward
+	c.ShowPrompt(false)
+	c.Println("Press Enter to stop the port-forward...")
 	if _, err := c.ReadLineErr(); err != nil {
 		c.Println("Error reading input:", err)
 	}
+	c.ShowPrompt(true)
 }

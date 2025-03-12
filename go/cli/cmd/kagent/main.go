@@ -203,5 +203,14 @@ Examples:
 		},
 	})
 
+	shell.AddCmd(&ishell.Cmd{
+		Name:    "dashboard",
+		Aliases: []string{"d"},
+		Help:    "Open the kagent dashboard.",
+		Func: func(c *ishell.Context) {
+			cli.DashboardCmd(ctx, c)
+		},
+	})
+
 	shell.Run()
 }
