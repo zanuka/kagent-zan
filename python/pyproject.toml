@@ -20,6 +20,7 @@ dependencies = [
   "mcp>=1.2.0",
   "sqlite-vec>=0.1.0",
   "typer",
+  "numpy>=2.2.3",
 ]
 
 [project.optional-dependencies]
