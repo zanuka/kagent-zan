@@ -56,6 +56,12 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.app.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /api/version
+              port: {{ .Values.service.ports.app.targetPort }}
+            initialDelaySeconds: 3
+            periodSeconds: 3
         - name: ui
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}

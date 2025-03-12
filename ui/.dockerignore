@@ -5,3 +5,5 @@ env/
 .coverage
 htmlcov/
 workspace/
+node_modules/
+.next/
