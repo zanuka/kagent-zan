@@ -89,12 +89,20 @@ def _label_resource(
 
 
 def _create_resource(
-    resource_yaml: Annotated[str, "The YAML definition of the resource to create"],
+    resource_yaml: Annotated[str, "The YAML definition of the resource to create. Must be a local file"],
+    namespace: Annotated[Optional[str], "The namespace of the resource to create"],
 ) -> str:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=True) as tmp_file:
         tmp_file.write(resource_yaml)
         tmp_file.flush()  # Ensure the content is written to disk
-        return _run_kubectl_command(f"create -f {tmp_file.name}")
+        return _run_kubectl_command(f"create -f {tmp_file.name} {f'-n {namespace}' if namespace else ''}")
+
+
+def _create_resource_from_url(
+    resource_yaml_url: Annotated[str, "The url of the yaml definition of the resource to create."],
+    namespace: Annotated[Optional[str], "The namespace of the resource to create"],
+) -> str:
+    return _run_kubectl_command(f"create -f {resource_yaml_url} {f'-n {namespace}' if namespace else ''}")
 
 
 def _get_events() -> str:
@@ -267,12 +275,22 @@ LabelResource, LabelResourceConfig = create_typed_fn_tool(
 
 create_resource = FunctionTool(
     _create_resource,
-    description="Create a resource in Kubernetes.",
+    description="Create a resource in Kubernetes. Must be a local file.",
     name="create_resource",
+)
+
+create_resource_from_url = FunctionTool(
+    _create_resource_from_url,
+    description="Create a resource in Kubernetes from a url.",
+    name="create_resource_from_url",
 )
 
 CreateResource, CreateResourceConfig = create_typed_fn_tool(
     create_resource, "kagent.tools.k8s.CreateResource", "CreateResource"
+)
+
+CreateResourceFromUrl, CreateResourceFromUrlConfig = create_typed_fn_tool(
+    create_resource_from_url, "kagent.tools.k8s.CreateResourceFromUrl", "CreateResourceFromUrl"
 )
 
 get_events = FunctionTool(

@@ -78,3 +78,12 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+
+contrib:
+  agents:
+    istio:
+      enabled: true
+    helm:
+      enabled: true
+    observability:
+      enabled: true

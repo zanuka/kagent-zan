@@ -52,6 +52,32 @@ spec:
             type: object
           status:
             description: ModelConfigStatus defines the observed state of ModelConfig.
+            properties:
+              conditions:
+                items:
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              observedGeneration:
+                format: int64
+                type: integer
+            required:
+            - conditions
+            - observedGeneration
             type: object
         type: object
     served: true

@@ -80,7 +80,7 @@ async def _install_istio(
         str, "Istio configuration profile to install, the allowed values are: ambient, default, demo, minimal, empty"
     ],
 ) -> str:
-    return _run_istioctl_command(f"install {profile} -y")
+    return _run_istioctl_command(f"install --set profile={profile} -y")
 
 
 async def _proxy_config(

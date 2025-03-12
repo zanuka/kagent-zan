@@ -4,11 +4,17 @@ import (
 	"context"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	reconcileLog = ctrl.Log.WithName("reconcile")
 )
 
 type AutogenReconciler interface {
@@ -57,10 +63,49 @@ func (a *autogenReconciler) ReconcileAutogenAgent(ctx context.Context, req ctrl.
 		return fmt.Errorf("failed to find teams for agent %s: %v", req.Name, err)
 	}
 
-	return a.reconcileTeams(ctx, teams...)
+	return a.reconcileAgentStatus(
+		ctx,
+		agent,
+		a.reconcileTeams(ctx, teams...),
+	)
+}
+
+func (a *autogenReconciler) reconcileAgentStatus(ctx context.Context, agent *v1alpha1.Agent, err error) error {
+	var (
+		status metav1.ConditionStatus
+		reason string
+	)
+	if err != nil {
+		status = metav1.ConditionFalse
+		reason = err.Error()
+		reconcileLog.Error(err, "failed to reconcile agent", "agent", agent)
+	} else {
+		status = metav1.ConditionTrue
+		reason = ""
+	}
+	agent.Status = v1alpha1.AgentStatus{
+		ObservedGeneration: agent.Generation,
+		Conditions: []metav1.Condition{{
+			Type:               v1alpha1.AgentConditionTypeAccepted,
+			Status:             status,
+			LastTransitionTime: metav1.Now(),
+			Reason:             reason,
+		}},
+	}
+
+	if err := a.kube.Status().Update(ctx, agent); err != nil {
+		return fmt.Errorf("failed to update agent status: %v", err)
+	}
+
+	return nil
 }
 
 func (a *autogenReconciler) ReconcileAutogenModelConfig(ctx context.Context, req ctrl.Request) error {
+	modelConfig := &v1alpha1.ModelConfig{}
+	if err := a.kube.Get(ctx, req.NamespacedName, modelConfig); err != nil {
+		return fmt.Errorf("failed to get model %s: %v", req.Name, err)
+	}
+
 	agents, err := a.findAgentsUsingModel(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to find agents for model %s: %v", req.Name, err)
@@ -75,7 +120,41 @@ func (a *autogenReconciler) ReconcileAutogenModelConfig(ctx context.Context, req
 		return fmt.Errorf("failed to find teams for model %s: %v", req.Name, err)
 	}
 
-	return a.reconcileTeams(ctx, teams...)
+	return a.reconcileModelConfigStatus(
+		ctx,
+		modelConfig,
+		a.reconcileTeams(ctx, teams...),
+	)
+}
+
+func (a *autogenReconciler) reconcileModelConfigStatus(ctx context.Context, modelConfig *v1alpha1.ModelConfig, err error) error {
+	var (
+		status metav1.ConditionStatus
+		reason string
+	)
+	if err != nil {
+		status = metav1.ConditionFalse
+		reason = err.Error()
+		reconcileLog.Error(err, "failed to reconcile model config", "modelConfig", modelConfig)
+	} else {
+		status = metav1.ConditionTrue
+		reason = ""
+	}
+	modelConfig.Status = v1alpha1.ModelConfigStatus{
+		ObservedGeneration: modelConfig.Generation,
+		Conditions: []metav1.Condition{{
+			Type:               v1alpha1.ModelConfigConditionTypeAccepted,
+			Status:             status,
+			LastTransitionTime: metav1.Now(),
+			Reason:             reason,
+		}},
+	}
+
+	if err := a.kube.Status().Update(ctx, modelConfig); err != nil {
+		return fmt.Errorf("failed to update model config status: %v", err)
+	}
+
+	return nil
 }
 
 func (a *autogenReconciler) ReconcileAutogenTeam(ctx context.Context, req ctrl.Request) error {
@@ -84,7 +163,37 @@ func (a *autogenReconciler) ReconcileAutogenTeam(ctx context.Context, req ctrl.R
 		return fmt.Errorf("failed to get team %s: %v", req.Name, err)
 	}
 
-	return a.reconcileTeams(ctx, team)
+	return a.reconcileTeamStatus(ctx, team, a.reconcileTeams(ctx, team))
+}
+
+func (a *autogenReconciler) reconcileTeamStatus(ctx context.Context, team *v1alpha1.Team, err error) error {
+	var (
+		status metav1.ConditionStatus
+		reason string
+	)
+	if err != nil {
+		status = metav1.ConditionFalse
+		reason = err.Error()
+		reconcileLog.Error(err, "failed to reconcile team", "team", team)
+	} else {
+		status = metav1.ConditionTrue
+		reason = ""
+	}
+	team.Status = v1alpha1.TeamStatus{
+		ObservedGeneration: team.Generation,
+		Conditions: []metav1.Condition{{
+			Type:               v1alpha1.TeamConditionTypeAccepted,
+			Status:             status,
+			LastTransitionTime: metav1.Now(),
+			Reason:             reason,
+		}},
+	}
+
+	if err := a.kube.Status().Update(ctx, team); err != nil {
+		return fmt.Errorf("failed to update team status: %v", err)
+	}
+
+	return nil
 }
 
 func (a *autogenReconciler) ReconcileAutogenApiKeySecret(ctx context.Context, req ctrl.Request) error {
@@ -148,6 +257,18 @@ func (a *autogenReconciler) reconcileAgents(ctx context.Context, agents ...*v1al
 }
 
 func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
+	// validate the team
+	req := autogen_client.ValidationRequest{
+		Component: team.Component,
+	}
+	resp, err := a.autogenClient.Validate(&req)
+	if err != nil {
+		return fmt.Errorf("failed to validate team %s: %v", *team.Component.Label, err)
+	}
+	if !resp.IsValid {
+		return fmt.Errorf("team %s is invalid: %v", *team.Component.Label, resp.ErrorMsg())
+	}
+
 	// delete if team exists
 	existingTeam, err := a.autogenClient.GetTeam(*team.Component.Label, GlobalUserID)
 	if err != nil {
@@ -158,18 +279,6 @@ func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
 		if err != nil {
 			return fmt.Errorf("failed to delete existing team %s: %v", *team.Component.Label, err)
 		}
-	}
-
-	// validate the team
-	req := autogen_client.ValidationRequest{
-		Component: team.Component,
-	}
-	resp, err := a.autogenClient.Validate(&req)
-	if err != nil {
-		return fmt.Errorf("failed to validate team %s: %v", *team.Component.Label, err)
-	}
-	if !resp.IsValid {
-		return fmt.Errorf("team %s is invalid: %v", *team.Component.Label, resp.Errors)
 	}
 
 	return a.autogenClient.CreateTeam(team)

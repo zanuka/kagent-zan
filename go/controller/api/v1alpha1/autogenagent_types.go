@@ -22,8 +22,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const (
+	AgentConditionTypeAccepted = "Accepted"
+)
 
 // AgentSpec defines the desired state of Agent.
 type AgentSpec struct {
@@ -36,6 +37,8 @@ type AgentSpec struct {
 
 type Tool struct {
 	Provider string `json:"provider,omitempty"`
+	// Description is a brief description of the tool.
+	Description string `json:"description,omitempty"`
 	// note: this implementation is due to the kubebuilder limitation https://github.com/kubernetes-sigs/controller-tools/issues/636
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Schemaless
@@ -47,7 +50,10 @@ type AnyType struct {
 }
 
 // AgentStatus defines the observed state of Agent.
-type AgentStatus struct{}
+type AgentStatus struct {
+	ObservedGeneration int64              `json:"observedGeneration,omitempty"`
+	Conditions         []metav1.Condition `json:"conditions,omitempty"`
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

@@ -20,6 +20,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ModelConfigConditionTypeAccepted = "Accepted"
+)
+
 // ModelConfigSpec defines the desired state of ModelConfig.
 type ModelConfigSpec struct {
 	Model            string `json:"model"`
@@ -28,7 +32,10 @@ type ModelConfigSpec struct {
 }
 
 // ModelConfigStatus defines the observed state of ModelConfig.
-type ModelConfigStatus struct{}
+type ModelConfigStatus struct {
+	Conditions         []metav1.Condition `json:"conditions"`
+	ObservedGeneration int64              `json:"observedGeneration"`
+}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

@@ -134,6 +134,7 @@ func (a *apiTranslator) translateGroupChatForTeam(
 				Model:  modelConfig.Spec.Model,
 				APIKey: makePtr(string(modelApiKey)),
 			},
+			BaseURL: makePtr("http://host.docker.internal:8089/api/account/profile"),
 		}),
 	}
 	modelContext := &api.Component{
@@ -326,8 +327,13 @@ func translateAssistantAgent(
 		providerParts := strings.Split(tool.Provider, ".")
 		toolLabel := providerParts[len(providerParts)-1]
 
+		var description *string
+		if tool.Description != "" {
+			description = makePtr(tool.Description)
+		}
 		tool := &api.Component{
 			Provider:      tool.Provider,
+			Description:   description,
 			ComponentType: "tool",
 			Version:       makePtr(1),
 			Config:        api.GenericToolConfig(toolConfig),
