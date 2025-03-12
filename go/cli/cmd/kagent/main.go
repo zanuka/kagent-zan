@@ -185,5 +185,23 @@ Examples:
 		},
 	})
 
+	shell.AddCmd(&ishell.Cmd{
+		Name:    "install",
+		Aliases: []string{"i"},
+		Help:    "Install kagent.",
+		Func: func(c *ishell.Context) {
+			cli.InstallCmd(ctx, c)
+		},
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:    "uninstall",
+		Aliases: []string{"u"},
+		Help:    "Uninstall kagent.",
+		Func: func(c *ishell.Context) {
+			cli.UninstallCmd(ctx, c)
+		},
+	})
+
 	shell.Run()
 }

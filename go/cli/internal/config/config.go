@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	APIURL string `mapstructure:"api_url"`
-	WSURL  string `mapstructure:"ws_url"`
-	UserID string `mapstructure:"user_id"`
+	APIURL    string `mapstructure:"api_url"`
+	WSURL     string `mapstructure:"ws_url"`
+	UserID    string `mapstructure:"user_id"`
+	Namespace string `mapstructure:"namespace"`
 }
 
 func Init() error {
@@ -35,6 +36,7 @@ func Init() error {
 	viper.SetDefault("ws_url", "ws://localhost:8081/api/ws")
 	viper.SetDefault("user_id", "admin@kagent.dev")
 	viper.SetDefault("output_format", "table")
+	viper.SetDefault("namespace", "kagent")
 
 	if err := viper.ReadInConfig(); err != nil {
 		// If config file doesn't exist, create it with defaults
