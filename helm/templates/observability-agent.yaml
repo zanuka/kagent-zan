@@ -4,6 +4,8 @@ apiVersion: kagent.dev/v1alpha1
 kind: Agent
 metadata:
   name: observability-agent
+  labels:
+    {{- include "kagent.labels" . | nindent 4 }}
 spec:
   description: The Observability Expert AI Agent specializing in using Prometheus, Grafana, and Kubernetes for monitoring and observability. This agent is equipped with a range of tools to query Prometheus for metrics, create Grafana dashboards, and verify Kubernetes resources.
   systemMessage: |-

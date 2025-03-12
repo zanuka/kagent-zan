@@ -135,7 +135,8 @@ apiVersion: kagent.dev/v1alpha1
 kind: Agent
 metadata:
   name: istio-agent
-  namespace: team-ns
+  labels:
+    {{- include "kagent.labels" . | nindent 4 }}
 spec:
   description: The Istio Expert AI Agent specializing in Istio operations,
     troubleshooting, and maintenance.
