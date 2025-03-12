@@ -50,6 +50,9 @@ spec:
                       description: 'note: this implementation is due to the kubebuilder
                         limitation https://github.com/kubernetes-sigs/controller-tools/issues/636'
                       x-kubernetes-preserve-unknown-fields: true
+                    description:
+                      description: Description is a brief description of the tool.
+                      type: string
                     provider:
                       type: string
                   type: object

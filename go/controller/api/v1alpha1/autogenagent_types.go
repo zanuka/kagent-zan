@@ -24,9 +24,6 @@ import (
 
 const (
 	AgentConditionTypeAccepted = "Accepted"
-
-	AgentConditionStatusTrue  = "True"
-	AgentConditionStatusFalse = "False"
 )
 
 // AgentSpec defines the desired state of Agent.
@@ -38,6 +35,8 @@ type AgentSpec struct {
 
 type Tool struct {
 	Provider string `json:"provider,omitempty"`
+	// Description is a brief description of the tool.
+	Description string `json:"description,omitempty"`
 	// note: this implementation is due to the kubebuilder limitation https://github.com/kubernetes-sigs/controller-tools/issues/636
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// +kubebuilder:validation:Schemaless
@@ -50,15 +49,8 @@ type AnyType struct {
 
 // AgentStatus defines the observed state of Agent.
 type AgentStatus struct {
-	ObservedGeneration int64            `json:"observedGeneration,omitempty"`
-	Conditions         []AgentCondition `json:"conditions,omitempty"`
-}
-
-type AgentCondition struct {
-	Type               string      `json:"type"`
-	Status             string      `json:"status"`
-	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
-	Reason             string      `json:"reason"`
+	ObservedGeneration int64              `json:"observedGeneration,omitempty"`
+	Conditions         []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:root=true

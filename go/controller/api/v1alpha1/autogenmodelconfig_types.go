@@ -22,9 +22,6 @@ import (
 
 const (
 	ModelConfigConditionTypeAccepted = "Accepted"
-
-	ModelConfigConditionStatusTrue  = "True"
-	ModelConfigConditionStatusFalse = "False"
 )
 
 // ModelConfigSpec defines the desired state of ModelConfig.
@@ -36,15 +33,8 @@ type ModelConfigSpec struct {
 
 // ModelConfigStatus defines the observed state of ModelConfig.
 type ModelConfigStatus struct {
-	Conditions         []ModelConfigCondition `json:"conditions"`
-	ObservedGeneration int64                  `json:"observedGeneration"`
-}
-
-type ModelConfigCondition struct {
-	Type               string      `json:"type"`
-	Status             string      `json:"status"`
-	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
-	Reason             string      `json:"reason"`
+	Conditions         []metav1.Condition `json:"conditions"`
+	ObservedGeneration int64              `json:"observedGeneration"`
 }
 
 // +kubebuilder:object:root=true

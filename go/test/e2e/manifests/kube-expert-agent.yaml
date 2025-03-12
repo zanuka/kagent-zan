@@ -1,7 +1,6 @@
 apiVersion: kagent.dev/v1alpha1
 kind: Agent
 metadata:
-  creationTimestamp: null
   name: kube-expert
   namespace: team-ns
 spec:
@@ -205,32 +204,19 @@ spec:
   tools:
   - provider: kagent.tools.k8s.AnnotateResource
   - provider: kagent.tools.k8s.ApplyManifest
-  - provider: kagent.tools.k8s.CheckServiceConnectivity
   - provider: kagent.tools.k8s.CreateResource
   - provider: kagent.tools.k8s.CreateResourceFromUrl
   - provider: kagent.tools.k8s.DeleteResource
   - provider: kagent.tools.k8s.DescribeResource
   - provider: kagent.tools.k8s.ExecuteCommand
-  - provider: kagent.tools.k8s.GetAvailableAPIResources
-  - provider: kagent.tools.k8s.GetClusterConfiguration
   - provider: kagent.tools.k8s.GetEvents
   - provider: kagent.tools.k8s.GetPodLogs
   - provider: kagent.tools.k8s.GetResources
-  - provider: kagent.tools.k8s.GetResourceYAML
   - provider: kagent.tools.k8s.LabelResource
   - provider: kagent.tools.k8s.PatchResource
   - provider: kagent.tools.k8s.RemoveAnnotation
   - provider: kagent.tools.k8s.RemoveLabel
-  - provider: kagent.tools.k8s.Rollout
-  - provider: kagent.tools.k8s.Scale
   - provider: kagent.tools.k8s.GenerateResourceTool
-  - provider: kagent.tools.istio.ZTunnelConfig
-  - provider: kagent.tools.istio.WaypointStatus
-  - provider: kagent.tools.istio.ListWaypoints
-  - provider: kagent.tools.istio.GenerateWaypoint
-  - provider: kagent.tools.istio.DeleteWaypoint
-  - provider: kagent.tools.istio.ApplyWaypoint
-  - provider: kagent.tools.istio.RemoteClusters
   - provider: kagent.tools.istio.ProxyStatus
   - provider: kagent.tools.istio.GenerateManifest
   - provider: kagent.tools.istio.InstallIstio

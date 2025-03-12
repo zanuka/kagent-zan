@@ -71,18 +71,21 @@ func (a *autogenReconciler) ReconcileAutogenAgent(ctx context.Context, req ctrl.
 }
 
 func (a *autogenReconciler) reconcileAgentStatus(ctx context.Context, agent *v1alpha1.Agent, err error) error {
-	var status, reason string
+	var (
+		status metav1.ConditionStatus
+		reason string
+	)
 	if err != nil {
-		status = v1alpha1.AgentConditionStatusFalse
+		status = metav1.ConditionFalse
 		reason = err.Error()
 		reconcileLog.Error(err, "failed to reconcile agent", "agent", agent)
 	} else {
-		status = v1alpha1.AgentConditionStatusTrue
+		status = metav1.ConditionTrue
 		reason = ""
 	}
 	agent.Status = v1alpha1.AgentStatus{
 		ObservedGeneration: agent.Generation,
-		Conditions: []v1alpha1.AgentCondition{{
+		Conditions: []metav1.Condition{{
 			Type:               v1alpha1.AgentConditionTypeAccepted,
 			Status:             status,
 			LastTransitionTime: metav1.Now(),
@@ -125,18 +128,21 @@ func (a *autogenReconciler) ReconcileAutogenModelConfig(ctx context.Context, req
 }
 
 func (a *autogenReconciler) reconcileModelConfigStatus(ctx context.Context, modelConfig *v1alpha1.ModelConfig, err error) error {
-	var status, reason string
+	var (
+		status metav1.ConditionStatus
+		reason string
+	)
 	if err != nil {
-		status = v1alpha1.ModelConfigConditionStatusFalse
+		status = metav1.ConditionFalse
 		reason = err.Error()
 		reconcileLog.Error(err, "failed to reconcile model config", "modelConfig", modelConfig)
 	} else {
-		status = v1alpha1.ModelConfigConditionStatusTrue
+		status = metav1.ConditionTrue
 		reason = ""
 	}
 	modelConfig.Status = v1alpha1.ModelConfigStatus{
 		ObservedGeneration: modelConfig.Generation,
-		Conditions: []v1alpha1.ModelConfigCondition{{
+		Conditions: []metav1.Condition{{
 			Type:               v1alpha1.ModelConfigConditionTypeAccepted,
 			Status:             status,
 			LastTransitionTime: metav1.Now(),
@@ -161,18 +167,21 @@ func (a *autogenReconciler) ReconcileAutogenTeam(ctx context.Context, req ctrl.R
 }
 
 func (a *autogenReconciler) reconcileTeamStatus(ctx context.Context, team *v1alpha1.Team, err error) error {
-	var status, reason string
+	var (
+		status metav1.ConditionStatus
+		reason string
+	)
 	if err != nil {
-		status = v1alpha1.TeamConditionStatusFalse
+		status = metav1.ConditionFalse
 		reason = err.Error()
 		reconcileLog.Error(err, "failed to reconcile team", "team", team)
 	} else {
-		status = v1alpha1.TeamConditionStatusTrue
+		status = metav1.ConditionTrue
 		reason = ""
 	}
 	team.Status = v1alpha1.TeamStatus{
 		ObservedGeneration: team.Generation,
-		Conditions: []v1alpha1.TeamCondition{{
+		Conditions: []metav1.Condition{{
 			Type:               v1alpha1.TeamConditionTypeAccepted,
 			Status:             status,
 			LastTransitionTime: metav1.Now(),
