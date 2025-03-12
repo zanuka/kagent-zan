@@ -3,6 +3,7 @@ package autogen
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -31,6 +32,7 @@ type autogenReconciler struct {
 	autogenClient *autogen_client.Client
 
 	defaultModelConfig types.NamespacedName
+	upsertLock         sync.Mutex
 }
 
 func NewAutogenReconciler(
@@ -266,6 +268,9 @@ func (a *autogenReconciler) reconcileAgents(ctx context.Context, agents ...*v1al
 }
 
 func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
+	// lock to prevent races
+	a.upsertLock.Lock()
+	defer a.upsertLock.Unlock()
 	// validate the team
 	req := autogen_client.ValidationRequest{
 		Component: team.Component,
@@ -288,6 +293,7 @@ func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
 		if err != nil {
 			return fmt.Errorf("failed to delete existing team %s: %v", *team.Component.Label, err)
 		}
+		team.Id = existingTeam.Id
 	}
 
 	return a.autogenClient.CreateTeam(team)
