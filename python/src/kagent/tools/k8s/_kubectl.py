@@ -104,6 +104,7 @@ def _create_resource_from_url(
 ) -> str:
     return _run_kubectl_command(f"create -f {resource_yaml_url} {f'-n {namespace}' if namespace else ''}")
 
+
 def _get_events() -> str:
     return _run_kubectl_command("get events")
 

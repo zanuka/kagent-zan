@@ -83,3 +83,7 @@ contrib:
   agents:
     istio:
       enabled: true
+    helm:
+      enabled: true
+    observability:
+      enabled: true

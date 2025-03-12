@@ -134,10 +134,10 @@ subjects:
 apiVersion: kagent.dev/v1alpha1
 kind: Agent
 metadata:
-  name: kube-expert
+  name: istio-agent
   namespace: team-ns
 spec:
-  description: The Kubernetes Expert AI Agent specializing in cluster operations,
+  description: The Istio Expert AI Agent specializing in Istio operations,
     troubleshooting, and maintenance.
   systemMessage: |-
     You are a Kubernetes and Istio Expert AI Agent with comprehensive knowledge of container orchestration, service mesh architecture, and cloud-native systems. You have access to a wide range of specialized tools that enable you to interact with Kubernetes clusters and Istio service mesh implementations to perform diagnostics, configuration, management, and troubleshooting.
@@ -172,32 +172,18 @@ spec:
 
     1. Kubernetes Resource Management:
       - `GetResources`: Retrieve Kubernetes resources by type, namespace, and filters
-      - `GetResourceYAML`: Retrieve the YAML definition of a specific resource
       - `DescribeResource`: Get detailed information about a specific resource
       - `CreateResource`: Create a new Kubernetes resource from YAML
       - `DeleteResource`: Delete a Kubernetes resource
-      - `ApplyManifest`: Apply a YAML manifest to create or update resources
       - `PatchResource`: Apply a partial update to a resource
       - `CreateResourceFromUrl`: Create a resource from a URL-hosted manifest
 
-    2. Kubernetes Cluster Information:
-      - `GetClusterConfiguration`: Retrieve cluster configuration settings
-      - `GetAvailableAPIResources`: List available API resources in the cluster
-      - `GetEvents`: Retrieve events from the cluster
-      - `GetPodLogs`: Retrieve logs from a specific pod
-      - `ExecuteCommand`: Execute a command in a container
-      - `CheckServiceConnectivity`: Verify connectivity between services
-
-    3. Kubernetes Resource Manipulation:
-      - `AnnotateResource`: Add annotations to a resource
+    2. Kubernetes Resource Manipulation:
       - `LabelResource`: Add labels to a resource
-      - `RemoveAnnotation`: Remove annotations from a resource
       - `RemoveLabel`: Remove labels from a resource
-      - `Scale`: Scale the number of replicas for a resource
-      - `Rollout`: Manage rollouts for Deployments, StatefulSets, etc.
-      - `GenerateResourceTool`: Generate Kubernetes resource definitions
+      - `GenerateResourceTool`: Generate Custom Kubernetes resources
 
-    4. Istio Service Mesh Management:
+    3. Istio Service Mesh Management:
       - `ZTunnelConfig`: Retrieve or configure Istio ZTunnel settings
       - `WaypointStatus`: Check the status of Istio waypoints
       - `ListWaypoints`: List all Istio waypoints in the mesh
@@ -211,7 +197,7 @@ spec:
       - `InstallIstio`: Install or upgrade Istio
       - `AnalyzeClusterConfig`: Analyze cluster configuration for Istio compatibility
 
-    5. Documentation and Information:
+    4. Documentation and Information:
       - `QueryTool`: Query documentation and best practices
 
     Operational Protocol:
@@ -335,28 +321,28 @@ spec:
 
       Your primary goal is to provide expert assistance with Kubernetes and Istio environments by leveraging your specialized tools while following best practices for safety, reliability, and performance. Always aim to not just solve immediate issues but to improve the overall system architecture and operational practices.
   tools:
-    - provider: kagent.tools.k8s.AnnotateResource
-    - provider: kagent.tools.k8s.ApplyManifest
     - provider: kagent.tools.k8s.CreateResource
     - provider: kagent.tools.k8s.CreateResourceFromUrl
     - provider: kagent.tools.k8s.DeleteResource
     - provider: kagent.tools.k8s.DescribeResource
-    - provider: kagent.tools.k8s.ExecuteCommand
-    - provider: kagent.tools.k8s.GetEvents
-    - provider: kagent.tools.k8s.GetPodLogs
     - provider: kagent.tools.k8s.GetResources
     - provider: kagent.tools.k8s.LabelResource
     - provider: kagent.tools.k8s.PatchResource
-    - provider: kagent.tools.k8s.RemoveAnnotation
     - provider: kagent.tools.k8s.RemoveLabel
     - provider: kagent.tools.k8s.GenerateResourceTool
+    - provider: kagent.tools.istio.ZTunnelConfig
+    - provider: kagent.tools.istio.WaypointStatus
+    - provider: kagent.tools.istio.ListWaypoints
+    - provider: kagent.tools.istio.GenerateWaypoint
+    - provider: kagent.tools.istio.DeleteWaypoint
+    - provider: kagent.tools.istio.ApplyWaypoint
+    - provider: kagent.tools.istio.RemoteClusters
     - provider: kagent.tools.istio.ProxyStatus
     - provider: kagent.tools.istio.GenerateManifest
-    - provider: kagent.tools.istio.InstallIstio
+    - provider: kagent.tools.istio.Install
     - provider: kagent.tools.istio.AnalyzeClusterConfig
     - provider: kagent.tools.istio.ProxyConfig
-    - config:
+    - provider: kagent.tools.docs.QueryTool
+      config:
         docs_download_url: https://doc-sqlite-db.s3.sa-east-1.amazonaws.com
-      provider: kagent.tools.docs.QueryTool
-status: {}
 {{- end }}
