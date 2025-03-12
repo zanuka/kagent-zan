@@ -135,7 +135,6 @@ apiVersion: kagent.dev/v1alpha1
 kind: Agent
 metadata:
   name: istio-agent
-  namespace: team-ns
 spec:
   description: The Istio Expert AI Agent specializing in Istio operations,
     troubleshooting, and maintenance.
@@ -179,9 +178,8 @@ spec:
       - `CreateResourceFromUrl`: Create a resource from a URL-hosted manifest
 
     2. Kubernetes Resource Manipulation:
-      - `LabelResource`: Add labels to a resource
-      - `RemoveLabel`: Remove labels from a resource
       - `GenerateResourceTool`: Generate Custom Kubernetes resources
+      - `PatchResource`: Apply a partial update to a resource
 
     3. Istio Service Mesh Management:
       - `ZTunnelConfig`: Retrieve or configure Istio ZTunnel settings
@@ -326,9 +324,7 @@ spec:
     - provider: kagent.tools.k8s.DeleteResource
     - provider: kagent.tools.k8s.DescribeResource
     - provider: kagent.tools.k8s.GetResources
-    - provider: kagent.tools.k8s.LabelResource
     - provider: kagent.tools.k8s.PatchResource
-    - provider: kagent.tools.k8s.RemoveLabel
     - provider: kagent.tools.k8s.GenerateResourceTool
     - provider: kagent.tools.istio.ZTunnelConfig
     - provider: kagent.tools.istio.WaypointStatus
