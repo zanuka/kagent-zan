@@ -335,7 +335,7 @@ spec:
     - provider: kagent.tools.istio.RemoteClusters
     - provider: kagent.tools.istio.ProxyStatus
     - provider: kagent.tools.istio.GenerateManifest
-    - provider: kagent.tools.istio.Install
+    - provider: kagent.tools.istio.InstallIstio
     - provider: kagent.tools.istio.AnalyzeClusterConfig
     - provider: kagent.tools.istio.ProxyConfig
     - provider: kagent.tools.docs.QueryTool

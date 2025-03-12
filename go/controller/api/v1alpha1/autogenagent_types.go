@@ -57,6 +57,7 @@ type AgentStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Accepted",type="string",JSONPath=".status.conditions[0].status",description="Whether or not the agent has been accepted by the system."
 
 // Agent is the Schema for the agents API.
 type Agent struct {

@@ -81,7 +81,7 @@ func (a *autogenReconciler) reconcileAgentStatus(ctx context.Context, agent *v1a
 		reconcileLog.Error(err, "failed to reconcile agent", "agent", agent)
 	} else {
 		status = metav1.ConditionTrue
-		reason = ""
+		reason = "Agent reconciled"
 	}
 	agent.Status = v1alpha1.AgentStatus{
 		ObservedGeneration: agent.Generation,
@@ -138,7 +138,7 @@ func (a *autogenReconciler) reconcileModelConfigStatus(ctx context.Context, mode
 		reconcileLog.Error(err, "failed to reconcile model config", "modelConfig", modelConfig)
 	} else {
 		status = metav1.ConditionTrue
-		reason = ""
+		reason = "Model config reconciled"
 	}
 	modelConfig.Status = v1alpha1.ModelConfigStatus{
 		ObservedGeneration: modelConfig.Generation,
@@ -177,7 +177,7 @@ func (a *autogenReconciler) reconcileTeamStatus(ctx context.Context, team *v1alp
 		reconcileLog.Error(err, "failed to reconcile team", "team", team)
 	} else {
 		status = metav1.ConditionTrue
-		reason = ""
+		reason = "Team reconciled"
 	}
 	team.Status = v1alpha1.TeamStatus{
 		ObservedGeneration: team.Generation,
