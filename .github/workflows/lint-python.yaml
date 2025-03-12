@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - '**/*.py'  # Only trigger on changes to Python files
+      - 'python/pyproject.toml'
+      - 'python/uv.lock'
 
 jobs:
   lint:
