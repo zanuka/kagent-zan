@@ -129,7 +129,7 @@ bin/kagent-windows-amd64.exe.sha256: bin/kagent-windows-amd64.exe
 	sha256sum bin/kagent-windows-amd64.exe > bin/kagent-windows-amd64.exe.sha256
 
 .PHONY: build
-build: bin/kagent-linux-amd64.sha256 bin/kagent-linux-arm64.sha256 bin/kagent-darwin-amd64.sha256 bin/kagent-darwin-arm64.sha256 bin/kagent-windows-amd64.sha256
+build: bin/kagent-linux-amd64.sha256 bin/kagent-linux-arm64.sha256 bin/kagent-darwin-amd64.sha256 bin/kagent-darwin-arm64.sha256 bin/kagent-windows-amd64.exe.sha256
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
