@@ -60,7 +60,7 @@ class GenerateResourceTool(BaseTool, Component[GenerateResourceToolConfig]):
         self,
         policy_description: str,
         resource_type: ResourceTypes,
-        cancellation_token: Optional[CancellationToken] = None,
+        cancellation_token: CancellationToken,
     ) -> str:
         """
         Asynchronously generates a resource YAML based on the
