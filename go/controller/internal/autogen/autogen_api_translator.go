@@ -133,8 +133,12 @@ func (a *apiTranslator) translateGroupChatForTeam(
 			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
 				Model:  modelConfig.Spec.Model,
 				APIKey: makePtr(string(modelApiKey)),
+				// By default, we include usage in the stream
+				// If we aren't streaming this may break, but I think we're good for now
+				StreamOptions: &api.StreamOptions{
+					IncludeUsage: true,
+				},
 			},
-			BaseURL: makePtr("http://host.docker.internal:8089/api/account/profile"),
 		}),
 	}
 	modelContext := &api.Component{
@@ -273,6 +277,9 @@ func (a *apiTranslator) translateTaskAgent(
 	modelContext *api.Component,
 ) (*api.Component, error) {
 	// generate an internal round robin "team" for the society of mind agent
+	meta := agent.ObjectMeta.DeepCopy()
+	// This is important so we don't output this message in the CLI/UI
+	meta.Name = "society-of-mind-team"
 	team := &v1alpha1.Team{
 		ObjectMeta: agent.ObjectMeta,
 		TypeMeta: metav1.TypeMeta{
@@ -362,7 +369,8 @@ func translateAssistantAgent(
 			// TODO(ilackarms): convert to non-ptr with omitempty?
 			SystemMessage:         sysMsgPtr,
 			ReflectOnToolUse:      false,
-			ToolCallSummaryFormat: "{result}",
+			ModelClientStream:     true,
+			ToolCallSummaryFormat: "\nTool: \n{tool_name}\n\nArguments:\n\n{arguments}\n\nResult: \n{result}\n",
 		}),
 	}, nil
 }
