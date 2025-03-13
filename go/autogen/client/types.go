@@ -55,7 +55,7 @@ type CreateRunRequest struct {
 }
 
 type CreateRunResult struct {
-	ID string `json:"run_id"`
+	ID int `json:"run_id"`
 }
 
 type SessionRuns struct {
