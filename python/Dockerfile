@@ -76,7 +76,6 @@ RUN uv sync --frozen && \
 # Generate tools and agents
 RUN mkdir -p /root/.autogenstudio/configs
 RUN uv run tool_gen -o /root/.autogenstudio/configs
-COPY agents/*.json /root/.autogenstudio/configs
 
 # Ensure correct permissions
 RUN chown -R python:pythongroup /app/python && \
