@@ -2,6 +2,10 @@
 
 kagent is a kubernetes native framework for building AI agents. Kubernets is the most popular orchestration platform for running workloads, and kagent makes it easy to build, deploy and manage AI agents in kubernetes. The kagent framework is designed to be easy to understand and use, and to provide a flexible and powerful way to build and manage AI agents.
 
+<div align="center">
+  <img src="img/hero.png" alt="Autogen Framework" width="500">
+</div>
+
 ## Core Concepts
 
 - **Agents**: Agents are the main building block of kagent. They are a system prompt, a set of tools, and a model configuration.
@@ -20,9 +24,15 @@ All of the above are defined as kubernetes custom resources, which makes them ea
 
 ## Architecture
 
+
+
 The kagent framework is designed to be easy to understand and use, and to provide a flexible and powerful way to build and manage AI agents.
 
-Kagent has 3 core components:
+<div align="center">
+  <img src="img/arch.png" alt="Autogen Framework" width="500">
+</div>
+
+Kagent has 4 core components:
 
 - **Controller**: The controller is a kubernetes controller that watches the kagent custom resources and creates the necessary resources to run the agents.
 - **UI**: The UI is a web UI that allows you to manage the agents and tools.
