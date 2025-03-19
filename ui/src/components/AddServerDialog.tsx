@@ -247,7 +247,7 @@ export function AddServerDialog({ open, onOpenChange, onAddServer }: AddServerDi
     }
 
     const newServer: Component<ToolServerConfig> = {
-      provider: "command" in params ? "autogen_ext.tool_servers.StdioMcpToolServer" : "autogen_ext.tool_servers.SseMcpToolServer",
+      provider: "command" in params ? "kagent.tool_servers.StdioMcpToolServer" : "kagent.tool_servers.SseMcpToolServer",
       component_type: "tool_server",
       version: 1,
       component_version: 1,
