@@ -33,6 +33,21 @@ export async function deleteTeam(teamLabel: string) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function processConfigObject(config: { [key: string]: any }): { [key: string]: any } {
+  return Object.entries(config).reduce((acc, [key, value]) => {
+    // If value is an object and not null, process it recursively
+    if (typeof value === "object" && value !== null) {
+      acc[key] = processConfigObject(value);
+    } else {
+      // For primitive values, convert to string
+      acc[key] = String(value);
+    }
+    return acc;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }, {} as { [key: string]: any });
+}
+
 function fromAgentFormDataToAgent(agentFormData: AgentFormData): Agent {
   return {
     metadata: {
@@ -45,12 +60,7 @@ function fromAgentFormDataToAgent(agentFormData: AgentFormData): Agent {
       tools: agentFormData.tools.map((tool) => ({
         provider: tool.provider,
         description: tool.description ?? "No description provided",
-        config: tool.config
-          ? Object.entries(tool.config).reduce((acc, [key, value]) => {
-              acc[key] = String(value);
-              return acc;
-            }, {} as { [key: string]: string })
-          : {},
+        config: tool.config ? processConfigObject(tool.config) : {},
       })),
     },
   };
@@ -61,6 +71,8 @@ export async function createAgent(agentConfig: AgentFormData, update: boolean = 
 
   try {
     agentSpec = fromAgentFormDataToAgent(agentConfig);
+
+    console.log("Converted agent data:", agentSpec);
   } catch (ex) {
     console.error("Error converting agent data:", ex);
     return { success: false, error: "Failed to convert agent data. Please try again." };

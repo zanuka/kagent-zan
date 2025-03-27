@@ -16,6 +16,7 @@ import type { AgentTool } from "@/types/datamodel";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import KagentLogo from "@/components/kagent-logo";
+import { extractSocietyOfMindAgentTools } from "@/lib/toolUtils";
 
 interface ValidationErrors {
   name?: string;
@@ -79,9 +80,7 @@ function AgentPageContent() {
               setName(agent.metadata.name || "");
               setDescription(agent.spec.description || "");
               setSystemPrompt(agent.spec.systemMessage || "");
-
-              // Extract and set tools - these are already AgentTool objects
-              setSelectedTools(agent.spec.tools || []);
+              setSelectedTools(extractSocietyOfMindAgentTools(agentResponse) || []);
 
               setSelectedModel({
                 model: agentResponse.model,
@@ -128,6 +127,9 @@ function AgentPageContent() {
     try {
       setIsSubmitting(true);
       setGeneralError("");
+      if (!selectedModel) {
+        throw new Error("Model is required to create the agent.");
+      }
 
       const agentData = {
         name,
@@ -141,24 +143,10 @@ function AgentPageContent() {
 
       if (isEditMode && agentId) {
         // Update existing agent
-        if (!selectedModel) {
-          throw new Error("Model is required to update the agent.");
-        }
-        result = await updateAgent(agentId, {
-          ...agentData,
-          model: selectedModel,
-          tools: selectedTools,
-        });
+        result = await updateAgent(agentId, agentData);
       } else {
         // Create new agent
-        if (!selectedModel) {
-          throw new Error("Model is required to create the agent.");
-        }
-        result = await createNewAgent({
-          ...agentData,
-          model: selectedModel,
-          tools: selectedTools,
-        });
+        result = await createNewAgent(agentData);
       }
 
       if (!result.success) {
