@@ -9,6 +9,8 @@ import { AgentActions } from "./AgentActions";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingState } from "@/components/LoadingState";
+import { getToolDescription, getToolDisplayName, getToolIdentifier } from "@/lib/data";
+import { extractSocietyOfMindAgentTools } from "@/lib/toolUtils";
 
 interface AgentDetailsSidebarProps {
   selectedAgentId: number;
@@ -22,7 +24,7 @@ export function AgentDetailsSidebar({ selectedAgentId }: AgentDetailsSidebarProp
     const fetchTeam = async () => {
       setLoading(true);
       try {
-        const { data }  = await getTeam(selectedAgentId);
+        const { data } = await getTeam(selectedAgentId);
         if (data && data.agent) {
           setSelectedTeam(data);
         }
@@ -52,9 +54,9 @@ export function AgentDetailsSidebar({ selectedAgentId }: AgentDetailsSidebarProp
     return (
       <SidebarMenu>
         {tools.map((tool) => {
-          const toolIdentifier = tool.provider; // getToolIdentifier(tool);
-          const displayName = tool.provider; // getToolDisplayName(tool);
-          const displayDescription = tool.description; // getToolDescription(tool);
+          const toolIdentifier = getToolIdentifier(tool);
+          const displayName = getToolDisplayName(tool);
+          const displayDescription = getToolDescription(tool);
 
           return (
             <Collapsible key={toolIdentifier} asChild className="group/collapsible">
@@ -62,7 +64,7 @@ export function AgentDetailsSidebar({ selectedAgentId }: AgentDetailsSidebarProp
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton tooltip={displayName}>
                     <span>{displayName}</span>
-                    {displayDescription &&  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" /> }
+                    {displayDescription && <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />}
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 {displayDescription && (
@@ -95,7 +97,7 @@ export function AgentDetailsSidebar({ selectedAgentId }: AgentDetailsSidebarProp
             </SidebarGroup>
             <SidebarGroup className="group-data-[collapsible=icon]:hidden">
               <SidebarGroupLabel>Tools</SidebarGroupLabel>
-              {renderAgentTools(selectedTeam?.agent.spec.tools)}
+              {selectedTeam && renderAgentTools(extractSocietyOfMindAgentTools(selectedTeam))}
             </SidebarGroup>
           </ScrollArea>
         </SidebarContent>

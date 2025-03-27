@@ -2,7 +2,8 @@
  * This utility file provides functions to convert between different tool types
  */
 
-import { AgentTool, Component, ToolConfig } from "@/types/datamodel";
+import { AgentConfig, AgentResponse, AgentTool, AssistantAgentConfig, Component, RoundRobinGroupChatConfig, SelectorGroupChatConfig, TeamConfig, ToolConfig } from "@/types/datamodel";
+import { getToolIdentifier } from "./data";
 
 /**
  * Converts a Component<ToolConfig> to an AgentTool
@@ -13,20 +14,9 @@ export function componentToAgentTool(tool: Component<ToolConfig>): AgentTool {
   return {
     provider: tool.provider,
     description: tool.description || "",
-    config: Object.entries(tool.config || {}).reduce((acc, [key, value]) => {
-      acc[key] = String(value); // Ensure all values are strings
-      return acc;
-    }, {} as Record<string, string>),
+    // Deep copy the entire config object to preserve all nested structures
+    config: tool.config ? JSON.parse(JSON.stringify(tool.config)) : {},
   };
-}
-
-/**
- * Converts an array of Component<ToolConfig> to an array of AgentTools
- * @param tools Array of Component<ToolConfig> to convert
- * @returns Array of AgentTools
- */
-export function componentsToAgentTools(tools: Component<ToolConfig>[]): AgentTool[] {
-  return tools.map(componentToAgentTool);
 }
 
 /**
@@ -39,37 +29,111 @@ export function findComponentForAgentTool(
   agentTool: AgentTool,
   availableTools: Component<ToolConfig>[]
 ): Component<ToolConfig> | undefined {
-  return availableTools.find((tool) => tool.provider === agentTool.provider);
+  return availableTools.find((tool) =>  getToolIdentifier(tool) === getToolIdentifier(agentTool));
 }
 
 /**
- * Checks if an AgentTool is represented in an array of Component<ToolConfig>
- * @param agentTool The AgentTool to check
- * @param components Array of Component<ToolConfig> to search in
- * @returns True if the AgentTool is found, false otherwise
+ * Type guard to check if config is RoundRobinGroupChatConfig
  */
-export function isAgentToolInComponents(
-  agentTool: AgentTool,
-  components: Component<ToolConfig>[]
-): boolean {
-  return components.some((component) => component.provider === agentTool.provider);
+function isRoundRobinGroupChatConfig(config: TeamConfig): config is RoundRobinGroupChatConfig {
+  return (config as RoundRobinGroupChatConfig).participants !== undefined;
 }
 
 /**
- * Updates an AgentTool with new configuration values
- * @param agentTool The AgentTool to update
- * @param newConfig The new configuration to apply
- * @returns A new AgentTool with updated configuration
+ * Type guard to check if config is SelectorGroupChatConfig
  */
-export function updateAgentToolConfig(
-  agentTool: AgentTool,
-  newConfig: Record<string, string>
-): AgentTool {
-  return {
-    ...agentTool,
-    config: {
-      ...agentTool.config,
-      ...newConfig,
-    },
-  };
+function isSelectorGroupChatConfig(config: TeamConfig): config is SelectorGroupChatConfig {
+  return (config as SelectorGroupChatConfig).participants !== undefined;
+}
+
+/**
+ * Type guard to check if config is AssistantAgentConfig
+ */
+function isAssistantAgentConfig(config: AgentConfig): config is AssistantAgentConfig {
+  return (config as AssistantAgentConfig).tools !== undefined;
+}
+
+/**
+ * Extracts all tools from any agent within the society_of_mind_agent in the provided JSON
+ * @param agentResponse - The agent response data
+ * @param societyOfMindAgentLabel - Optional label for the society of mind agent (defaults to "society_of_mind_agent")
+ * @returns Array of AgentTool objects or undefined if not found
+ */
+export function extractSocietyOfMindAgentTools(
+  agentResponse: AgentResponse, 
+  societyOfMindAgentLabel: string = "society_of_mind_agent"
+): AgentTool[] | undefined {
+  try {
+    // Get the component from the response
+    const component = agentResponse.component;
+    
+    // Check if the component config is a RoundRobinGroupChatConfig or SelectorGroupChatConfig
+    if (!isRoundRobinGroupChatConfig(component.config) && !isSelectorGroupChatConfig(component.config)) {
+      console.error("Component config does not have participants");
+      return undefined;
+    }
+    
+    // Find the society_of_mind_agent participant
+    const societyOfMindAgent = component.config.participants.find(
+      (participant) => participant.label === societyOfMindAgentLabel
+    );
+    
+    if (!societyOfMindAgent || !societyOfMindAgent.config) {
+      console.error(`Could not find agent with label: ${societyOfMindAgentLabel}`);
+      return undefined;
+    }
+    
+    // Ensure the agent has a team property with a valid config
+    if (!('team' in societyOfMindAgent.config)) {
+      console.error(`Agent with label ${societyOfMindAgentLabel} does not have a team configuration`);
+      return undefined;
+    }
+    
+    const team = societyOfMindAgent.config.team;
+    
+    // Check if the team config is a RoundRobinGroupChatConfig or SelectorGroupChatConfig
+    if (!isRoundRobinGroupChatConfig(team.config) && !isSelectorGroupChatConfig(team.config)) {
+      console.error("Team config does not have participants");
+      return undefined;
+    }
+    
+    // Find all agents in the team that have tools
+    const agentsWithTools = team.config.participants.filter(
+      (participant) => {
+        if (participant.component_type !== "agent" || !participant.config) {
+          return false;
+        }
+        
+        return isAssistantAgentConfig(participant.config) && participant.config.tools && participant.config.tools.length > 0;
+      }
+    );
+    
+    if (agentsWithTools.length === 0) {
+      console.error("No agents with tools found in the team configuration");
+      return undefined;
+    }
+    
+    // If we're looking for tools from all agents, we can combine them
+    const allTools: AgentTool[] = [];
+    
+    agentsWithTools.forEach(agent => {
+      if (isAssistantAgentConfig(agent.config) && agent.config.tools) {
+        // Convert Component<ToolConfig> to AgentTool
+        const agentTools = agent.config.tools.map(tool => {
+          return {
+            provider: tool.provider,
+            description: tool.description || '',
+            config: tool.config || {}
+          } as AgentTool;
+        });
+        
+        allTools.push(...agentTools);
+      }
+    });
+    
+    return allTools.length > 0 ? allTools : undefined;
+  } catch (error) {
+    console.error("Error extracting tools:", error);
+    return undefined;
+  }
 }
