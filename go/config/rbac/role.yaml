@@ -5,6 +5,32 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - agent.kagent.dev
+  resources:
+  - toolservers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - agent.kagent.dev
+  resources:
+  - toolservers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - agent.kagent.dev
+  resources:
+  - toolservers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - kagent.dev
   resources:
   - agents

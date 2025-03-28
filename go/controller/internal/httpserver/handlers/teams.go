@@ -186,7 +186,7 @@ func (h *TeamsHandler) HandleGetTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	teamLabel := convertToKubernetesIdentifier(*autogenTeam.Component.Label)
+	teamLabel := convertToKubernetesIdentifier(autogenTeam.Component.Label)
 
 	team := &v1alpha1.Agent{}
 	if err := h.KubeClient.Get(r.Context(), types.NamespacedName{

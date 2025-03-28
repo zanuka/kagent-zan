@@ -6,32 +6,47 @@ import (
 	"github.com/kagent-dev/kagent/go/autogen/api"
 )
 
-type Team struct {
+type BaseObject struct {
 	Component *api.Component `json:"component"`
-	CreatedAt *string        `json:"created_at,omitempty"`
-	UpdatedAt *string        `json:"updated_at,omitempty"`
+	CreatedAt string         `json:"created_at,omitempty"`
+	UpdatedAt string         `json:"updated_at,omitempty"`
 	UserID    string         `json:"user_id"`
-	Version   *string        `json:"version,omitempty"`
+	Version   string         `json:"version,omitempty"`
 	Id        int            `json:"id,omitempty"`
 }
 
+type Team struct {
+	BaseObject
+	Component *api.Component `json:"component"`
+}
+
 type Tool struct {
-	Id        *int          `json:"id,omitempty"`
-	Component api.Component `json:"component"`
-	CreatedAt *string       `json:"created_at,omitempty"`
-	UpdatedAt *string       `json:"updated_at,omitempty"`
-	UserID    *string       `json:"user_id,omitempty"`
-	Version   *string       `json:"version,omitempty"`
+	BaseObject
+	Component *api.Component `json:"component"`
+	ServerID  *int           `json:"server_id,omitempty"`
+}
+
+type StdioMcpServerConfig struct {
+	Command string            `json:"command"`
+	Args    []string          `json:"args,omitempty"`
+	Env     map[string]string `json:"env,omitempty"`
+}
+
+type SseMcpServerConfig struct {
+	URL            string                 `json:"url"`
+	Headers        map[string]interface{} `json:"headers,omitempty"`
+	Timeout        *int                   `json:"timeout,omitempty"`
+	SseReadTimeout *int                   `json:"sse_read_timeout,omitempty"`
 }
 
 type ToolServer struct {
-	Id            *int          `json:"id,omitempty"`
+	Id            int           `json:"id,omitempty"`
 	Component     api.Component `json:"component"`
-	CreatedAt     *string       `json:"created_at,omitempty"`
-	UpdatedAt     *string       `json:"updated_at,omitempty"`
-	UserID        *string       `json:"user_id,omitempty"`
-	LastConnected *string       `json:"last_connected,omitempty"`
-	Version       *string       `json:"version,omitempty"`
+	CreatedAt     string        `json:"created_at,omitempty"`
+	UpdatedAt     string        `json:"updated_at,omitempty"`
+	UserID        string        `json:"user_id,omitempty"`
+	LastConnected string        `json:"last_connected,omitempty"`
+	Version       string        `json:"version,omitempty"`
 }
 
 type ModelsUsage struct {

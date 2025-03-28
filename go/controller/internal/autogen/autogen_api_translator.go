@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
@@ -53,11 +54,81 @@ type ApiTranslator interface {
 		ctx context.Context,
 		team *v1alpha1.Agent,
 	) (*autogen_client.Team, error)
+
+	TranslateToolServer(ctx context.Context, toolServer *v1alpha1.ToolServer) (*autogen_client.ToolServer, error)
 }
 
 type apiTranslator struct {
 	kube               client.Client
 	defaultModelConfig types.NamespacedName
+}
+
+func (a *apiTranslator) TranslateToolServer(ctx context.Context, toolServer *v1alpha1.ToolServer) (*autogen_client.ToolServer, error) {
+	// provder = "kagent.tool_servers.StdioMcpToolServer" || "kagent.tool_servers.SseMcpToolServer"
+	provider, toolServerConfig, err := translateToolServerConfig(toolServer.Spec.Config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &autogen_client.ToolServer{
+		UserID: GlobalUserID,
+		Component: api.Component{
+			Provider:      provider,
+			ComponentType: "tool_server",
+			Version:       1,
+			Description:   toolServer.Spec.Description,
+			Label:         toolServer.Name,
+			Config:        api.MustToConfig(toolServerConfig),
+		},
+	}, nil
+}
+
+func translateToolServerConfig(config v1alpha1.ToolServerConfig) (string, *api.ToolServerConfig, error) {
+	switch {
+	case config.Stdio != nil:
+		return "kagent.tool_servers.StdioMcpToolServer", &api.ToolServerConfig{
+			StdioMcpServerConfig: &api.StdioMcpServerConfig{
+				Command: config.Stdio.Command,
+				Args:    config.Stdio.Args,
+				Env:     config.Stdio.Env,
+			},
+		}, nil
+	case config.Sse != nil:
+		headers, err := convertMapFromAnytype(config.Sse.Headers)
+		if err != nil {
+			return "", nil, err
+		}
+		timeout, err := convertDurationToSeconds(config.Sse.Timeout)
+		if err != nil {
+			return "", nil, err
+		}
+		sseReadTimeout, err := convertDurationToSeconds(config.Sse.SseReadTimeout)
+		if err != nil {
+			return "", nil, err
+		}
+
+		return "kagent.tool_servers.SseMcpToolServer", &api.ToolServerConfig{
+			SseMcpServerConfig: &api.SseMcpServerConfig{
+				URL:            config.Sse.URL,
+				Headers:        headers,
+				Timeout:        timeout,
+				SseReadTimeout: sseReadTimeout,
+			},
+		}, nil
+	}
+
+	return "", nil, fmt.Errorf("unsupported tool server config")
+}
+
+func convertDurationToSeconds(timeout string) (int, error) {
+	if timeout == "" {
+		return 0, nil
+	}
+	d, err := time.ParseDuration(timeout)
+	if err != nil {
+		return 0, err
+	}
+	return int(d.Seconds()), nil
 }
 
 func NewAutogenApiTranslator(
@@ -176,9 +247,9 @@ func (a *apiTranslator) translateGroupChatForTeam(
 	modelContext := &api.Component{
 		Provider:      "autogen_core.model_context.UnboundedChatCompletionContext",
 		ComponentType: "chat_completion_context",
-		Version:       makePtr(1),
-		Description:   makePtr("An unbounded chat completion context that keeps a view of the all the messages."),
-		Label:         makePtr("UnboundedChatCompletionContext"),
+		Version:       1,
+		Description:   "An unbounded chat completion context that keeps a view of the all the messages.",
+		Label:         "UnboundedChatCompletionContext",
 		Config:        map[string]interface{}{},
 	}
 
@@ -205,7 +276,10 @@ func (a *apiTranslator) translateGroupChatForTeam(
 			)
 		} else {
 			participant, err = translateAssistantAgent(
+				ctx,
+				a.kube,
 				agent.Name,
+				agent.Namespace,
 				agent.Spec,
 				modelClientWithStreaming,
 				modelClientWithoutStreaming,
@@ -252,8 +326,8 @@ func (a *apiTranslator) translateGroupChatForTeam(
 		teamConfig = &api.Component{
 			Provider:      "autogen_agentchat.teams.RoundRobinGroupChat",
 			ComponentType: "team",
-			Version:       makePtr(1),
-			Description:   makePtr(team.Spec.Description),
+			Version:       1,
+			Description:   team.Spec.Description,
 			Config: api.MustToConfig(&api.RoundRobinGroupChatConfig{
 				CommonTeamConfig: commonTeamConfig,
 			}),
@@ -262,31 +336,31 @@ func (a *apiTranslator) translateGroupChatForTeam(
 		teamConfig = &api.Component{
 			Provider:      "autogen_agentchat.teams.SelectorGroupChat",
 			ComponentType: "team",
-			Version:       makePtr(1),
-			Description:   makePtr(team.Spec.Description),
+			Version:       1,
+			Description:   team.Spec.Description,
 			Config: api.MustToConfig(&api.SelectorGroupChatConfig{
 				CommonTeamConfig: commonTeamConfig,
-				SelectorPrompt:   makePtr(selectorTeamConfig.SelectorPrompt),
+				SelectorPrompt:   selectorTeamConfig.SelectorPrompt,
 			}),
 		}
 	} else if magenticOneTeamConfig != nil {
 		teamConfig = &api.Component{
 			Provider:      "autogen_agentchat.teams.MagenticOneGroupChat",
 			ComponentType: "team",
-			Version:       makePtr(1),
-			Description:   makePtr(team.Spec.Description),
+			Version:       1,
+			Description:   team.Spec.Description,
 			Config: api.MustToConfig(&api.MagenticOneGroupChatConfig{
 				CommonTeamConfig:  commonTeamConfig,
-				MaxStalls:         makePtr(magenticOneTeamConfig.MaxStalls),
-				FinalAnswerPrompt: makePtr(magenticOneTeamConfig.FinalAnswerPrompt),
+				MaxStalls:         magenticOneTeamConfig.MaxStalls,
+				FinalAnswerPrompt: magenticOneTeamConfig.FinalAnswerPrompt,
 			}),
 		}
 	} else if swarmTeamConfig != nil {
 		teamConfig = &api.Component{
 			Provider:      "autogen_agentchat.teams.SwarmTeam",
 			ComponentType: "team",
-			Version:       makePtr(1),
-			Description:   makePtr(team.Spec.Description),
+			Version:       1,
+			Description:   team.Spec.Description,
 			Config: api.MustToConfig(&api.SwarmTeamConfig{
 				CommonTeamConfig: commonTeamConfig,
 			}),
@@ -295,11 +369,13 @@ func (a *apiTranslator) translateGroupChatForTeam(
 		return nil, fmt.Errorf("no team config specified")
 	}
 
-	teamConfig.Label = makePtr(team.Name)
+	teamConfig.Label = team.Name
 
 	return &autogen_client.Team{
-		UserID:    GlobalUserID, // always use global id
 		Component: teamConfig,
+		BaseObject: autogen_client.BaseObject{
+			UserID: GlobalUserID, // always use global id
+		},
 	}, nil
 }
 
@@ -340,9 +416,9 @@ func (a *apiTranslator) translateTaskAgent(
 	return &api.Component{
 		Provider:      "kagent.agents.TaskAgent",
 		ComponentType: "agent",
-		Version:       makePtr(1),
-		Label:         makePtr("society_of_mind_agent"),
-		Description:   makePtr("An agent that runs a team of agents"),
+		Version:       1,
+		Label:         "society_of_mind_agent",
+		Description:   "An agent that runs a team of agents",
 		Config: api.MustToConfig(&api.TaskAgentConfig{
 			Team:         societyOfMindTeam.Component,
 			Name:         "society_of_mind_agent",
@@ -352,7 +428,10 @@ func (a *apiTranslator) translateTaskAgent(
 }
 
 func translateAssistantAgent(
+	ctx context.Context,
+	kube client.Client,
 	agentName string,
+	agentNamespace string,
 	agentSpec v1alpha1.AgentSpec,
 	modelClientWithStreaming *api.Component,
 	modelClientWithoutStreaming *api.Component,
@@ -361,45 +440,45 @@ func translateAssistantAgent(
 
 	tools := []*api.Component{}
 	for _, tool := range agentSpec.Tools {
-		toolConfig, err := convertToolConfig(tool.Config)
-		if err != nil {
-			return nil, err
-		}
-		// special case where we put the model client in the tool config
-		if toolNeedsModelClient(tool.Provider) {
-			if err := addModelClientToConfig(modelClientWithoutStreaming, &toolConfig); err != nil {
-				return nil, fmt.Errorf("failed to add model client to tool config: %v", err)
+		switch {
+		case tool.Provider != "":
+			autogenTool, err := translateBuiltinTool(
+				modelClientWithoutStreaming,
+				tool.BuiltinTool,
+			)
+			if err != nil {
+				return nil, err
 			}
+			tools = append(tools, autogenTool)
+		case tool.ToolServer != "":
+			for _, toolName := range tool.ToolNames {
+				autogenTool, err := translateToolServerTool(
+					ctx,
+					kube,
+					tool.ToolServer,
+					toolName,
+					agentNamespace,
+				)
+				if err != nil {
+					return nil, err
+				}
+				tools = append(tools, autogenTool)
+			}
+		default:
+			return nil, fmt.Errorf("tool must have a provider or tool server")
 		}
-
-		providerParts := strings.Split(tool.Provider, ".")
-		toolLabel := providerParts[len(providerParts)-1]
-
-		var description *string
-		if tool.Description != "" {
-			description = makePtr(tool.Description)
-		}
-
-		tools = append(tools, &api.Component{
-			Provider:      tool.Provider,
-			Description:   description,
-			ComponentType: "tool",
-			Version:       makePtr(1),
-			Config:        api.GenericToolConfig(toolConfig),
-			Label:         makePtr(toolLabel),
-		})
 	}
 
-	sysMsgPtr := makePtr(agentSpec.SystemMessage + "\n" + defaultSystemMessageSuffix)
+	sysMsg := agentSpec.SystemMessage + "\n" + defaultSystemMessageSuffix
 	if agentSpec.SystemMessage == "" {
-		sysMsgPtr = nil
+		sysMsg = ""
 	}
 
 	return &api.Component{
 		Provider:      "autogen_agentchat.agents.AssistantAgent",
 		ComponentType: "agent",
-		Version:       makePtr(1),
-		Description:   makePtr(agentSpec.Description),
+		Version:       1,
+		Description:   agentSpec.Description,
 		Config: api.MustToConfig(&api.AssistantAgentConfig{
 			Name:         convertToPythonIdentifier(agentName),
 			ModelClient:  modelClientWithStreaming,
@@ -407,7 +486,7 @@ func translateAssistantAgent(
 			ModelContext: modelContext,
 			Description:  agentSpec.Description,
 			// TODO(ilackarms): convert to non-ptr with omitempty?
-			SystemMessage:         sysMsgPtr,
+			SystemMessage:         sysMsg,
 			ReflectOnToolUse:      false,
 			ModelClientStream:     true,
 			ToolCallSummaryFormat: "\nTool: \n{tool_name}\n\nArguments:\n\n{arguments}\n\nResult: \n{result}\n",
@@ -415,7 +494,81 @@ func translateAssistantAgent(
 	}, nil
 }
 
-func convertToolConfig(config map[string]v1alpha1.AnyType) (map[string]interface{}, error) {
+func translateBuiltinTool(
+	modelClient *api.Component,
+	tool v1alpha1.BuiltinTool,
+) (*api.Component, error) {
+
+	toolConfig, err := convertMapFromAnytype(tool.Config)
+	if err != nil {
+		return nil, err
+	}
+	// special case where we put the model client in the tool config
+	if toolNeedsModelClient(tool.Provider) {
+		if err := addModelClientToConfig(modelClient, &toolConfig); err != nil {
+			return nil, fmt.Errorf("failed to add model client to tool config: %v", err)
+		}
+	}
+
+	providerParts := strings.Split(tool.Provider, ".")
+	toolLabel := providerParts[len(providerParts)-1]
+
+	return &api.Component{
+		Provider:      tool.Provider,
+		Description:   tool.Description,
+		ComponentType: "tool",
+		Version:       1,
+		Config:        toolConfig,
+		Label:         toolLabel,
+	}, nil
+}
+
+func translateToolServerTool(
+	ctx context.Context,
+	kube client.Client,
+	toolServerName string,
+	toolName string,
+	agentNamespace string,
+) (*api.Component, error) {
+	toolServer := &v1alpha1.ToolServer{}
+	err := fetchObjKube(
+		ctx,
+		kube,
+		toolServer,
+		toolServerName,
+		agentNamespace,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// requires the tool to have been discovered
+	for _, discoveredTool := range toolServer.Status.DiscoveredTools {
+		if discoveredTool.Name == toolName {
+			return convertComponent(discoveredTool.Component)
+		}
+	}
+
+	return nil, fmt.Errorf("tool %v not found in discovered tools in ToolServer %v", toolName, toolServer.Name)
+}
+
+func convertComponent(component v1alpha1.Component) (*api.Component, error) {
+	config, err := convertMapFromAnytype(component.Config)
+	if err != nil {
+		return nil, err
+	}
+	return &api.Component{
+		Provider:         component.Provider,
+		ComponentType:    component.ComponentType,
+		Version:          component.Version,
+		ComponentVersion: component.ComponentVersion,
+		Description:      component.Description,
+		Label:            component.Label,
+		Config:           config,
+	}, nil
+}
+
+func convertMapFromAnytype(config map[string]v1alpha1.AnyType) (map[string]interface{}, error) {
 	// convert to map[string]interface{} to allow kubebuilder schemaless validation
 	// see https://github.com/kubernetes-sigs/controller-tools/issues/636 for more info
 	// must unmarshal to interface{} to avoid json.RawMessage
@@ -436,10 +589,6 @@ func convertToolConfig(config map[string]v1alpha1.AnyType) (map[string]interface
 	}
 
 	return convertedConfig, nil
-}
-
-func makePtr[T any](v T) *T {
-	return &v
 }
 
 func translateTerminationCondition(terminationCondition v1alpha1.TerminationCondition) (*api.Component, error) {
@@ -469,30 +618,30 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.MaxMessageTermination",
 			ComponentType: "termination",
-			Version:       makePtr(1),
+			Version:       1,
 			//ComponentVersion: 1,
 			Config: api.MustToConfig(&api.MaxMessageTerminationConfig{
-				MaxMessages: makePtr(terminationCondition.MaxMessageTermination.MaxMessages),
+				MaxMessages: terminationCondition.MaxMessageTermination.MaxMessages,
 			}),
 		}, nil
 	case terminationCondition.TextMentionTermination != nil:
 		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.TextMentionTermination",
 			ComponentType: "termination",
-			Version:       makePtr(1),
+			Version:       1,
 			//ComponentVersion: 1,
 			Config: api.MustToConfig(&api.TextMentionTerminationConfig{
-				Text: makePtr(terminationCondition.TextMentionTermination.Text),
+				Text: terminationCondition.TextMentionTermination.Text,
 			}),
 		}, nil
 	case terminationCondition.TextMessageTermination != nil:
 		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.TextMessageTermination",
 			ComponentType: "termination",
-			Version:       makePtr(1),
+			Version:       1,
 			//ComponentVersion: 1,
 			Config: api.MustToConfig(&api.TextMessageTerminationConfig{
-				Source: makePtr(terminationCondition.TextMessageTermination.Source),
+				Source: terminationCondition.TextMessageTermination.Source,
 			}),
 		}, nil
 	case terminationCondition.OrTermination != nil:
@@ -512,7 +661,7 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.OrTerminationCondition",
 			ComponentType: "termination",
-			Version:       makePtr(1),
+			Version:       1,
 			//ComponentVersion: 1,
 			Config: api.MustToConfig(&api.OrTerminationConfig{
 				Conditions: conditions,
@@ -522,10 +671,10 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 		return &api.Component{
 			Provider:      "autogen_agentchat.conditions.StopMessageTermination",
 			ComponentType: "termination",
-			Version:       makePtr(1),
+			Version:       1,
 			//ComponentVersion: 1,
 			Config: api.MustToConfig(&api.StopMessageTerminationConfig{}),
-			Label:  makePtr("StopMessageTermination"),
+			Label:  "StopMessageTermination",
 		}, nil
 	}
 
@@ -579,7 +728,7 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 	case v1alpha1.Anthropic:
 		config := &api.AnthropicClientConfiguration{
 			BaseAnthropicClientConfiguration: api.BaseAnthropicClientConfiguration{
-				APIKey: makePtr(string(apiKey)),
+				APIKey: string(apiKey),
 				Model:  modelConfig.Spec.Model,
 			},
 		}
@@ -588,33 +737,24 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		if modelConfig.Spec.ProviderAnthropic != nil {
 			anthropicConfig := modelConfig.Spec.ProviderAnthropic
 
-			if anthropicConfig.BaseURL != "" {
-				config.BaseURL = &anthropicConfig.BaseURL
-			}
-
-			if anthropicConfig.MaxTokens > 0 {
-				maxTokens := int(anthropicConfig.MaxTokens)
-				config.MaxTokens = &maxTokens
-			}
+			config.BaseURL = anthropicConfig.BaseURL
+			config.MaxTokens = anthropicConfig.MaxTokens
 
 			if anthropicConfig.Temperature != "" {
 				temp, err := strconv.ParseFloat(anthropicConfig.Temperature, 64)
 				if err == nil {
-					config.Temperature = &temp
+					config.Temperature = temp
 				}
 			}
 
 			if anthropicConfig.TopP != "" {
 				topP, err := strconv.ParseFloat(anthropicConfig.TopP, 64)
 				if err == nil {
-					config.TopP = &topP
+					config.TopP = topP
 				}
 			}
 
-			if anthropicConfig.TopK > 0 {
-				topK := int(anthropicConfig.TopK)
-				config.TopK = &topK
-			}
+			config.TopK = anthropicConfig.TopK
 		}
 
 		// Convert to map
@@ -626,7 +766,7 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		return &api.Component{
 			Provider:      "autogen_ext.models.anthropic.AnthropicChatCompletionClient",
 			ComponentType: "model",
-			Version:       makePtr(1),
+			Version:       1,
 			Config:        configMap,
 		}, nil
 
@@ -634,9 +774,9 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		config := &api.AzureOpenAIClientConfig{
 			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
 				Model:  modelConfig.Spec.Model,
-				APIKey: makePtr(string(apiKey)),
+				APIKey: string(apiKey),
 			},
-			Stream: makePtr(true),
+			Stream: true,
 		}
 
 		if includeUsage {
@@ -649,21 +789,10 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		if modelConfig.Spec.ProviderAzureOpenAI != nil {
 			azureConfig := modelConfig.Spec.ProviderAzureOpenAI
 
-			if azureConfig.Endpoint != "" {
-				config.AzureEndpoint = &azureConfig.Endpoint
-			}
-
-			if azureConfig.APIVersion != "" {
-				config.APIVersion = &azureConfig.APIVersion
-			}
-
-			if azureConfig.DeploymentName != "" {
-				config.AzureDeployment = &azureConfig.DeploymentName
-			}
-
-			if azureConfig.AzureADToken != "" {
-				config.AzureADToken = &azureConfig.AzureADToken
-			}
+			config.AzureEndpoint = azureConfig.Endpoint
+			config.APIVersion = azureConfig.APIVersion
+			config.AzureDeployment = azureConfig.DeploymentName
+			config.AzureADToken = azureConfig.AzureADToken
 
 			if azureConfig.Temperature != "" {
 				temp, err := strconv.ParseFloat(azureConfig.Temperature, 64)
@@ -683,7 +812,7 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		return &api.Component{
 			Provider:      "autogen_ext.models.openai.AzureOpenAIChatCompletionClient",
 			ComponentType: "model",
-			Version:       makePtr(1),
+			Version:       1,
 			Config:        api.MustToConfig(config),
 		}, nil
 
@@ -691,7 +820,7 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		config := &api.OpenAIClientConfig{
 			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
 				Model:  modelConfig.Spec.Model,
-				APIKey: makePtr(string(apiKey)),
+				APIKey: string(apiKey),
 			},
 		}
 
@@ -749,7 +878,7 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		return &api.Component{
 			Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
 			ComponentType: "model",
-			Version:       makePtr(1),
+			Version:       1,
 			Config:        api.MustToConfig(config),
 		}, nil
 
