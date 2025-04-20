@@ -9,6 +9,7 @@ async def _current_date_time() -> str:
     """Returns the current date and time in ISO 8601 format."""
     return datetime.datetime.now().isoformat()
 
+
 current_date_time = FunctionTool(
     _current_date_time,
     description="Returns the current date and time in ISO 8601 format.",
