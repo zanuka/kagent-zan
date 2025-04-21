@@ -2,18 +2,18 @@
 replicaCount: 1
 
 global:
-  tag: ""
+  tag: ''
 
 openai:
-  secretName: "kagent-openai"
-  apiKey: ""
-  secretKey: "OPENAI_API_KEY"
+  secretName: 'kagent-openai'
+  apiKey: ''
+  secretKey: 'OPENAI_API_KEY'
 
 controller:
   image:
     registry: ghcr.io
     repository: kagent-dev/kagent/controller
-    tag: ""  # Will default to global, then Chart version
+    tag: '' # Will default to global, then Chart version
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -27,7 +27,7 @@ app:
   image:
     registry: ghcr.io
     repository: kagent-dev/kagent/app
-    tag: ""  # Will default to global, then Chart version
+    tag: '' # Will default to global, then Chart version
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -41,7 +41,7 @@ ui:
   image:
     registry: ghcr.io
     repository: kagent-dev/kagent/ui
-    tag: ""  # Will default to global, then Chart version
+    tag: '' # Will default to global, then Chart version
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -50,7 +50,6 @@ ui:
     limits:
       cpu: 1000m
       memory: 1Gi
-  
 
 service:
   type: ClusterIP
@@ -63,15 +62,17 @@ service:
       targetPort: 8081
 
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 
 podAnnotations: {}
 
-podSecurityContext: {}
+podSecurityContext:
+  {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext:
+  {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -89,14 +90,14 @@ contrib:
       enabled: true
     observability:
       prometheus:
-        url: ""
-        username: ""
-        password: ""
+        url: ''
+        username: ''
+        password: ''
       grafana:
-        url: ""
-        username: ""
-        password: ""
-        apiKey: ""
+        url: ''
+        username: ''
+        password: ''
+        apiKey: ''
       enabled: true
     argoRolloutsConversion:
       enabled: true

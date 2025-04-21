@@ -1,58 +1,103 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Search, FunctionSquare, Filter, Info, AlertCircle, Server } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { getToolDescription, getToolDisplayName, getToolIdentifier } from "@/lib/toolUtils";
-import {  Component, ToolConfig, ToolServerConfiguration } from "@/types/datamodel";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getTools } from "../actions/tools";
-import { getServers } from "../actions/servers";
-import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  getToolDescription,
+  getToolDisplayName,
+  getToolIdentifier,
+} from '@/lib/toolUtils';
+import {
+  Component,
+  MCPToolConfig,
+  ToolConfig,
+  ToolServerConfiguration,
+} from '@/types/datamodel';
+import {
+  AlertCircle,
+  Filter,
+  FunctionSquare,
+  Info,
+  Search,
+  Server,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { getServers } from '../actions/servers';
+import { getTools } from '../actions/tools';
 
 // Extract category from tool identifier
 const getToolCategory = (component: Component<ToolConfig>): string => {
-  const providerId = getToolIdentifier(component);
-  const parts = providerId.split(".");
+  // For MCP tools, use their tool name to determine category
+  if (component.provider === 'autogen_ext.tools.mcp.StdioMcpToolAdapter') {
+    const mcpConfig = component.config as MCPToolConfig;
+    const toolName = mcpConfig.tool.name;
+    // For Kubernetes tools, group them under KUBERNETES
+    if (
+      toolName.includes('deployment') ||
+      toolName.includes('pod') ||
+      toolName.includes('service') ||
+      toolName.includes('namespace') ||
+      toolName.includes('context') ||
+      toolName.includes('cronjob')
+    ) {
+      return 'KUBERNETES';
+    }
+    return 'MCP';
+  }
 
-  if (parts.length >= 3 && parts[0] === "kagent" && parts[1] === "tools") {
-    return parts[2];
+  // For regular tools, use the existing logic
+  const providerId = getToolIdentifier(component);
+  const parts = providerId.split('.');
+
+  if (parts.length >= 3 && parts[0] === 'kagent' && parts[1] === 'tools') {
+    return parts[2].toUpperCase();
   }
 
   if (component.provider) {
-    const providerParts = component.provider.split(".");
+    const providerParts = component.provider.split('.');
     if (providerParts.length >= 3) {
-      return providerParts[2];
+      return providerParts[2].toUpperCase();
     }
   }
 
-  return "other";
+  return 'OTHER';
 };
 
 export default function ToolsPage() {
   // Consolidated state
   const [toolsData, setToolsData] = useState<{
     tools: Component<ToolConfig>[];
-    serversMap: Map<string, { name: string; label: string; config: ToolServerConfiguration }>;
+    serversMap: Map<
+      string,
+      { name: string; label: string; config: ToolServerConfiguration }
+    >;
     categories: Set<string>;
     isLoading: boolean;
     error: string | null;
   }>({
-    tools: [],                 // Normalized tools from both sources
-    serversMap: new Map(),     // Map of server_id to server name/label
-    categories: new Set(),     // Unique categories
+    tools: [], // Normalized tools from both sources
+    serversMap: new Map(), // Map of server_id to server name/label
+    categories: new Set(), // Unique categories
     isLoading: true,
-    error: null
+    error: null,
   });
-  
+
   // UI state
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(
+    new Set()
+  );
 
   // Fetch data on component mount
   useEffect(() => {
@@ -62,29 +107,32 @@ export default function ToolsPage() {
   // Fetch and consolidate tools data
   const fetchData = async () => {
     try {
-      setToolsData(prev => ({ ...prev, isLoading: true, error: null }));
+      setToolsData((prev) => ({ ...prev, isLoading: true, error: null }));
 
       // Fetch both data sources in parallel
       const [serversResponse, toolsResponse] = await Promise.all([
         getServers(),
-        getTools()
+        getTools(),
       ]);
 
       // Process servers
-      const serversMap = new Map<string, { name: string; label: string; config: ToolServerConfiguration }>();
+      const serversMap = new Map<
+        string,
+        { name: string; label: string; config: ToolServerConfiguration }
+      >();
       const toolsFromServers: Component<ToolConfig>[] = [];
-      
+
       if (serversResponse.success && serversResponse.data) {
-        serversResponse.data.forEach(server => {
+        serversResponse.data.forEach((server) => {
           serversMap.set(server.name, {
             name: server.name,
             label: server.name,
-            config: server.config
+            config: server.config,
           });
-          
+
           // Process discovered tools from this server
           if (server.discoveredTools && Array.isArray(server.discoveredTools)) {
-            server.discoveredTools.forEach(tool => {
+            server.discoveredTools.forEach((tool) => {
               toolsFromServers.push(tool.component);
             });
           }
@@ -96,31 +144,31 @@ export default function ToolsPage() {
       if (toolsResponse.success && toolsResponse.data) {
         allTools = [...toolsResponse.data];
       }
-      
+
       // Combine tools from both sources (prioritizing DB tools if there are duplicates)
       // This assumes getToolIdentifier returns a unique identifier for each tool
       const toolMap = new Map<string, Component<ToolConfig>>();
-      
+
       // First add all DB tools
-      allTools.forEach(tool => {
+      allTools.forEach((tool) => {
         const toolId = getToolIdentifier(tool);
         toolMap.set(toolId, tool);
       });
-      
+
       // Then add server tools only if they don't already exist
-      toolsFromServers.forEach(tool => {
+      toolsFromServers.forEach((tool) => {
         const toolId = getToolIdentifier(tool);
         if (!toolMap.has(toolId)) {
           toolMap.set(toolId, tool);
         }
       });
-      
+
       // Convert map back to array
       const consolidatedTools = Array.from(toolMap.values());
-      
+
       // Extract unique categories
       const uniqueCategories = new Set<string>();
-      consolidatedTools.forEach(tool => {
+      consolidatedTools.forEach((tool) => {
         uniqueCategories.add(getToolCategory(tool));
       });
 
@@ -130,21 +178,21 @@ export default function ToolsPage() {
         serversMap,
         categories: uniqueCategories,
         isLoading: false,
-        error: null
+        error: null,
       });
     } catch (error) {
-      console.error("Error fetching data:", error);
-      setToolsData(prev => ({
+      console.error('Error fetching data:', error);
+      setToolsData((prev) => ({
         ...prev,
         isLoading: false,
-        error: "An error occurred while fetching data."
+        error: 'An error occurred while fetching data.',
       }));
     }
   };
 
   // Category filter handlers
   const handleToggleCategory = (category: string) => {
-    setSelectedCategories(prev => {
+    setSelectedCategories((prev) => {
       const newSelection = new Set(prev);
       if (newSelection.has(category)) {
         newSelection.delete(category);
@@ -155,11 +203,12 @@ export default function ToolsPage() {
     });
   };
 
-  const selectAllCategories = () => setSelectedCategories(new Set(toolsData.categories));
+  const selectAllCategories = () =>
+    setSelectedCategories(new Set(toolsData.categories));
   const clearCategories = () => setSelectedCategories(new Set());
 
   // Filter tools based on search and categories
-  const filteredTools = toolsData.tools.filter(tool => {
+  const filteredTools = toolsData.tools.filter((tool) => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
       getToolDisplayName(tool)?.toLowerCase().includes(searchLower) ||
@@ -168,14 +217,15 @@ export default function ToolsPage() {
       getToolIdentifier(tool)?.toLowerCase().includes(searchLower);
 
     const toolCategory = getToolCategory(tool);
-    const matchesCategory = selectedCategories.size === 0 || selectedCategories.has(toolCategory);
+    const matchesCategory =
+      selectedCategories.size === 0 || selectedCategories.has(toolCategory);
 
     return matchesSearch && matchesCategory;
   });
 
   // Group tools by category
   const toolsByCategory: Record<string, Component<ToolConfig>[]> = {};
-  filteredTools.forEach(tool => {
+  filteredTools.forEach((tool) => {
     const category = getToolCategory(tool);
     if (!toolsByCategory[category]) {
       toolsByCategory[category] = [];
@@ -187,7 +237,10 @@ export default function ToolsPage() {
     <div className="mt-12 mx-auto max-w-6xl px-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Tools Library</h1>
-        <Link href="/servers" className="text-blue-600 hover:text-blue-800 text-sm">
+        <Link
+          href="/servers"
+          className="text-blue-600 hover:text-blue-800 text-sm"
+        >
           Manage tool servers →
         </Link>
       </div>
@@ -205,18 +258,18 @@ export default function ToolsPage() {
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search tools by name, description or provider..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
-            className="pl-10" 
+          <Input
+            placeholder="Search tools by name, description or provider..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
           />
         </div>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={() => setShowFilters(!showFilters)} 
-          className={showFilters ? "bg-secondary" : ""}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowFilters(!showFilters)}
+          className={showFilters ? 'bg-secondary' : ''}
         >
           <Filter className="h-4 w-4" />
         </Button>
@@ -229,11 +282,13 @@ export default function ToolsPage() {
           <div className="flex flex-wrap gap-2 mb-3">
             {Array.from(toolsData.categories)
               .sort()
-              .map(category => (
-                <Badge 
-                  key={category} 
-                  variant={selectedCategories.has(category) ? "default" : "outline"} 
-                  className="cursor-pointer capitalize" 
+              .map((category) => (
+                <Badge
+                  key={category}
+                  variant={
+                    selectedCategories.has(category) ? 'default' : 'outline'
+                  }
+                  className="cursor-pointer capitalize"
                   onClick={() => handleToggleCategory(category)}
                 >
                   {category}
@@ -254,7 +309,8 @@ export default function ToolsPage() {
       {/* Tools counter */}
       <div className="flex justify-end items-center mb-4">
         <div className="text-sm text-muted-foreground">
-          {filteredTools.length} tool{filteredTools.length !== 1 ? "s" : ""} found
+          {filteredTools.length} tool{filteredTools.length !== 1 ? 's' : ''}{' '}
+          found
         </div>
       </div>
 
@@ -271,29 +327,37 @@ export default function ToolsPage() {
               .map(([category, categoryTools]) => (
                 <div key={category}>
                   <div className="flex items-center gap-2 mb-3 pb-2 border-b">
-                    <h3 className="text-lg font-semibold uppercase">{category}</h3>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                      {categoryTools.length} tool{categoryTools.length !== 1 ? "s" : ""}
+                    <h3 className="text-lg font-semibold uppercase">
+                      {category}
+                    </h3>
+                    <Badge
+                      variant="outline"
+                      className="bg-blue-50 text-blue-700"
+                    >
+                      {categoryTools.length} tool
+                      {categoryTools.length !== 1 ? 's' : ''}
                     </Badge>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {categoryTools
                       .sort((a, b) => {
-                        const aName = getToolDisplayName(a) || "";
-                        const bName = getToolDisplayName(b) || "";
+                        const aName = getToolDisplayName(a) || '';
+                        const bName = getToolDisplayName(b) || '';
                         return aName.localeCompare(bName);
                       })
-                      .map(tool => (
-                        <div 
-                          key={getToolIdentifier(tool)} 
+                      .map((tool) => (
+                        <div
+                          key={getToolIdentifier(tool)}
                           className="p-4 border rounded-md hover:bg-secondary/5 transition-colors"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-start gap-2">
                               <FunctionSquare className="h-5 w-5 text-blue-500 mt-0.5" />
                               <div>
-                                <div className="font-medium">{getToolDisplayName(tool)}</div>
+                                <div className="font-medium">
+                                  {getToolDisplayName(tool)}
+                                </div>
                                 <div className="text-sm text-muted-foreground mt-1">
                                   {getToolDescription(tool)}
                                 </div>
@@ -307,12 +371,21 @@ export default function ToolsPage() {
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
                                     <Info className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent side="left" className="max-w-sm">
-                                  <p className="font-mono text-xs">{getToolIdentifier(tool)}</p>
+                                <TooltipContent
+                                  side="left"
+                                  className="max-w-sm"
+                                >
+                                  <p className="font-mono text-xs">
+                                    {getToolIdentifier(tool)}
+                                  </p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -329,16 +402,16 @@ export default function ToolsPage() {
           <FunctionSquare className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
           <h3 className="font-medium text-lg">No tools found</h3>
           <p className="text-muted-foreground mt-1 mb-4">
-            {searchTerm || selectedCategories.size > 0 
-              ? "Try adjusting your search or filters to find tools." 
-              : "Connect a server to discover tools."}
+            {searchTerm || selectedCategories.size > 0
+              ? 'Try adjusting your search or filters to find tools.'
+              : 'Connect a server to discover tools.'}
           </p>
           {searchTerm || selectedCategories.size > 0 ? (
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSearchTerm("");
+                  setSearchTerm('');
                   clearCategories();
                 }}
               >

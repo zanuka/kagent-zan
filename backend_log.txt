@@ -1,0 +1,19 @@
+╭──────────────────────────────────────── Traceback (most recent call last) ─────────────────────────────────────────╮
+│ /Users/deeda/workspace/zanuka-github/kagent-zan/python/src/kagent/cli.py:290 in serve                              │
+│                                                                                                                    │
+│   287 │   import logging                                                                                           │
+│   288 │   import os                                                                                                │
+│   289 │                                                                                                            │
+│ ❱ 290 │   from autogenstudio.cli import ui                                                                         │
+│   291 │   from opentelemetry import trace                                                                          │
+│   292 │   from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter                       │
+│   293 │   from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor                                  │
+│                                                                                                                    │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮     │
+│ │    host = '127.0.0.1'                                                                                      │     │
+│ │ logging = <module 'logging' from '/Users/deeda/.pyenv/versions/3.10.4/lib/python3.10/logging/__init__.py'> │     │
+│ │      os = <module 'os' from '/Users/deeda/.pyenv/versions/3.10.4/lib/python3.10/os.py'>                    │     │
+│ │    port = 8081                                                                                             │     │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯     │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ModuleNotFoundError: No module named 'autogenstudio'

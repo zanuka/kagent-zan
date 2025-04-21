@@ -1,4 +1,4 @@
-import { getWsUrl, getBackendUrl, getWebSocketUrl, getRelativeTimeString, isResourceNameValid, messageUtils } from '../utils';
+import { getBackendUrl, getRelativeTimeString, getWebSocketUrl, getWsUrl, isResourceNameValid, messageUtils } from '../utils';
 
 describe('URL Generation Utilities', () => {
   const originalEnv = process.env;
@@ -60,7 +60,7 @@ describe('URL Generation Utilities', () => {
         value: 'development',
         configurable: true
       });
-      expect(getBackendUrl()).toBe('http://localhost:8083/api');
+      expect(getBackendUrl()).toBe('http://localhost:8081/api');
     });
   });
 

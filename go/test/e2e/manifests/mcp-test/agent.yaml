@@ -1,0 +1,33 @@
+apiVersion: kagent.dev/v1alpha1
+kind: Agent
+metadata:
+  creationTimestamp: null
+  name: mcp-test-agent
+  namespace: mcp-test-ns
+spec:
+  description: Test agent for MCP tool integration
+  modelConfigRef: gpt-model-config
+  systemMessage: You are a test agent for MCP tool integration
+  tools:
+  - inline:
+      config:
+        test_param: test_value
+      provider: kagent.tools.test.TestTool
+status: {}
+---
+apiVersion: kagent.dev/v1alpha1
+kind: ToolServer
+metadata:
+  creationTimestamp: null
+  name: hosted-mcp-server
+  namespace: mcp-test-ns
+spec:
+  config:
+    sse:
+      url: https://www.mcp.run/api/mcp/sse
+  description: Hosted MCP server for testing
+status:
+  conditions: null
+  discoveredTools: null
+  observedGeneration: 0
+---

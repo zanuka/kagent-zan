@@ -1,8 +1,8 @@
 import { LLMCall } from "@/components/chat/LLMCallModal";
+import type { TextMessageConfig } from "@/types/datamodel";
 import { FunctionCall, FunctionExecutionResult, ImageContent, TeamResult } from "@/types/datamodel";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { TextMessageConfig } from "@/types/datamodel";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,8 +34,13 @@ export function getBackendUrl() {
     return "http://kagent.kagent.svc.cluster.local/api";
   }
 
-  // Fallback for local development
-  return "http://localhost:8083/api";
+  // Check if we're in a server-side environment
+  if (typeof window === 'undefined') {
+    return "http://localhost:8081/api";
+  }
+
+  // Fallback for local development (client-side)
+  return "http://localhost:8081/api";
 }
 
 export function getWebSocketUrl() {
