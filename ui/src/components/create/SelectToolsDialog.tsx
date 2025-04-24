@@ -65,6 +65,7 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({
   availableTools,
   selectedTools,
   onToolsSelected,
+  onTestTool,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [localSelectedComponents, setLocalSelectedComponents] = useState<
@@ -345,28 +346,43 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({
                                         )}
                                       </p>
                                     </div>
-                                    {!isSelected && !isDisabled && (
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-green-600 hover:text-green-700"
-                                      >
-                                        <PlusCircle className="h-4 w-4" />
-                                      </Button>
-                                    )}
-                                    {isSelected && (
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-destructive hover:text-destructive/80"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleRemoveTool(tool);
-                                        }}
-                                      >
-                                        <XCircle className="h-4 w-4" />
-                                      </Button>
-                                    )}
+                                    <div className="flex gap-1">
+                                      {onTestTool && (
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          className="h-7 px-4 bg-blue-600 hover:bg-blue-700 text-white"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onTestTool(tool);
+                                          }}
+                                        >
+                                          Test
+                                        </Button>
+                                      )}
+                                      {!isSelected && !isDisabled && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 opacity-0 group-hover:opacity-100 text-green-600 hover:text-green-700"
+                                        >
+                                          <PlusCircle className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                      {isSelected && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 text-destructive hover:text-destructive/80"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveTool(tool);
+                                          }}
+                                        >
+                                          <XCircle className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
                                 );
                               })}

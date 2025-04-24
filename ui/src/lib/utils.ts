@@ -24,23 +24,19 @@ export function getWsUrl() {
 }
 
 export function getBackendUrl() {
-  // The NEXT_PUBLIC_BACKEND_URL is set in the Helm chart to the Kubernetes service name
   if (process.env.NEXT_PUBLIC_BACKEND_URL) {
     return process.env.NEXT_PUBLIC_BACKEND_URL;
   }
 
   if (process.env.NODE_ENV === "production") {
-    // This is more of a fallback; the NEXT_PUBLIC_BACKEND_URL should be set in the Helm chart
     return "http://kagent.kagent.svc.cluster.local/api";
   }
 
-  // Check if we're in a server-side environment
   if (typeof window === 'undefined') {
-    return "http://localhost:8081/api";
+    return "http://localhost:8083/api";
   }
 
-  // Fallback for local development (client-side)
-  return "http://localhost:8081/api";
+  return "http://localhost:8083/api";
 }
 
 export function getWebSocketUrl() {

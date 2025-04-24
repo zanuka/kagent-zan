@@ -1,0 +1,28 @@
+apiVersion: kagent.dev/v1alpha1
+kind: ToolServer
+metadata:
+  name: strava-mcp-server
+  namespace: default
+spec:
+  config:
+    sse:
+      url: https://www.mcp.run/api/mcp/sse
+  description: Strava MCP Tool Server for fitness data tools
+---
+apiVersion: kagent.dev/v1alpha1
+kind: Agent
+metadata:
+  name: strava-agent
+  namespace: default
+spec:
+  description: Agent with Strava MCP tools for fitness data analysis
+  modelConfigRef: gpt-model-config
+  systemMessage: You are an expert on fitness data analysis with Strava integration.
+  tools:
+    - type: McpServer
+      mcpServer:
+        toolServer: strava-mcp-server
+        toolNames:
+          - calculate_pace
+          - calculate_speed
+          - draw_polyline

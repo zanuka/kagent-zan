@@ -21,8 +21,15 @@ class SseMcpToolServer(ToolServer, Component[SseMcpToolServerConfig]):
         try:
             logger.debug(f"Discovering tools from sse server: {self.config}")
             tools = await mcp_server_tools(self.config)
+            
+            # For debugging
+            logger.debug(f"Discovered {len(tools)} tools from SSE server")
+            for tool in tools:
+                logger.debug(f"Tool: {tool.label} - {tool.provider}")
+                
             return tools
         except Exception as e:
+            logger.error(f"Failed to discover tools: {e}")
             raise Exception(f"Failed to discover tools: {e}") from e
 
     def _to_config(self) -> SseMcpToolServerConfig:

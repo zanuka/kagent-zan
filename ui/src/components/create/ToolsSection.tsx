@@ -160,13 +160,44 @@ export const ToolsSection = ({
     });
   };
 
-  const handleTestTool = (tool: Component<ToolConfig>) => {
-    // You would implement the actual test logic here
-    alert(`Testing MCP tool: ${tool.label}`);
+  const handleTestTool = async (tool: Component<ToolConfig>) => {
+    try {
+      const toolName = getToolDisplayName(tool);
+      const provider = getToolProvider(tool);
+      const parameters = {}; // You could add a UI to collect parameters if needed
 
-    // This is where you would call your testing API or trigger the actual test
-    // For example:
-    // api.testMcpTool(tool.provider, tool.label);
+      // Use different endpoint for MCP tools vs regular tools
+      const endpoint =
+        tool.provider === 'autogen_ext.tools.mcp.SseMcpToolAdapter'
+          ? '/api/mcp-mock/test'
+          : '/api/tools/test';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          toolName,
+          provider,
+          parameters,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to execute tool');
+      }
+
+      const data = await response.json();
+      alert(`Test result: ${data.result}`);
+    } catch (error) {
+      console.error('Error executing tool:', error);
+      alert(
+        `Error testing tool: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
   };
 
   const renderConfigDialog = () => {

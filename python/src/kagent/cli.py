@@ -285,29 +285,28 @@ def serve(
     port: int = 8081,
 ):
     import logging
-    import os
-
-    from autogenstudio.cli import ui
-    from opentelemetry import trace
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-    from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-    from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-    from opentelemetry.sdk.resources import Resource
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    import uvicorn
+    from kagent.mcp_server import MCPServer
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
 
     logging.basicConfig(level=logging.INFO)
-    tracing_enabled = os.getenv("OTEL_TRACING_ENABLED", "false").lower() == "true"
-    if tracing_enabled:
-        logging.info("Enabling tracing")
-        tracer_provider = TracerProvider(resource=Resource({"service.name": "kagent"}))
-        processor = BatchSpanProcessor(OTLPSpanExporter())
-        tracer_provider.add_span_processor(processor)
-        trace.set_tracer_provider(tracer_provider)
-        HTTPXClientInstrumentor().instrument()
-        OpenAIInstrumentor().instrument()
-
-    ui(host=host, port=port)
+    
+    mcp_server = MCPServer()
+    app = FastAPI()
+    
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    app.mount("/", mcp_server.get_app())
+    
+    logging.info(f"Starting MCP server on http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port)
 
 
 def run():

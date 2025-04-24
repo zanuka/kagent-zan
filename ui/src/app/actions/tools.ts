@@ -1,14 +1,15 @@
 "use server";
 
 import { BaseResponse } from "@/lib/types";
-import { fetchApi, createErrorResponse } from "./utils";
-import { Component, ToolConfig, MCPToolConfig } from "@/types/datamodel";
+import { Component, MCPToolConfig, ToolConfig } from "@/types/datamodel";
+import { createErrorResponse, fetchApi } from "./utils";
 
 /**
  * Gets all available tools
+ * @param useMockMcp Whether to include mock MCP tools
  * @returns A promise with all tools
  */
-export async function getTools(): Promise<BaseResponse<Component<ToolConfig>[]>> {
+export async function getTools(useMockMcp = false): Promise<BaseResponse<Component<ToolConfig>[]>> {
   try {
     const response = await fetchApi<Component<ToolConfig>[]>("/tools");
     if (!response) {
@@ -16,7 +17,7 @@ export async function getTools(): Promise<BaseResponse<Component<ToolConfig>[]>>
     }
 
     // Convert API components to Component<ToolConfig> format
-    const convertedTools = response.map((tool) => {
+    let convertedTools = response.map((tool) => {
       // Convert to Component<ToolConfig> format
       return {
         provider: tool.provider,
@@ -27,13 +28,24 @@ export async function getTools(): Promise<BaseResponse<Component<ToolConfig>[]>>
       } as Component<ToolConfig>;
     });
 
+    // Optionally add mock MCP tools
+    if (useMockMcp) {
+      try {
+        const mockResponse = await fetch('/api/mcp-mock/tools');
+        if (mockResponse.ok) {
+          const mockTools = await mockResponse.json();
+          convertedTools = [...convertedTools, ...mockTools];
+        }
+      } catch (error) {
+        console.error("Error fetching mock MCP tools:", error);
+      }
+    }
+
     return { success: true, data: convertedTools };
   } catch (error) {
     return createErrorResponse<Component<ToolConfig>[]>(error, "Error getting built-in tools");
   }
 }
-
-
 
 /**
  * Gets a specific tool by its provider name and optionally tool name
@@ -67,5 +79,54 @@ export async function getToolByProvider(allTools: Component<ToolConfig>[], provi
   }
 
   throw new Error(`Tool with provider ${provider}${toolName ? ` and name ${toolName}` : ''} not found`);
+}
 
+/**
+ * Gets the parameter schema for a tool for testing purposes
+ * @param toolName The name of the tool
+ * @param provider The provider of the tool
+ * @returns A promise with the tool parameter schema
+ */
+export async function getToolTestSchema(toolName: string, provider: string): Promise<BaseResponse<Record<string, unknown>>> {
+  try {
+    // For now, we'll return hardcoded schemas for known tools
+    // In a real implementation, you would fetch this from the backend
+
+    if (provider.includes("strava-mcp") || provider === "autogen_ext.tools.mcp.SseMcpToolAdapter") {
+      if (toolName === "calculate_pace") {
+        return {
+          success: true,
+          data: {
+            distance: { type: "number", description: "Distance in meters" },
+            time: { type: "number", description: "Time in seconds" }
+          }
+        };
+      } else if (toolName === "calculate_speed") {
+        return {
+          success: true,
+          data: {
+            speed: { type: "number", description: "Speed in m/s" },
+            unit: { type: "string", description: "Target unit (km/h or mph)" }
+          }
+        };
+      } else if (toolName === "draw_polyline") {
+        return {
+          success: true,
+          data: {
+            polyline: { type: "string", description: "Encoded polyline string" }
+          }
+        };
+      }
+    }
+
+    // Generic schema for unknown tools
+    return {
+      success: true,
+      data: {
+        input: { type: "string", description: "Input for the tool" }
+      }
+    };
+  } catch (error) {
+    return createErrorResponse<Record<string, unknown>>(error, "Error getting tool test schema");
+  }
 }
