@@ -576,6 +576,21 @@ func (a *apiTranslator) translateAssistantAgent(
 		cfg.ModelClientStream = false
 	}
 
+	// TODO:
+	cfg.Memory = []*api.Component{
+		{
+			Provider:      "kagent.memory.PineconeMemory",
+			ComponentType: "memory",
+			Version:       1,
+			Config: api.MustToConfig(&api.PineconeMemoryConfig{
+				ApiKey:    "todo",
+				IndexHost: "todo",
+				TopK:      1,
+				Namespace: "todo",
+			}),
+		},
+	}
+
 	return &api.Component{
 		Provider:      "autogen_agentchat.agents.AssistantAgent",
 		ComponentType: "agent",
