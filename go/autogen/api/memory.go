@@ -1,10 +1,11 @@
 package api
 
 type PineconeMemoryConfig struct {
-	ApiKey    string `json:"api_key"`
-	IndexHost string `json:"index_host"`
-	TopK      int    `json:"top_k"`
-	Namespace string `json:"namespace"`
+	APIKey       string   `json:"api_key"`
+	IndexHost    string   `json:"index_host"`
+	TopK         int      `json:"top_k"`
+	Namespace    string   `json:"namespace"`
+	RecordFields []string `json:"record_fields"`
 }
 
 func (c *PineconeMemoryConfig) ToConfig() (map[string]interface{}, error) {
