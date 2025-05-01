@@ -36,7 +36,7 @@ type AgentSpec struct {
 	// +kubebuilder:validation:MaxItems=20
 	Tools []*Tool `json:"tools,omitempty"`
 	// +optional
-	Memory []*Memory `json:"memory,omitempty"`
+	Memory []string `json:"memory,omitempty"`
 }
 
 // ToolProviderType represents the tool provider type

@@ -577,8 +577,8 @@ func (a *apiTranslator) translateAssistantAgent(
 	}
 
 	if agent.Spec.Memory != nil {
-		for _, memory := range agent.Spec.Memory {
-			autogenMemory, err := a.translateMemory(ctx, memory.Name, agent.Namespace)
+		for _, memoryName := range agent.Spec.Memory {
+			autogenMemory, err := a.translateMemory(ctx, memoryName, agent.Namespace)
 			if err != nil {
 				return nil, err
 			}
@@ -610,16 +610,22 @@ func (a *apiTranslator) translateMemory(ctx context.Context, memoryName string, 
 			return nil, err
 		}
 
+		threshold, err := strconv.ParseFloat(memoryObj.Spec.Pinecone.ScoreThreshold, 32)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse score threshold: %v", err)
+		}
+
 		return &api.Component{
 			Provider:      "kagent.memory.PineconeMemory",
 			ComponentType: "memory",
 			Version:       1,
 			Config: api.MustToConfig(&api.PineconeMemoryConfig{
-				APIKey:       string(apiKey),
-				IndexHost:    memoryObj.Spec.Pinecone.IndexHost,
-				TopK:         memoryObj.Spec.Pinecone.TopK,
-				Namespace:    memoryObj.Spec.Pinecone.Namespace,
-				RecordFields: memoryObj.Spec.Pinecone.RecordFields,
+				APIKey:         string(apiKey),
+				IndexHost:      memoryObj.Spec.Pinecone.IndexHost,
+				TopK:           memoryObj.Spec.Pinecone.TopK,
+				Namespace:      memoryObj.Spec.Pinecone.Namespace,
+				RecordFields:   memoryObj.Spec.Pinecone.RecordFields,
+				ScoreThreshold: threshold,
 			}),
 		}, nil
 	}

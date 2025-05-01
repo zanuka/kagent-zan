@@ -40,12 +40,15 @@ type PineconeConfig struct {
 	// The number of results to return from the Pinecone index
 	// +optional
 	TopK int `json:"topK,omitempty"`
-	// The namespace to use for the Pinecone index
+	// The namespace to use for the Pinecone index. If not provided, the default namespace will be used.
 	// +optional
 	Namespace string `json:"namespace,omitempty"`
-	// The fields to retrieve from the Pinecone index
+	// The fields to retrieve from the Pinecone index. If not provided, all fields will be retrieved.
 	// +optional
 	RecordFields []string `json:"recordFields,omitempty"`
+	// The score threshold of results to include in the context. Results with a score below this threshold will be ignored.
+	// +optional
+	ScoreThreshold string `json:"scoreThreshold,omitempty"`
 }
 
 // MemorySpec defines the desired state of Memory.

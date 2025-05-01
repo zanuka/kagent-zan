@@ -1,5 +1,4 @@
 import asyncio
-import json
 from typing import Any, List, Optional, Sequence
 
 from autogen_core import CancellationToken, Component
@@ -10,16 +9,17 @@ from loguru import logger
 from pinecone import Pinecone
 from pinecone.core.openapi.db_data.model.hit import Hit
 from pinecone.data import Index
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import Self
 
 
 class PineconeMemoryConfig(BaseModel):
-    api_key: str = Field(..., description="The API key for the Pinecone API")
+    api_key: SecretStr = Field(..., description="The API key for the Pinecone API")
     index_host: str = Field(..., description="The host for the Pinecone index")
     top_k: int = Field(default=5, description="The number of results to retrieve from Pinecone")
     namespace: Optional[str] = Field(default=None, description="The Pinecone namespace to query")
     record_fields:Optional[List[str]] = Field(description="The fields to retrieve from the Pinecone index")
+    score_threshold: float = Field(default=0.0, description="The score threshold of results to include in the context. Results with a score below this threshold will be ignored.")
 
 class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
     component_config_schema = PineconeMemoryConfig
@@ -32,10 +32,10 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
         self._index: Index | None = None
 
     async def _initialize(self):
-        """Initialize Pinecone and embedding clients if not already done."""
+        """Initialize Pinecone if not already done."""
         if self._pc is None:
             try:
-                self._pc = Pinecone(api_key=self._config.api_key, host=self._config.index_host)
+                self._pc = Pinecone(api_key=self._config.api_key.get_secret_value(), host=self._config.index_host)
                 self._index = self._pc.Index(host=self._config.index_host)
             except Exception as e:
                 logger.error(f"Failed to initialize Pinecone: {e}")
@@ -71,7 +71,7 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
             query_results = await self.query(query_text, cancellation_token=cancellation_token)
             if query_results.results:
                 memory_strings = [f"{i}. {str(memory.content)}" for i, memory in enumerate(query_results.results, 1)]
-                memory_context = "\nRelevant memory content:\n" + "\n".join(memory_strings)
+                memory_context = "\nYour response should include the following memory content:\n" + "\n".join(memory_strings)
 
                 await model_context.add_message(SystemMessage(content=memory_context))
 
@@ -125,11 +125,20 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
             if query_response and "result" in query_response:
                 for match in query_response.result.hits:
                     hit: Hit = match
+                    score = hit.get("_score")
+                    # Ignore hits with a score below the threshold
+                    if score and score < self._config.score_threshold:
+                        continue
+
                     for field in self._config.record_fields:
                         # For each hit, we get the text from record_fields, and store the remaining fields in metadata
                         text = hit.fields.get(field)
                         metadata = {k: v for k, v in hit.fields.items() if k != field}
                         results.append(MemoryContent(content=text, mime_type=MemoryMimeType.TEXT, metadata=metadata))
+
+            if len(results) == 0:
+                logger.warning("No results found from Pinecone query.")
+
             return MemoryQueryResult(results=results)
         except Exception as e:
             logger.error(f"Error during Pinecone query: {e}")
