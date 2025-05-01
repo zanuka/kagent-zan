@@ -18,8 +18,12 @@ class PineconeMemoryConfig(BaseModel):
     index_host: str = Field(..., description="The host for the Pinecone index")
     top_k: int = Field(default=5, description="The number of results to retrieve from Pinecone")
     namespace: Optional[str] = Field(default=None, description="The Pinecone namespace to query")
-    record_fields:Optional[List[str]] = Field(description="The fields to retrieve from the Pinecone index")
-    score_threshold: float = Field(default=0.0, description="The score threshold of results to include in the context. Results with a score below this threshold will be ignored.")
+    record_fields: Optional[List[str]] = Field(description="The fields to retrieve from the Pinecone index")
+    score_threshold: float = Field(
+        default=0.0,
+        description="The score threshold of results to include in the context. Results with a score below this threshold will be ignored.",
+    )
+
 
 class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
     component_config_schema = PineconeMemoryConfig
@@ -30,8 +34,9 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
         self._config = config
         self._pc: Pinecone | None = None
         self._index: Index | None = None
+        self._initialize()
 
-    async def _initialize(self):
+    def _initialize(self):
         """Initialize Pinecone if not already done."""
         if self._pc is None:
             try:
@@ -55,7 +60,6 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
         if not messages:
             return UpdateContextResult(success=True, memories=MemoryQueryResult(results=[]))
 
-        await self._initialize()
         if not self._index:
             logger.error("Pinecone index not initialized.")
             raise RuntimeError("Pinecone index not initialized.")
@@ -65,19 +69,19 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
         query_text = last_message.content if isinstance(last_message.content, str) else str(last_message)
 
         if not query_text:
-             return UpdateContextResult(success=True, memories=MemoryQueryResult(results=[]))
+            return UpdateContextResult(success=True, memories=MemoryQueryResult(results=[]))
 
         try:
             query_results = await self.query(query_text, cancellation_token=cancellation_token)
             if query_results.results:
                 memory_strings = [f"{i}. {str(memory.content)}" for i, memory in enumerate(query_results.results, 1)]
-                memory_context = "\nYour response should include the following memory content:\n" + "\n".join(memory_strings)
+                memory_context = "\nYour response should include the following memory content:\n" + "\n".join(
+                    memory_strings
+                )
 
                 await model_context.add_message(SystemMessage(content=memory_context))
 
-            return UpdateContextResult(
-                success=True,
-                memories=query_results)
+            return UpdateContextResult(success=True, memories=query_results)
         except Exception as e:
             logger.error(f"Error during Pinecone update_context: {e}")
             return UpdateContextResult(success=False, error=str(e), memories=MemoryQueryResult(results=[]))
@@ -89,7 +93,6 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
         **kwargs: Any,
     ) -> MemoryQueryResult:
         """Query the memory with a specific string or MemoryContent."""
-        await self._initialize()
         if not self._index:
             logger.error("Pinecone index not initialized.")
             raise RuntimeError("Pinecone index not initialized.")
@@ -114,10 +117,7 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
             query_response = await asyncio.to_thread(
                 self._index.search,
                 namespace=self._config.namespace,
-                query={
-                    "inputs": { "text": query_text },
-                    "top_k": self._config.top_k
-                },
+                query={"inputs": {"text": query_text}, "top_k": self._config.top_k},
                 fields=self._config.record_fields,
             )
 
@@ -144,7 +144,9 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
             logger.error(f"Error during Pinecone query: {e}")
             raise e
 
-    async def add(self, content: MemoryContent | Sequence[MemoryContent], cancellation_token: CancellationToken | None = None) -> None:
+    async def add(
+        self, content: MemoryContent | Sequence[MemoryContent], cancellation_token: CancellationToken | None = None
+    ) -> None:
         pass
 
     async def reset(self) -> None:
@@ -156,7 +158,6 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
         self._pc = None
         self._index = None
         logger.info("PineconeMemory closed.")
-
 
     async def clear(self) -> None:
         """Clear the memory by deleting all data in the specified namespace (or the whole index if no namespace)."""
