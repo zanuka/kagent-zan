@@ -130,6 +130,11 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
                     if score and score < self._config.score_threshold:
                         continue
 
+                    if not self._config.record_fields:
+                        # if no record fields are specified initially, use all fields
+                        logger.info("No record fields specified, using all fields.")
+                        self._config.record_fields = list(hit.fields.keys())
+
                     for field in self._config.record_fields:
                         # For each hit, we get the text from record_fields, and store the remaining fields in metadata
                         text = hit.fields.get(field)
