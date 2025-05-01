@@ -60,10 +60,6 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
         if not messages:
             return UpdateContextResult(success=True, memories=MemoryQueryResult(results=[]))
 
-        if not self._index:
-            logger.error("Pinecone index not initialized.")
-            raise RuntimeError("Pinecone index not initialized.")
-
         # Use the last message as the query basis
         last_message = messages[-1]
         query_text = last_message.content if isinstance(last_message.content, str) else str(last_message)
@@ -93,10 +89,6 @@ class PineconeMemory(Memory, Component[PineconeMemoryConfig]):
         **kwargs: Any,
     ) -> MemoryQueryResult:
         """Query the memory with a specific string or MemoryContent."""
-        if not self._index:
-            logger.error("Pinecone index not initialized.")
-            raise RuntimeError("Pinecone index not initialized.")
-
         query_text = ""
         if isinstance(query, str):
             query_text = query
