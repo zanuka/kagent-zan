@@ -33,6 +33,7 @@ import (
 	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
 
 	"github.com/kagent-dev/kagent/go/controller/internal/httpserver"
+	utils_internal "github.com/kagent-dev/kagent/go/controller/internal/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -57,7 +58,7 @@ import (
 var (
 	scheme       = runtime.NewScheme()
 	setupLog     = ctrl.Log.WithName("setup")
-	podNamespace = os.Getenv("POD_NAMESPACE")
+	podNamespace = utils_internal.GetResourceNamespace()
 )
 
 func init() {
@@ -67,10 +68,6 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
-
-	if podNamespace == "" {
-		podNamespace = "kagent"
-	}
 }
 
 // nolint:gocyclo
@@ -303,8 +300,15 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ToolServer")
 		os.Exit(1)
 	}
+	if err = (&controller.AutogenMemoryReconciler{
+		Client:     kubeClient,
+		Scheme:     mgr.GetScheme(),
+		Reconciler: autogenReconciler,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Memory")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
-
 	if metricsCertWatcher != nil {
 		setupLog.Info("Adding metrics certificate watcher to manager")
 		if err := mgr.Add(metricsCertWatcher); err != nil {
