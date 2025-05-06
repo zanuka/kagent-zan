@@ -115,7 +115,7 @@ func InstallCmd(ctx context.Context, c *ishell.Context) {
 	}
 
 	// Wait for port-forward to be ready
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	// Check if port-forward is running
 	if portForwardCmd.Process == nil {
