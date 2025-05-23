@@ -56,16 +56,17 @@ func (h *ToolsHandler) HandleListTools(w ErrorResponseWriter, r *http.Request) {
 	}
 
 	discoveredTools := make([]*api.Component, 0)
+
 	for _, toolServer := range allToolServers.Items {
-		for _, t := range toolServer.Status.DiscoveredTools {
-			// Set the server name in the component label
-			t.Component.Label = toolServer.Name
+		for _, t := range toolServer.Status.Tools {
 			discoveredTools = append(discoveredTools, &api.Component{
 				Provider:      t.Component.Provider,
-				Label:         t.Component.Label,
-				Description:   t.Component.Description,
-				Config:        convertAnyTypeMapToInterfaceMap(t.Component.Config),
 				ComponentType: t.Component.ComponentType,
+				Config:        convertAnyTypeMapToInterfaceMap(t.Component.Config),
+				Label:         toolServer.Name,
+				Version:       t.Component.Version,
+				ComponentVersion: t.Component.ComponentVersion,
+				Description:   t.Component.Description,
 			})
 		}
 	}

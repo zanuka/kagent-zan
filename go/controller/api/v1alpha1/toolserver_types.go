@@ -53,7 +53,7 @@ type ToolServerStatus struct {
 	ObservedGeneration int64              `json:"observedGeneration"`
 	Conditions         []metav1.Condition `json:"conditions"`
 	// +kubebuilder:validation:Optional
-	DiscoveredTools []*MCPTool `json:"discoveredTools"`
+	Tools []*MCPTool `json:"tools"`
 }
 
 type MCPTool struct {
@@ -82,6 +82,8 @@ type MCPToolServerParams struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:shortName=ts
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ToolServer is the Schema for the toolservers API.
 type ToolServer struct {
@@ -93,6 +95,7 @@ type ToolServer struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ToolServerList contains a list of ToolServer.
 type ToolServerList struct {

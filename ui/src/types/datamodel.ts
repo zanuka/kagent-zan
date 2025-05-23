@@ -426,9 +426,19 @@ export interface ToolComponent {
 
 export interface ToolServerWithTools {
   name: string;
-  config: any;
-  discoveredTools: any[];
+  namespace: string;
   status: {
-    error?: string;
+    conditions: Array<{
+      type: string;
+      status: string;
+      message: string;
+      lastTransitionTime: string;
+      observedGeneration: number;
+    }>;
   };
+  tools: Array<{
+    name: string;
+    component: Component<ToolConfig>;
+  }>;
+  config: ToolServerConfiguration;
 }

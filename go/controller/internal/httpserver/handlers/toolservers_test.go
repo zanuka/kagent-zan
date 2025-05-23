@@ -126,9 +126,9 @@ func TestHandleListToolServers(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody: map[string]interface{}{
-				"name":            "test-server-1",
-				"config":          map[string]interface{}{},
-				"discoveredTools": []interface{}{},
+				"name": "test-server-1",
+				"config": map[string]interface{}{},
+				"tools": []interface{}{},
 				"status": map[string]interface{}{
 					"conditions": []interface{}{
 						map[string]interface{}{
@@ -146,7 +146,8 @@ func TestHandleListToolServers(t *testing.T) {
 			toolServers: []v1alpha1.ToolServer{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-server-2",
+						Name:      "test-server-2",
+						Namespace: "default",
 					},
 					Spec: v1alpha1.ToolServerSpec{
 						Config: v1alpha1.ToolServerConfig{},
@@ -164,9 +165,8 @@ func TestHandleListToolServers(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody: map[string]interface{}{
-				"name":            "test-server-2",
-				"config":          map[string]interface{}{},
-				"discoveredTools": []interface{}{},
+				"name":       "test-server-2",
+				"namespace":  "default",
 				"status": map[string]interface{}{
 					"conditions": []interface{}{
 						map[string]interface{}{
@@ -175,8 +175,15 @@ func TestHandleListToolServers(t *testing.T) {
 							"message": "Failed to reconcile",
 						},
 					},
-					"error": "Failed to reconcile",
 				},
+				"conditions": []interface{}{
+					map[string]interface{}{
+						"type":    "Accepted",
+						"status":  "False",
+						"message": "Failed to reconcile",
+					},
+				},
+				"tools": []interface{}{},
 			},
 		},
 	}

@@ -216,9 +216,10 @@ type ModelConfigStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Provider",type="string",JSONPath=".spec.provider"
 // +kubebuilder:printcolumn:name="Model",type="string",JSONPath=".spec.model"
 // +kubebuilder:resource:shortName=mc
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ModelConfig is the Schema for the modelconfigs API.
 type ModelConfig struct {
@@ -230,6 +231,7 @@ type ModelConfig struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ModelConfigList contains a list of ModelConfig.
 type ModelConfigList struct {

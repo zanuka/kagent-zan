@@ -15,6 +15,9 @@ import (
 type AutogenClient interface {
 	CreateSession(*autogen_client.CreateSession) (*autogen_client.Session, error)
 	CreateRun(*autogen_client.CreateRunRequest) (*autogen_client.CreateRunResult, error)
+	GetTeamByID(int, string) (*autogen_client.Team, error)
+	InvokeTask(*autogen_client.InvokeTaskRequest) (*autogen_client.InvokeTaskResult, error)
+	InvokeTaskStream(*autogen_client.InvokeTaskRequest) (<-chan *autogen_client.SseEvent, error)
 }
 
 // InvokeHandler processes agent invocation API requests.
@@ -63,13 +66,13 @@ func (h *InvokeHandler) HandleInvokeAgent(w ErrorResponseWriter, r *http.Request
 		return
 	}
 
-	team, err := h.AutogenClient.GetTeamByID(agentID, req.UserID)
+	team, err := h.client.GetTeamByID(agentID, req.UserID)
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to get team", err))
 		return
 	}
 
-	result, err := h.AutogenClient.InvokeTask(&autogen_client.InvokeTaskRequest{
+	result, err := h.client.InvokeTask(&autogen_client.InvokeTaskRequest{
 		Task:       req.Message,
 		TeamConfig: team.Component,
 	})
@@ -81,7 +84,17 @@ func (h *InvokeHandler) HandleInvokeAgent(w ErrorResponseWriter, r *http.Request
 	log.Info("Synchronous request - waiting for response")
 
 	log.Info("Successfully invoked agent")
-	RespondWithJSON(w, http.StatusOK, result)
+
+	response := InvokeResponse{
+		SessionID:   strconv.Itoa(team.Id),
+		Status:      result.TaskResult.StopReason,
+	}
+	if len(result.TaskResult.Messages) > 0 {
+		if content, ok := result.TaskResult.Messages[0]["content"].(string); ok {
+			response.Response = content
+		}
+	}
+	RespondWithJSON(w, http.StatusOK, response)
 }
 
 // HandleInvokeAgentStream processes asynchronous agent execution requests.
@@ -94,13 +107,13 @@ func (h *InvokeHandler) HandleInvokeAgentStream(w ErrorResponseWriter, r *http.R
 		return
 	}
 
-	team, err := h.AutogenClient.GetTeamByID(agentID, req.UserID)
+	team, err := h.client.GetTeamByID(agentID, req.UserID)
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to get team", err))
 		return
 	}
 
-	ch, err := h.AutogenClient.InvokeTaskStream(&autogen_client.InvokeTaskRequest{
+	ch, err := h.client.InvokeTaskStream(&autogen_client.InvokeTaskRequest{
 		Task:       req.Message,
 		TeamConfig: team.Component,
 	})

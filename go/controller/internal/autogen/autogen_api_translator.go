@@ -637,7 +637,7 @@ func translateToolServerTool(
 	}
 
 	// requires the tool to have been discovered
-	for _, discoveredTool := range toolServer.Status.DiscoveredTools {
+	for _, discoveredTool := range toolServer.Status.Tools {
 		if discoveredTool.Name == toolName {
 			return convertComponent(discoveredTool.Component)
 		}

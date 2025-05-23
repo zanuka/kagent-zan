@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
+	"github.com/kagent-dev/kagent/go/autogen/api"
 	"github.com/kagent-dev/kagent/go/controller/internal/httpserver/handlers"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -39,6 +40,8 @@ func (m *mockErrorResponseWriter) RespondWithError(err error) {
 type mockAutogenClient struct {
 	createSessionFunc func(*autogen_client.CreateSession) (*autogen_client.Session, error)
 	createRunFunc     func(*autogen_client.CreateRunRequest) (*autogen_client.CreateRunResult, error)
+	getTeamByIDFunc   func(int, string) (*autogen_client.Team, error)
+	invokeTaskFunc    func(*autogen_client.InvokeTaskRequest) (*autogen_client.InvokeTaskResult, error)
 }
 
 func (m *mockAutogenClient) CreateSession(req *autogen_client.CreateSession) (*autogen_client.Session, error) {
@@ -113,6 +116,40 @@ func (m *mockAutogenClient) DeleteToolServer(name string) error {
 	return nil
 }
 
+func (m *mockAutogenClient) GetTeamByID(teamID int, userID string) (*autogen_client.Team, error) {
+	if m.getTeamByIDFunc != nil {
+		return m.getTeamByIDFunc(teamID, userID)
+	}
+	return &autogen_client.Team{
+		BaseObject: autogen_client.BaseObject{
+			Id: teamID,
+		},
+		Component: &api.Component{
+			Provider: "test-provider",
+		},
+	}, nil
+}
+
+func (m *mockAutogenClient) InvokeTask(req *autogen_client.InvokeTaskRequest) (*autogen_client.InvokeTaskResult, error) {
+	if m.invokeTaskFunc != nil {
+		return m.invokeTaskFunc(req)
+	}
+	return &autogen_client.InvokeTaskResult{
+		Duration: 1.0,
+		TaskResult: autogen_client.TaskResult{
+			Messages: []autogen_client.TaskMessageMap{
+				{"content": "Test response"},
+			},
+			StopReason: "completed",
+		},
+		Usage: "test usage",
+	}, nil
+}
+
+func (m *mockAutogenClient) InvokeTaskStream(req *autogen_client.InvokeTaskRequest) (<-chan *autogen_client.SseEvent, error) {
+	return nil, nil
+}
+
 // TestInvokeHandler tests the InvokeHandler functions
 func TestInvokeHandler(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -140,23 +177,30 @@ var _ = Describe("InvokeHandler", func() {
 
 	Context("HandleInvokeAgent", func() {
 		It("should handle synchronous invocation successfully", func() {
-			mockClient.createSessionFunc = func(req *autogen_client.CreateSession) (*autogen_client.Session, error) {
-				return &autogen_client.Session{
-					ID:      42,
-					UserID:  req.UserID,
-					Version: "1.0",
-					TeamID:  req.TeamID,
-					Name:    req.Name,
+			mockClient.getTeamByIDFunc = func(teamID int, userID string) (*autogen_client.Team, error) {
+				return &autogen_client.Team{
+					BaseObject: autogen_client.BaseObject{
+						Id: teamID,
+					},
+					Component: &api.Component{
+						Provider: "test-provider",
+					},
+				}, nil
+			}
+			mockClient.invokeTaskFunc = func(req *autogen_client.InvokeTaskRequest) (*autogen_client.InvokeTaskResult, error) {
+				return &autogen_client.InvokeTaskResult{
+					Duration: 1.0,
+					TaskResult: autogen_client.TaskResult{
+						Messages: []autogen_client.TaskMessageMap{
+							{"content": "Test response"},
+						},
+						StopReason: "completed",
+					},
+					Usage: "test usage",
 				}, nil
 			}
 
-			mockClient.createRunFunc = func(req *autogen_client.CreateRunRequest) (*autogen_client.CreateRunResult, error) {
-				return &autogen_client.CreateRunResult{
-					ID: 123,
-				}, nil
-			}
-
-			agentID := "1"
+			agentID := "42"
 			reqBody := handlers.InvokeRequest{
 				Message: "Test message",
 				UserID:  "test-user",
@@ -183,12 +227,12 @@ var _ = Describe("InvokeHandler", func() {
 			Expect(response.Response).NotTo(BeEmpty())
 		})
 
-		It("should handle errors in session creation", func() {
-			mockClient.createSessionFunc = func(req *autogen_client.CreateSession) (*autogen_client.Session, error) {
-				return nil, fmt.Errorf("session creation failed")
+		It("should handle errors in GetTeamByID", func() {
+			mockClient.getTeamByIDFunc = func(teamID int, userID string) (*autogen_client.Team, error) {
+				return nil, fmt.Errorf("get team failed")
 			}
 
-			agentID := "1"
+			agentID := "42"
 			reqBody := handlers.InvokeRequest{
 				Message: "Test message",
 				UserID:  "test-user",
@@ -208,22 +252,22 @@ var _ = Describe("InvokeHandler", func() {
 			Expect(responseRecorder.errorReceived).ToNot(BeNil())
 		})
 
-		It("should handle errors in run creation", func() {
-			mockClient.createSessionFunc = func(req *autogen_client.CreateSession) (*autogen_client.Session, error) {
-				return &autogen_client.Session{
-					ID:      42,
-					UserID:  req.UserID,
-					Version: "1.0",
-					TeamID:  req.TeamID,
-					Name:    req.Name,
+		It("should handle errors in InvokeTask", func() {
+			mockClient.getTeamByIDFunc = func(teamID int, userID string) (*autogen_client.Team, error) {
+				return &autogen_client.Team{
+					BaseObject: autogen_client.BaseObject{
+						Id: teamID,
+					},
+					Component: &api.Component{
+						Provider: "test-provider",
+					},
 				}, nil
 			}
-
-			mockClient.createRunFunc = func(req *autogen_client.CreateRunRequest) (*autogen_client.CreateRunResult, error) {
-				return nil, fmt.Errorf("run creation failed")
+			mockClient.invokeTaskFunc = func(req *autogen_client.InvokeTaskRequest) (*autogen_client.InvokeTaskResult, error) {
+				return nil, fmt.Errorf("invoke task failed")
 			}
 
-			agentID := "1"
+			agentID := "42"
 			reqBody := handlers.InvokeRequest{
 				Message: "Test message",
 				UserID:  "test-user",

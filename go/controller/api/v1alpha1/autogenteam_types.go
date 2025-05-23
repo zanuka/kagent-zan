@@ -95,6 +95,8 @@ type TeamStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Team is the Schema for the teams API.
 type Team struct {
@@ -106,6 +108,7 @@ type Team struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TeamList contains a list of Team.
 type TeamList struct {

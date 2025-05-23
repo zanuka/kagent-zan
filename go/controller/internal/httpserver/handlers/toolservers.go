@@ -48,21 +48,20 @@ func (h *ToolServersHandler) HandleListToolServers(w ErrorResponseWriter, r *htt
 
 		errorMsg := getErrorFromConditions(toolServer.Status.Conditions)
 		if errorMsg != nil {
-			log.Info("Tool server has error condition", "toolServerName", toolServer.Name, "error", *errorMsg)
+			log.V(1).Info("Tool server has error condition", "toolServerName", toolServer.Name, "error", *errorMsg)
 		}
 
-		discoveredTools := toolServer.Status.DiscoveredTools
+		discoveredTools := toolServer.Status.Tools
 		if discoveredTools == nil {
 			discoveredTools = []*v1alpha1.MCPTool{}
 		}
-		toolServerWithTools = append(toolServerWithTools, map[string]interface{}{ 
-			"name":            toolServer.Name,
-			"config":          toolServer.Spec.Config,
-			"discoveredTools": discoveredTools,
-			"status": map[string]interface{}{
-				"conditions": toolServer.Status.Conditions,
-				"error":     errorMsg,
-			},
+		toolServerWithTools = append(toolServerWithTools, map[string]interface{}{
+			"name":       toolServer.Name,
+			"namespace":  toolServer.Namespace,
+			"status":     toolServer.Status,
+			"conditions": toolServer.Status.Conditions,
+			"tools":      discoveredTools,
+			"config":     toolServer.Spec.Config,
 		})
 	}
 

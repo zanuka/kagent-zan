@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/kagent-dev/kagent/go/autogen/api"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -344,43 +343,24 @@ func (a *autogenReconciler) reconcileToolServerStatus(
 ) error {
 	discoveredTools, discoveryErr := a.getDiscoveredMCPTools(serverID)
 	if discoveryErr != nil {
-		err = multierror.Append(err, discoveryErr)
+		conditionChanged := meta.SetStatusCondition(&toolServer.Status.Conditions, metav1.Condition{
+			Type:    "Accepted",
+			Status:  metav1.ConditionFalse,
+			Message: fmt.Sprintf("Failed to discover tools: %v", discoveryErr),
+		})
+		if conditionChanged {
+			if err := a.kube.Status().Update(ctx, toolServer); err != nil {
+				return err
+			}
+		}
+		return discoveryErr
 	}
 
-	var (
-		status  metav1.ConditionStatus
-		message string
-		reason  string
-	)
-	if err != nil {
-		status = metav1.ConditionFalse
-		message = err.Error()
-		reason = "AgentReconcileFailed"
-		reconcileLog.Error(err, "failed to reconcile agent", "agent", toolServer)
-	} else {
-		status = metav1.ConditionTrue
-		reason = "AgentReconciled"
-	}
-	conditionChanged := meta.SetStatusCondition(&toolServer.Status.Conditions, metav1.Condition{
-		Type:               v1alpha1.AgentConditionTypeAccepted,
-		Status:             status,
-		LastTransitionTime: metav1.Now(),
-		Reason:             reason,
-		Message:            message,
-	})
-
-	// only update if the status has changed to prevent looping the reconciler
-	if !conditionChanged &&
-		toolServer.Status.ObservedGeneration == toolServer.Generation &&
-		reflect.DeepEqual(toolServer.Status.DiscoveredTools, discoveredTools) {
-		return nil
-	}
-
-	toolServer.Status.ObservedGeneration = toolServer.Generation
-	toolServer.Status.DiscoveredTools = discoveredTools
-
-	if err := a.kube.Status().Update(ctx, toolServer); err != nil {
-		return fmt.Errorf("failed to update agent status: %v", err)
+	if !reflect.DeepEqual(toolServer.Status.Tools, discoveredTools) {
+		toolServer.Status.Tools = discoveredTools
+		if err := a.kube.Status().Update(ctx, toolServer); err != nil {
+			return err
+		}
 	}
 
 	return nil

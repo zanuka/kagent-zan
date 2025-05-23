@@ -126,6 +126,8 @@ type AgentStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Accepted",type="string",JSONPath=".status.conditions[0].status",description="Whether or not the agent has been accepted by the system."
 // +kubebuilder:printcolumn:name="ModelConfig",type="string",JSONPath=".spec.modelConfig",description="The ModelConfig resource referenced by this agent."
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Agent is the Schema for the agents API.
 type Agent struct {
@@ -137,6 +139,7 @@ type Agent struct {
 }
 
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // AgentList contains a list of Agent.
 type AgentList struct {

@@ -1212,8 +1212,8 @@ func (in *ToolServerStatus) DeepCopyInto(out *ToolServerStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.DiscoveredTools != nil {
-		in, out := &in.DiscoveredTools, &out.DiscoveredTools
+	if in.Tools != nil {
+		in, out := &in.Tools, &out.Tools
 		*out = make([]*MCPTool, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {

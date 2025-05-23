@@ -219,15 +219,22 @@ export default function ServersPage() {
                 {/* Server Tools List */}
                 {isExpanded && (
                   <div className="p-4">
-                    {server.status.error ? (
+                    {server.status.conditions &&
+                    server.status.conditions.some(
+                      (c) => c.status === 'False'
+                    ) ? (
                       <div className="p-3 border border-red-200 bg-red-50 rounded-md text-red-700">
                         <div className="font-medium">Error</div>
-                        <div className="text-sm">{server.status.error}</div>
+                        <div className="text-sm">
+                          {server.status.conditions
+                            .filter((c) => c.status === 'False')
+                            .map((c) => c.message)
+                            .join(', ')}
+                        </div>
                       </div>
-                    ) : server.discoveredTools &&
-                      server.discoveredTools.length > 0 ? (
+                    ) : server.tools && server.tools.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {server.discoveredTools
+                        {server.tools
                           .sort((a, b) => {
                             const aName = getToolDisplayName(a.component) || '';
                             const bName = getToolDisplayName(b.component) || '';
